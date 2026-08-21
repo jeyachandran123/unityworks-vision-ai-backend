@@ -208,12 +208,43 @@ async def status(request: Request, access: CurrentAccess) -> dict[str, Any]:
     database = database_of(request)
     db_ok, _ = await database.healthy()
 
+    from app.api.dependencies import live_of
+
+    live = live_of(request)
+    summary = live.summary()
+    sessions = live.visible(
+        tenant_id=access.tenant_id, camera_ids=_scope_cameras(access)
+    )
+
     return {
         "service": {"ok": db_ok},
         "vision_os": vision.status().to_wire(),
         "tenant_id": access.tenant_id,
-        "not_yet_reported": ["cameras", "coverage", "incidents"],
+        # Real camera health, derived from real source state. A camera that is
+        # not producing is reported as such — never as a frozen last frame, and
+        # never as online.
+        "cameras": {
+            "configured": len(live.describe_cameras()),
+            "sessions": len(sessions),
+            "streaming": summary.streaming_sessions,
+            "health": [
+                {"camera_id": s.camera_id, "health": s.health.value, "kind": s.kind.value}
+                for s in sessions
+            ],
+        },
+        "live_runtime": summary.to_wire(),
+        # Still named rather than zeroed. Reporting 0 incidents from a store
+        # that does not exist is the failure this product must never commit.
+        "not_yet_reported": ["coverage", "incidents"],
     }
+
+
+def _scope_cameras(access):
+    from app.authorization.model import ScopeBreadth
+
+    if access.cameras.breadth is ScopeBreadth.ALL_IN_TENANT:
+        return None
+    return access.cameras.camera_ids
 
 
 def build_router() -> APIRouter:

@@ -449,15 +449,25 @@ class TestAuthenticatedAccess:
         assert response.json()["tenant_id"] == "org-test"
 
     async def test_status_does_not_invent_a_clean_result(self, seeded, client) -> None:
-        """Reporting zero cameras and zero incidents before those features exist
-        would be the exact failure this product must never commit: an empty
-        answer that reads as a clean one."""
+        """Reporting zero incidents before that feature exists would be the exact
+        failure this product must never commit: an empty answer that reads as a
+        clean one.
+
+        Cameras left this list in Phase 3 — they are now reported from real
+        source state, and an absence of cameras is reported as an absence of
+        cameras rather than as a healthy zero.
+        """
         response = await client.get(
             "/api/v1/status", headers=await bearer(client, "manager@example.com")
         )
         body = response.json()
-        assert "cameras" in body["not_yet_reported"]
         assert "incidents" in body["not_yet_reported"]
+        assert "coverage" in body["not_yet_reported"]
+
+        # Cameras are reported, and honestly: none configured, none streaming.
+        assert body["cameras"]["configured"] == 0
+        assert body["cameras"]["sessions"] == 0
+        assert body["live_runtime"]["streaming"] is False
 
 
 class TestDevToolsAuthorization:

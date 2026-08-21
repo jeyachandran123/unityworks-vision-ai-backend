@@ -120,6 +120,35 @@ class Settings(BaseSettings):
     #: adapter is bound yet, so a running platform would have nothing to read.
     vision_autostart: bool = False
 
+    # ── CCTV / live runtime ──────────────────────────────────────────────────
+    #
+    # Nothing here starts a camera. `feature_live_cctv` gates the runtime,
+    # `cctv_channels` names which channels exist, and the application lifespan
+    # is the only caller that starts a session. Three deliberate acts.
+    cctv_host: str = ""
+    cctv_rtsp_port: int = 554
+    #: EXPLICIT allowlist, e.g. "1,2,5,7". **Empty selects nothing** — a
+    #: 16-channel DVR must not become 16 pipelines because nobody said otherwise.
+    cctv_channels: str = ""
+    cctv_stream_type: Literal["main", "sub"] = "sub"
+    cctv_username: str = ""
+    #: A REFERENCE, resolved through the secret provider — never a password.
+    #: `env:CCTV_PASSWORD`, `file:/run/secrets/dvr`, `literal:…` (development).
+    cctv_credential_ref: str = ""
+    #: Independent of the camera's own frame rate: a 25 fps stream must not
+    #: become 25 fps of detection and VLM work.
+    cctv_analysis_fps: float = 4.0
+    #: Frames held between decoder and pipeline, per camera. Bounded, always;
+    #: there is no value meaning "unlimited". See app/vision/frames.py.
+    cctv_queue_capacity: int = 8
+    cctv_reconnect_initial_ms: float = 1_000.0
+    cctv_reconnect_max_ms: float = 60_000.0
+    #: 0 retries indefinitely, with the delay still capped.
+    cctv_reconnect_max_attempts: int = 0
+    #: Tenant that owns lifespan-started camera sessions. Phase 4 moves camera
+    #: ownership into the database and this becomes a per-camera column.
+    default_tenant_id: str = "default"
+
     # ── Evidence & imagery ───────────────────────────────────────────────────
     #
     # Both default OFF, and both are deployment decisions rather than user

@@ -245,9 +245,33 @@
         ]
       }
     },
+    "/api/v1/devtools/live": {
+      "get": {
+        "description": "The live runtime in full: sessions, queues, sources, drop counters.\n\nEverything a source knows except the credential. The URI is the redacted\nform and there is no code path here that can produce the real one.",
+        "operationId": "live_runtime_api_v1_devtools_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Live Runtime Api V1 Devtools Live Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Live Runtime",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
     "/api/v1/devtools/sessions": {
       "get": {
-        "description": "Sessions available to inspect.",
+        "description": "Sessions available to inspect \u2014 **real ones first**.\n\nLive and replay sessions come from the runtime and are scoped to the\ncaller's tenant and cameras. The fixture is appended and labelled, so a real\nsession is never confused with it and DevTools keeps working before any\nsource is configured.",
         "operationId": "sessions_api_v1_devtools_sessions_get",
         "responses": {
           "200": {

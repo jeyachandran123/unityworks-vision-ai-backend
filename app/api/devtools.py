@@ -27,7 +27,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 
-from app.api.dependencies import CurrentAccess, requires, settings_of, vision_of
+from app.api.dependencies import CurrentAccess, live_of, requires, settings_of, vision_of
 from app.authorization.model import Permission
 from app.errors import EvidenceForbiddenError
 
@@ -66,9 +66,59 @@ async def vision_diagnostics(request: Request) -> dict[str, Any]:
 
 
 @router.get("/sessions", dependencies=[_REQUIRE_DEVTOOLS])
-async def sessions(access: CurrentAccess) -> dict[str, Any]:
-    """Sessions available to inspect."""
-    return {"sessions": [_fixture(access).to_wire()]}
+async def sessions(request: Request, access: CurrentAccess) -> dict[str, Any]:
+    """Sessions available to inspect — **real ones first**.
+
+    Live and replay sessions come from the runtime and are scoped to the
+    caller's tenant and cameras. The fixture is appended and labelled, so a real
+    session is never confused with it and DevTools keeps working before any
+    source is configured.
+    """
+    live = live_of(request)
+    cameras = _visible_cameras(access)
+    real = [
+        session.to_wire()
+        for session in live.visible(tenant_id=access.tenant_id, camera_ids=cameras)
+    ]
+    return {
+        "runtime": live.summary().to_wire(),
+        "sessions": real + [_fixture(access).to_wire()],
+        "cameras_configured": live.describe_cameras(),
+    }
+
+
+@router.get("/live", dependencies=[_REQUIRE_DEVTOOLS])
+async def live_runtime(request: Request, access: CurrentAccess) -> dict[str, Any]:
+    """The live runtime in full: sessions, queues, sources, drop counters.
+
+    Everything a source knows except the credential. The URI is the redacted
+    form and there is no code path here that can produce the real one.
+    """
+    live = live_of(request)
+    cameras = _visible_cameras(access)
+    sessions = live.visible(tenant_id=access.tenant_id, camera_ids=cameras)
+    return {
+        "runtime": live.summary().to_wire(),
+        "sessions": [session.to_wire() for session in sessions],
+        "cameras_configured": live.describe_cameras(),
+        "backpressure": {
+            "policy": "drop-oldest",
+            "rationale": (
+                "For live monitoring the newest frame answers the question being "
+                "asked. Blocking the producer to keep old frames stalls the "
+                "decoder and turns a processing problem into a camera outage."
+            ),
+        },
+    }
+
+
+def _visible_cameras(access) -> tuple[str, ...] | None:
+    """The caller's camera scope. `None` is tenant-wide, `()` is none."""
+    from app.authorization.model import ScopeBreadth
+
+    if access.cameras.breadth is ScopeBreadth.ALL_IN_TENANT:
+        return None
+    return access.cameras.camera_ids
 
 
 @router.get("/capabilities", dependencies=[_REQUIRE_DEVTOOLS])

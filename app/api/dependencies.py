@@ -19,6 +19,7 @@ from app.configuration.settings import Settings
 from app.errors import AuthenticationError
 from app.infrastructure.cache import Cache
 from app.infrastructure.database import Database
+from app.vision.manager import LiveRuntime
 from app.vision.runtime import VisionRuntime
 
 
@@ -40,6 +41,10 @@ def auth_of(request: Request) -> AuthService:
 
 def vision_of(request: Request) -> VisionRuntime:
     return request.app.state.vision
+
+
+def live_of(request: Request) -> LiveRuntime:
+    return request.app.state.live
 
 
 async def db_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -124,5 +129,6 @@ __all__ = [
     "db_session",
     "requires",
     "settings_of",
+    "live_of",
     "vision_of",
 ]

@@ -44,6 +44,7 @@ from app.infrastructure.observability import (
     metrics_payload,
     request_context_middleware,
 )
+from app.vision.manager import LiveRuntime
 from app.vision.runtime import VisionRuntime
 
 
@@ -76,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.cache = Cache(cfg)
     app.state.auth = AuthService(TokenService(cfg))
     app.state.vision = VisionRuntime(cfg)
+    app.state.live = LiveRuntime(cfg)
 
     app.add_middleware(
         CORSMiddleware,
@@ -130,6 +132,14 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     VISION_READY.set(1 if await vision.start() else 0)
 
+    # The ONLY place a camera session starts. Not on import, not on a DevTools
+    # request, not as a side effect of anything else — and it starts nothing
+    # unless FEATURE_LIVE_CCTV is on and a channel is named.
+    live: LiveRuntime = app.state.live
+    started = await live.start_configured()
+    if started:
+        logger.warning("live CCTV runtime started {} camera session(s)", started)
+
     if cfg.serve_frames or cfg.allow_evidence:
         # Loud on purpose. These are the two settings that decide whether CCTV
         # imagery of identifiable people can leave the process.
@@ -142,6 +152,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("Shutting down")
+    await live.stop_all()
     await vision.stop()
     await cache.disconnect()
     await database.disconnect()

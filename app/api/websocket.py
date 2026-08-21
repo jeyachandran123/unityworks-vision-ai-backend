@@ -68,26 +68,39 @@ async def live(socket: WebSocket) -> None:
             await socket.close(code=failure.code, reason=failure.reason)
         return
 
+    # `streaming` is DERIVED from the runtime, never asserted. It is true only
+    # when a session has received a genuine frame and its source is still
+    # producing — see `VisionSession.streaming`. A socket being open has never
+    # been sufficient, and the frontend cannot set it.
+    live = socket.app.state.live
+    summary = live.summary()
+    cameras = _visible_cameras(access)
+    sessions = live.visible(tenant_id=access.tenant_id, camera_ids=cameras)
+    streaming = any(session.streaming for session in sessions)
+
     await socket.send_text(
         json.dumps(
             {
                 "type": "ready",
                 "subject": access.subject,
                 "tenant_id": access.tenant_id,
-                # Stated rather than implied. A client that knows no stream is
-                # attached can render "connected, not yet streaming" instead of
-                # an empty view that looks like an outage.
-                "streaming": False,
+                "streaming": streaming,
+                # Two facts, separately. "Connected" and "streaming" are
+                # different, and collapsing them is how a green LIVE badge ends
+                # up over a camera that does not exist.
+                "sessions": [_session_summary(s) for s in sessions],
+                "runtime": summary.to_wire(),
                 "note": (
-                    "authenticated; no live source is attached before Phase 3, "
-                    "so no observation frames will be delivered"
+                    ""
+                    if streaming
+                    else "authenticated; no source is currently producing frames"
                 ),
             }
         )
     )
 
     try:
-        await _heartbeat(socket)
+        await _heartbeat(socket, access)
     except (WebSocketDisconnect, asyncio.CancelledError):
         return
     except Exception:  # noqa: BLE001 - a dead socket is not an application error
@@ -162,11 +175,68 @@ async def _authenticate(socket: WebSocket):
     return decision
 
 
-async def _heartbeat(socket: WebSocket) -> None:
-    """Send a heartbeat until the client goes away."""
+async def _heartbeat(socket: WebSocket, access) -> None:
+    """Heartbeat, carrying the current live state.
+
+    The heartbeat re-reports `streaming` rather than only proving the socket is
+    alive, so a stream that starts or stops between frames reaches the client
+    without needing a separate event type. **Real runtime state only** — no
+    fabricated detection, frame or compliance event is ever emitted here.
+    """
+    live = socket.app.state.live
+
     while True:
         await asyncio.sleep(HEARTBEAT_SECONDS)
-        await socket.send_text(json.dumps({"type": "heartbeat"}))
+
+        cameras = _visible_cameras(access)
+        sessions = live.visible(tenant_id=access.tenant_id, camera_ids=cameras)
+        await socket.send_text(
+            json.dumps(
+                {
+                    "type": "heartbeat",
+                    "streaming": any(s.streaming for s in sessions),
+                    "cameras": [
+                        {
+                            "camera_id": s.camera_id,
+                            "health": s.health.value,
+                            "kind": s.kind.value,
+                        }
+                        for s in sessions
+                    ],
+                }
+            )
+        )
+
+
+def _visible_cameras(access) -> tuple[str, ...] | None:
+    """The caller's camera scope. `None` means tenant-wide.
+
+    Mirrors the authorization model's three states: a listed scope names its
+    cameras, a tenant-wide grant returns `None`, and no access returns an empty
+    tuple — which `visible()` then matches nothing against. An empty tuple must
+    never be read as a wildcard.
+    """
+    from app.authorization.model import ScopeBreadth
+
+    if access.cameras.breadth is ScopeBreadth.ALL_IN_TENANT:
+        return None
+    return access.cameras.camera_ids
+
+
+def _session_summary(session) -> dict[str, Any]:
+    """What a live client is told about a session.
+
+    Deliberately narrow: no URI, no credential reference, no queue internals.
+    Those belong to DevTools, behind its own permission.
+    """
+    return {
+        "session_id": session.session_id,
+        "camera_id": session.camera_id,
+        "kind": session.kind.value,
+        "state": session.state.value,
+        "health": session.health.value,
+        "streaming": session.streaming,
+    }
 
 
 def describe_protocol() -> dict[str, Any]:

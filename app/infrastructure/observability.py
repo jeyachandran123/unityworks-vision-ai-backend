@@ -66,6 +66,63 @@ EVIDENCE_ACCESS = Counter(
     "identifiable person and is expected to be matched by an audit record.",
     ["outcome"],
 )
+# ── Live runtime metrics ─────────────────────────────────────────────────────
+#
+# Labelled by `camera`, never by URI. A raw RTSP URL as a label is both a
+# credential in a metrics store and unbounded cardinality.
+
+FRAMES_RECEIVED = Counter(
+    "uwv_frames_received_total",
+    "Frames a source produced, before sampling.",
+    ["camera"],
+)
+FRAMES_PROCESSED = Counter(
+    "uwv_frames_processed_total",
+    "Frames that reached the pipeline.",
+    ["camera"],
+)
+FRAMES_DROPPED = Counter(
+    "uwv_frames_dropped_total",
+    "Frames that did not. `sampled_out` is the system working as configured; "
+    "`queue_full` is the system falling behind. Never merge the two.",
+    ["camera", "reason"],
+)
+QUEUE_DEPTH = Gauge(
+    "uwv_frame_queue_depth",
+    "Frames currently queued between decoder and pipeline. Bounded by capacity.",
+    ["camera"],
+)
+FRAME_PROCESSING = Histogram(
+    "uwv_frame_processing_seconds",
+    "Wall time to drive one frame through the pipeline.",
+    ["camera"],
+)
+CAMERA_STATE = Gauge(
+    "uwv_camera_state",
+    "1 for the source's current state, 0 for the others.",
+    ["camera", "state"],
+)
+CAMERA_RECONNECTS = Counter(
+    "uwv_camera_reconnects_total",
+    "Reconnect attempts. A rising count with no frames is a camera in trouble.",
+    ["camera"],
+)
+SOURCE_ERRORS = Counter(
+    "uwv_source_errors_total",
+    "Source failures, by exception type. Never carries a URL.",
+    ["camera", "kind"],
+)
+ACTIVE_SESSIONS = Gauge(
+    "uwv_active_sessions",
+    "Sessions currently running, by kind. REPLAY and LIVE are never merged.",
+    ["kind"],
+)
+STREAMING_SESSIONS = Gauge(
+    "uwv_streaming_sessions",
+    "Sessions that have received a genuine frame AND are still producing. "
+    "This is what `streaming` on the WebSocket is derived from.",
+)
+
 VISION_READY = Gauge(
     "uwv_vision_os_ready",
     "1 when Vision OS is assembled in this process, 0 otherwise. "
@@ -120,9 +177,19 @@ async def request_context_middleware(request: Request, call_next):
 
 
 __all__ = [
+    "ACTIVE_SESSIONS",
     "AUTHZ_DENIALS",
     "AUTH_FAILURES",
+    "CAMERA_RECONNECTS",
+    "CAMERA_STATE",
     "EVIDENCE_ACCESS",
+    "FRAMES_DROPPED",
+    "FRAMES_PROCESSED",
+    "FRAMES_RECEIVED",
+    "FRAME_PROCESSING",
+    "QUEUE_DEPTH",
+    "SOURCE_ERRORS",
+    "STREAMING_SESSIONS",
     "REQUESTS",
     "REQUEST_LATENCY",
     "VISION_READY",
