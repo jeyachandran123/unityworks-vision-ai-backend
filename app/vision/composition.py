@@ -51,6 +51,8 @@ class VisionComposition:
     detection: Any = None
     tracking: Any = None
     policies: tuple[Any, ...] = ()
+    #: Flow 5/6 and the M9 → M7 sink, when a provider was configured.
+    understanding_composition: Any = None
 
     @property
     def declared_attributes(self) -> tuple[str, ...]:

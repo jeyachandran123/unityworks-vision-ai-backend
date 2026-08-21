@@ -90,6 +90,24 @@ class Permission(enum.Enum):
     VIEW_EVIDENCE = "view_evidence"
     VIEW_CAMERA_HEALTH = "view_camera_health"
 
+    # sites and cameras
+    MANAGE_CAMERAS = "manage_cameras"
+    VIEW_CAMERAS = "view_cameras"
+
+    # incidents — the work queue
+    VIEW_INCIDENTS = "view_incidents"
+    ACKNOWLEDGE_INCIDENTS = "acknowledge_incidents"
+    RESOLVE_INCIDENTS = "resolve_incidents"
+
+    #: Erasing evidence is NOT implied by being allowed to view it. One is
+    #: looking; the other is destroying a record that may be needed to defend a
+    #: finding — or to answer an erasure request.
+    DELETE_EVIDENCE = "delete_evidence"
+
+    #: The audit trail records who looked at imagery of identifiable people.
+    #: Reading it is its own privilege, and it is not implied by administration.
+    VIEW_AUDIT = "view_audit"
+
     # engineering
     ACCESS_DEVTOOLS = "access_devtools"
     #: Registering a demand spends money and causes computation. Not a read.
@@ -119,6 +137,13 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_EVIDENCE,
             Permission.VIEW_CAMERA_HEALTH,
             Permission.REGISTER_DEMAND,
+            Permission.MANAGE_CAMERAS,
+            Permission.VIEW_CAMERAS,
+            Permission.VIEW_INCIDENTS,
+            Permission.ACKNOWLEDGE_INCIDENTS,
+            Permission.RESOLVE_INCIDENTS,
+            Permission.DELETE_EVIDENCE,
+            Permission.VIEW_AUDIT,
         }
     ),
     Role.RESTAURANT_MANAGER: frozenset(
@@ -128,6 +153,10 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_OBSERVATIONS,
             Permission.VIEW_EVIDENCE,
             Permission.VIEW_CAMERA_HEALTH,
+            Permission.VIEW_CAMERAS,
+            Permission.VIEW_INCIDENTS,
+            Permission.ACKNOWLEDGE_INCIDENTS,
+            Permission.RESOLVE_INCIDENTS,
         }
     ),
     Role.KITCHEN_SUPERVISOR: frozenset(
@@ -135,6 +164,11 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_LIVE,
             Permission.VIEW_OBSERVATIONS,
             Permission.VIEW_CAMERA_HEALTH,
+            Permission.VIEW_CAMERAS,
+            Permission.VIEW_INCIDENTS,
+            # May acknowledge — "I have seen this" — but not resolve. Closing a
+            # violation is a judgement a supervisor owns.
+            Permission.ACKNOWLEDGE_INCIDENTS,
         }
     ),
     Role.HYGIENE_OFFICER: frozenset(
@@ -142,12 +176,19 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_OBSERVATIONS,
             Permission.VIEW_EVIDENCE,
             Permission.VIEW_CAMERA_HEALTH,
+            Permission.VIEW_CAMERAS,
+            Permission.VIEW_INCIDENTS,
+            Permission.RESOLVE_INCIDENTS,
         }
     ),
     Role.AUDITOR: frozenset(
         {
             Permission.VIEW_OBSERVATIONS,
             Permission.VIEW_EVIDENCE,
+            Permission.VIEW_INCIDENTS,
+            # The whole point of the role: read the record, including who looked
+            # at what. Reads nothing live and changes nothing.
+            Permission.VIEW_AUDIT,
         }
     ),
     Role.DEVELOPER: frozenset(
@@ -158,6 +199,8 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_CAMERA_HEALTH,
             Permission.ACCESS_DEVTOOLS,
             Permission.REGISTER_DEMAND,
+            Permission.VIEW_CAMERAS,
+            Permission.VIEW_INCIDENTS,
         }
     ),
 }

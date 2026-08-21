@@ -73,6 +73,23 @@ class TokenExpiredError(AuthenticationError):
     retryable = True
 
 
+class NoSessionError(AuthenticationError):
+    """No session cookie was presented at all.
+
+    Distinct from a *failed* credential, and deliberately quiet: every page load
+    calls `/auth/refresh` to restore a session, and a first-time visitor has no
+    cookie to send. That is the flow working, not a security event, and logging
+    it at the same level as a real authentication failure buries the ones that
+    matter under routine traffic.
+
+    Still a 401 — the client must know to show the login screen — but the code
+    lets a client distinguish "you were never signed in" from "your session was
+    rejected", which are different things to tell a user.
+    """
+
+    code = "NO_SESSION"
+
+
 class InvalidCredentialsError(AuthenticationError):
     """Wrong username or password.
 
@@ -184,6 +201,7 @@ __all__ = [
     "DependencyUnavailableError",
     "EvidenceForbiddenError",
     "InvalidCredentialsError",
+    "NoSessionError",
     "NotFoundError",
     "RateLimitedError",
     "ScopeError",

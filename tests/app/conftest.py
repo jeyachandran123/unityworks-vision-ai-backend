@@ -18,6 +18,41 @@ from app.main import create_app
 from app.users.models import AccessGrant, Organization, RoleAssignment, User
 
 
+@pytest.fixture(autouse=True)
+def _isolate_from_local_env(monkeypatch):
+    """Tests read code defaults, never the developer's `.env`.
+
+    Without this, creating a local `.env` — which every developer does — silently
+    changes what the suite asserts. `test_devtools_and_live_cctv_are_off_by_default`
+    started failing the moment a machine enabled DevTools locally, and
+    `test_production_refuses_a_default_secret` started passing for the wrong
+    reason because a real SECRET_KEY was present.
+
+    A test that depends on an untracked file is a test that means something
+    different on every machine, and the failure it produces points at the wrong
+    thing entirely.
+    """
+    # `model_config` is a SettingsConfigDict — a dict, so setitem rather than
+    # setattr. monkeypatch restores it after each test.
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+    # Environment variables leak the same way. Clear the ones the suite asserts
+    # defaults for; anything else a developer exports is their own business.
+    for name in (
+        "SECRET_KEY",
+        "DB_PASSWORD",
+        "APP_DEBUG",
+        "APP_ENV",
+        "FEATURE_DEVTOOLS",
+        "FEATURE_LIVE_CCTV",
+        "SERVE_FRAMES",
+        "ALLOW_EVIDENCE",
+        "REDIS_ENABLED",
+        "VISION_AUTOSTART",
+        "CORS_ORIGINS",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
 @pytest.fixture
 def settings() -> Settings:
     return Settings(

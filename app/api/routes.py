@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Request, Response
+from loguru import logger
 
 from app.auth.cookies import clear_refresh_cookie, read_refresh_cookie, set_refresh_cookie
 from app.api.devtools import router as devtools_router
@@ -31,7 +32,7 @@ from app.api.dependencies import (
     vision_of,
 )
 from app.authorization.model import Permission
-from app.errors import AuthenticationError
+from app.errors import AuthenticationError, NoSessionError
 
 # ── health ───────────────────────────────────────────────────────────────────
 #
@@ -100,6 +101,12 @@ async def login(
 
     set_refresh_cookie(response, issued.refresh_token, settings_of(request))
 
+    # A successful login is worth recording; the token it issued is not. A
+    # bearer token on stdout is a bearer token in the container log, in the log
+    # aggregator, and in any screen recording of a terminal — and it is valid
+    # for fifteen minutes to whoever reads it there.
+    logger.info("login succeeded for {}", email)
+
     return {
         "access_token": issued.access_token,
         "token_type": "bearer",
@@ -133,8 +140,9 @@ async def refresh(
     if not token:
         # "No session" rather than "bad session". A client that was simply never
         # logged in should go to the login screen, not be told its credential
-        # failed.
-        raise AuthenticationError("no active session")
+        # failed — and this must not log like a failure, because every page load
+        # produces one.
+        raise NoSessionError("no active session")
 
     claims = auth.verify_refresh(token)
     decision = await decision_for_claims(session, claims)

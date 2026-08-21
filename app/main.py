@@ -163,9 +163,17 @@ def _install_error_handlers(app: FastAPI) -> None:
     def _request_id(request: Request) -> str:
         return getattr(request.state, "request_id", "")
 
+    # Codes that are part of a normal flow rather than a problem. They still
+    # return their status; they just do not deserve a line in the log every time
+    # somebody opens the page.
+    _routine = {"NO_SESSION"}
+
     @app.exception_handler(AppError)
     async def _app_error(request: Request, exc: AppError) -> JSONResponse:
-        logger.info("{}: {}", exc.code, exc.message)
+        if exc.code in _routine:
+            logger.debug("{}: {}", exc.code, exc.message)
+        else:
+            logger.info("{}: {}", exc.code, exc.message)
         return JSONResponse(
             status_code=exc.http_status, content=exc.to_envelope(_request_id(request))
         )
