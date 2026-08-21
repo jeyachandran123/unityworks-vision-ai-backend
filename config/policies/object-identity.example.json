@@ -1,0 +1,119 @@
+{
+  "_comment": [
+    "An EXAMPLE object-corroboration policy — the semantic half of verification.",
+    "",
+    "WHY THIS IS A SEPARATE DOCUMENT FROM kitchen-safety. A policy carries ONE",
+    "subject-class scope. Kitchen PPE is asked about 'person'; object identity is",
+    "asked about the classes a closed-set detector is least able to name. Merging",
+    "them into one document would demand a head covering of a toothbrush, and",
+    "would ask a person's crop what kind of object it is.",
+    "",
+    "The harness loads both because VISION_SEMANTIC_POLICY accepts a",
+    "comma-separated list. Two documents, two demands, two prompts, one adapter.",
+    "",
+    "WHAT THIS IS FOR. A closed-set detector scores a fixed vocabulary and returns",
+    "the argmax. Shown an object it was never trained on, it must still spread",
+    "probability across the words it knows, and the winner is the nearest",
+    "neighbour rather than an identification. A pen scores 0.454 as 'toothbrush'.",
+    "",
+    "'visible_object_kind' is the corroborating observation the Verification",
+    "Policy governs. It does NOT overwrite the detector's class_id — the detector",
+    "claim and the corroboration claim stay side by side and both stay traceable.",
+    "",
+    "READ THE DOMAIN. It is a list of VISIBLE KINDS, not a business vocabulary.",
+    "Every value names something a camera can see the shape of. 'unknown' is a",
+    "first-class member: a model that cannot tell must be able to say so, and",
+    "'unknown' is worth far more than a confident wrong identification."
+  ],
+
+  "policy_id": "object-identity",
+  "version": "1.0.0",
+
+  "scope": {
+    "_comment": [
+      "The COCO classes this deployment has observed a closed-set detector",
+      "reaching for when it meets a small hand-held object outside its",
+      "vocabulary. Narrow on purpose: every class listed here is a class whose",
+      "objects become eligible for a corroborating model call, and a wide list",
+      "is a wide bill.",
+      "",
+      "These are DETECTOR OUTPUT CLASSES, not a claim about what is really",
+      "there. That is the whole point — the detector said 'toothbrush' and we",
+      "are asking a second model whether it agrees."
+    ],
+    "object_classes": [
+      "toothbrush",
+      "cell_phone",
+      "remote",
+      "scissors",
+      "knife",
+      "fork",
+      "spoon",
+      "mouse"
+    ],
+    "lifecycle": ["active"],
+    "min_confidence": 0.25
+  },
+
+  "attributes": [
+    {
+      "key": "visible_object_kind",
+      "type": "enum",
+      "_comment": [
+        "The domain is configuration. Nothing in Python or TypeScript names any",
+        "of these values, and adding a ninth is an edit to this file only.",
+        "",
+        "The justification names VISIBLE EVIDENCE, which is what the registry's",
+        "neutrality gate demands. 'the object's outline, proportions and surface",
+        "markings are directly visible in the crop' registers; 'the object is",
+        "the wrong tool for this task' would not, and should not."
+      ],
+      "values": [
+        "pen",
+        "toothbrush",
+        "cutlery",
+        "phone",
+        "remote_control",
+        "cable_or_charger",
+        "hand_tool",
+        "other",
+        "unknown"
+      ],
+      "justification": "The object's outline, proportions and surface markings are directly visible in the crop",
+      "validity_ms": 300000,
+      "question": "Name the kind of object by its visible shape alone. Answer \"unknown\" if the crop does not show enough to tell — a wrong name is worse than no name."
+    }
+  ],
+
+  "demand": {
+    "_comment": [
+      "freshness_ms is 300000 — five minutes, five times the kitchen policy's",
+      "sixty seconds. Deliberate: PPE state changes when someone puts a glove",
+      "on, and a pen does not become a toothbrush. Freshness is the dominant",
+      "cost lever in steady state, and it should reflect how fast the thing",
+      "being observed can actually change.",
+      "",
+      "on_first_sight only. No on_change: an appearance delta on a small static",
+      "object is noise, and re-asking what kind of thing it is on every wobble",
+      "would spend a call to receive the same answer."
+    ],
+    "freshness_ms": 300000,
+    "triggers": ["on_first_sight"],
+    "priority_class": "identity-corroboration",
+    "budget": {
+      "max_calls_per_hour": 120
+    }
+  },
+
+  "prompt": {
+    "prompt_id": "object-identity.candidate",
+    "version": "1.0.0",
+    "max_output_tokens": 128,
+    "preamble": "You are a visual object identifier for a video analytics platform. Look at the cropped image and name what kind of object it is, using only its visible shape, proportions and markings. Do not guess from context. Do not infer purpose, ownership or value. If the crop does not show enough to identify the object, answer \"unknown\"."
+  },
+
+  "labels": {
+    "owner": "example",
+    "note": "illustrative-only"
+  }
+}

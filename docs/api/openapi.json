@@ -1,0 +1,395 @@
+{
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Production backend for UnityWorks Vision AI. Owns the Vision OS perception platform and exposes it through an authorized API.",
+    "title": "UnityWorks Vision AI",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Exchange an email and password for a session.\n\n**The refresh token is never in the body.** It is set as an httpOnly,\nSecure, SameSite=Strict cookie scoped to `/api/v1/auth`, so page JavaScript\ncannot read it and no other request carries it. The access token is returned\nin the body deliberately: it is short-lived and belongs in memory, where a\npage reload discards it.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Login Api V1 Auth Login Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "End the session by clearing the refresh cookie.\n\nUnauthenticated on purpose. Logging out must work when the access token has\nalready expired \u2014 requiring a valid one would mean the only users who cannot\nlog out are the ones whose session is in the worst state.\n\nIdempotent: logging out twice, or without a session, succeeds.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Logout Api V1 Auth Logout Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "description": "Who the caller is and what they may reach.\n\nThe frontend uses this to decide what to render. It is a convenience, not a\ncontrol \u2014 every capability listed here is separately enforced server-side on\nthe route that provides it.",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Me Api V1 Auth Me Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Trade the refresh cookie for a new access token, and rotate the cookie.\n\nTwo properties:\n\n**The decision is rebuilt from the database**, not read from the refresh\ntoken \u2014 so a role revoked five minutes ago is not reissued for another\nfifteen.\n\n**The refresh token is rotated on every use.** A token that has been\nexchanged is no longer held by the client, which turns a stolen-and-replayed\ntoken into a visible anomaly rather than a silent second session.",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Refresh Api V1 Auth Refresh Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/devtools/capabilities": {
+      "get": {
+        "description": "Live capability, from the platform.\n\n*\"Capability is live state, not documentation\"* (09_API \u00a75.2). What a bound\nmodel can actually produce is the difference between a rule that can reach a\nverdict and one that will sit at UNKNOWN forever.",
+        "operationId": "capabilities_api_v1_devtools_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Capabilities Api V1 Devtools Capabilities Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/evidence/{blob_ref}": {
+      "get": {
+        "description": "Retrieve evidence imagery.\n\nTwo gates beyond DevTools, and neither is implied by the other:\n\n1. `ALLOW_EVIDENCE` \u2014 a deployment decision. Off by default.\n2. `VIEW_EVIDENCE` \u2014 the caller's own privilege. Never implied by\n   `VIEW_OBSERVATIONS`: *\"Reading 'a person was here' and viewing their image\n   are categorically different acts.\"*",
+        "operationId": "evidence_api_v1_devtools_evidence__blob_ref__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "blob_ref",
+            "required": true,
+            "schema": {
+              "title": "Blob Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Evidence Api V1 Devtools Evidence  Blob Ref  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evidence",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/sessions": {
+      "get": {
+        "description": "Sessions available to inspect.",
+        "operationId": "sessions_api_v1_devtools_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Sessions Api V1 Devtools Sessions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sessions",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/state": {
+      "get": {
+        "description": "Current Vision State for the caller's scope.\n\nThe scope is the one the authorizer returned, never the one the client\nasked for. 12_SECURITY \u00a74.2 designs the leak out by constructing every query\nalready scoped, and post-filtering here would quietly reintroduce it.",
+        "operationId": "vision_state_api_v1_devtools_state_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Vision State Api V1 Devtools State Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Vision State",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/vision": {
+      "get": {
+        "description": "What the platform is configured to observe.\n\nNo imagery, no credentials, no principal \u2014 this answers \"what is this\nplatform configured to see\", which is the question an engineer debugging a\nsilent camera actually has.",
+        "operationId": "vision_diagnostics_api_v1_devtools_vision_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Vision Diagnostics Api V1 Devtools Vision Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Vision Diagnostics",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/status": {
+      "get": {
+        "description": "Operator-facing status, in terms an operator can act on.\n\nPhase 1 answers the two signals that exist yet. Camera health, coverage and\nincidents arrive with the features that produce them \u2014 reporting a hardcoded\nzero for any of them now would be the exact failure this product must never\ncommit: an empty answer that reads as a clean result.",
+        "operationId": "status_api_v1_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Status Api V1 Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "status"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "The process is up. Nothing more is claimed and nothing more is disclosed.",
+        "operationId": "liveness_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Liveness Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "description": "Whether backing dependencies answer. Booleans only, never detail.",
+        "operationId": "readiness_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Readiness Health Ready Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readiness",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}

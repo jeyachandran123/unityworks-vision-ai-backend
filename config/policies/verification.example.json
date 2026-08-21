@@ -1,0 +1,69 @@
+{
+  "_comment": [
+    "An EXAMPLE verification rule set. Nothing in Vision OS references this file,",
+    "and deleting it changes no behaviour — absent a document, no verification",
+    "policy is built and the trigger policy is the unwrapped default.",
+    "",
+    "WHAT THIS DOCUMENT IS FOR. A closed-set detector scores a fixed vocabulary",
+    "and returns the best of it. Shown an object it was never trained on, it must",
+    "still spread probability across the words it knows, and the winner is the",
+    "nearest neighbour rather than an identification. A pen scores 0.454 as",
+    "'toothbrush' — comfortably above any threshold that still admits real",
+    "detections. No confidence floor fixes that, because the number is not wrong;",
+    "the question was.",
+    "",
+    "So these rules say when a class claim needs corroborating from a second",
+    "source, and — far more often — when it does not. The second half is the",
+    "expensive one to get wrong: a rule that matches everything turns one demand",
+    "into one model call per object per freshness window.",
+    "",
+    "READ THE CONDITIONS AS 'OR'. Any one firing warrants a look. A claim is",
+    "doubtful if it is ambiguous, OR outside the model's vocabulary, OR unstable",
+    "over time; requiring all three at once would let the pen through because it",
+    "happened to be stable."
+  ],
+
+  "version": "1.0.0",
+
+  "rules": [
+    {
+      "rule_id": "identity.sensitive.v1",
+      "_comment": [
+        "Governs the corroborating attribute only. Every other demand — the PPE",
+        "attributes, the activity, the colours — falls through untouched, which",
+        "is what keeps ordinary understanding unchanged."
+      ],
+      "attributes": ["visible_object_kind"],
+
+      "require_when": {
+        "_comment": [
+          "detector_label_space limits this rule to closed-set detectors. An",
+          "open-vocabulary model is scored against labels supplied at query time,",
+          "so its silence carries information a closed-set silence does not, and",
+          "the same low score means something different.",
+          "",
+          "An UNDECLARED label space never matches. That is deliberate: a",
+          "deployment that has not wired its detector capability would otherwise",
+          "send every object to a model on a configuration mistake."
+        ],
+        "detector_label_space": ["closed_set"],
+
+        "class_confidence_below": 0.65,
+        "class_outside_native_vocabulary": true,
+        "class_instability_above": 0.30
+      },
+
+      "crop_must": {
+        "_comment": [
+          "Cheap pre-checks on grades the platform already estimated, so a",
+          "hopeless candidate is refused before it costs a crop AND a call. An",
+          "unmeasured grade never fails a requirement — 'not measured' and",
+          "'measured as bad' are different claims."
+        ],
+        "min_scale_pixels": 48,
+        "max_truncation": 0.5,
+        "max_occlusion": 0.7
+      }
+    }
+  ]
+}

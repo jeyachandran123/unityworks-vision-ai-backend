@@ -1,0 +1,52 @@
+{
+  "policy_id": "appearance",
+  "version": "1.0.0",
+  "scene": "generic",
+  "scope": {
+    "object_classes": ["person"],
+    "lifecycle": ["active", "occluded"]
+  },
+  "attributes": [
+    {
+      "key": "posture",
+      "type": "enum",
+      "values": ["standing", "sitting", "lying", "crouching", "walking"],
+      "justification": "Body configuration is directly visible",
+      "validity_ms": 30000
+    },
+    {
+      "key": "upper_body_colour",
+      "type": "enum",
+      "values": ["red", "blue", "green", "yellow", "orange", "black", "white", "grey", "brown", "other"],
+      "justification": "Dominant colour of the upper-body region is directly visible",
+      "validity_ms": 120000
+    },
+    {
+      "key": "lower_body_colour",
+      "type": "enum",
+      "values": ["red", "blue", "green", "yellow", "orange", "black", "white", "grey", "brown", "other"],
+      "justification": "Dominant colour of the lower-body region is directly visible",
+      "validity_ms": 120000
+    },
+    {
+      "key": "carrying_object",
+      "type": "enum",
+      "values": ["none", "bag", "box", "phone", "tray", "tool", "other"],
+      "justification": "A held object is visible in the hand region",
+      "validity_ms": 30000
+    }
+  ],
+  "demand": {
+    "freshness_ms": 30000,
+    "triggers": ["on_first_sight", "on_change"],
+    "priority_class": "standard",
+    "budget": {
+      "max_calls_per_hour": 600
+    }
+  },
+  "prompt": {
+    "prompt_id": "appearance.person",
+    "version": "1.0.0",
+    "max_output_tokens": 192
+  }
+}

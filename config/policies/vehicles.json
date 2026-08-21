@@ -1,0 +1,59 @@
+{
+  "_comment": [
+    "A second shipped policy, and the clearest demonstration that a use case is",
+    "data: it scopes to entirely different object classes and asks entirely",
+    "different questions from appearance.json, with no code difference at all.",
+    "",
+    "Also the practical one for street footage that contains vehicles but no",
+    "people — with appearance.json bound, such a clip detects buses and cars",
+    "correctly and examines nothing, because no demand matches."
+  ],
+
+  "policy_id": "vehicles",
+  "version": "1.0.0",
+  "scene": "street",
+  "scope": {
+    "object_classes": ["bus", "car", "truck", "motorcycle", "bicycle"],
+    "lifecycle": ["active", "occluded"]
+  },
+
+  "attributes": [
+    {
+      "key": "vehicle_colour",
+      "type": "enum",
+      "values": ["red", "blue", "green", "yellow", "orange", "black", "white", "grey", "silver", "brown", "other"],
+      "justification": "Dominant colour of the vehicle body is directly visible",
+      "validity_ms": 120000
+    },
+    {
+      "key": "vehicle_orientation",
+      "type": "enum",
+      "values": ["front", "rear", "side", "angled", "not_visible"],
+      "justification": "Which face of the vehicle is toward the camera is directly visible",
+      "validity_ms": 30000
+    },
+    {
+      "key": "visible_lights",
+      "type": "enum",
+      "values": ["none", "headlights", "brake_lights", "indicators", "other"],
+      "justification": "Illuminated lamps on the vehicle are directly visible",
+      "validity_ms": 15000,
+      "question": "Report only lamps you can see lit. Do not infer whether the vehicle is braking or turning."
+    }
+  ],
+
+  "demand": {
+    "freshness_ms": 30000,
+    "triggers": ["on_first_sight", "on_change"],
+    "priority_class": "standard",
+    "budget": {
+      "max_calls_per_hour": 400
+    }
+  },
+
+  "prompt": {
+    "prompt_id": "vehicles.street",
+    "version": "1.0.0",
+    "max_output_tokens": 192
+  }
+}

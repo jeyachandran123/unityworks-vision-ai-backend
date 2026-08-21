@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unityworks-vision-ai-backend"
+version = "1.0.0"
+description = "UnityWorks Vision AI — production backend. Owns the Vision OS perception platform."
+requires-python = ">=3.11"
+readme = "README.md"
+
+# ── Runtime dependencies ─────────────────────────────────────────────────────
+#
+# Derived from an import audit of `vision_os/`, `compliance/` and `app/`, not
+# inherited from another product. Three facts shaped this list:
+#
+#   1. `vision_os.core` is stdlib-only, by contract. Nothing here is needed to
+#      import the platform's object model or its ports.
+#   2. The understanding adapters speak HTTP over `urllib.request`. There is no
+#      httpx/requests dependency, and adding one would be dead weight.
+#   3. The heavy CV libraries are *lazy, adapter-scoped* imports. They are
+#      declared under [inference] rather than here, so a deployment that binds
+#      no ONNX detector installs no ONNX runtime.
+#
+# The previous backend declared none of numpy/onnxruntime/av and imported all of
+# them at runtime — a clean install could not execute detection. That is fixed
+# by declaring them, not by hiding them in the base set.
+dependencies = [
+    "fastapi>=0.115,<0.116",
+    "uvicorn[standard]>=0.32,<0.33",
+    "python-multipart>=0.0.12",
+    "pydantic>=2.10,<3",
+    "pydantic-settings>=2.6,<3",
+    "sqlalchemy[asyncio]>=2.0.36,<2.1",
+    "alembic>=1.14,<2",
+    "asyncpg>=0.30,<0.31",
+    "redis[hiredis]>=5.2,<6",
+    "PyJWT[crypto]>=2.10,<3",
+    "bcrypt>=4.2,<5",
+    "prometheus-client>=0.21,<0.22",
+    "loguru>=0.7.3,<0.8",
+]
+
+[project.optional-dependencies]
+# The production perception path. `VISION_DETECTOR_PROVIDER=yolo` requires this.
+# Without it the platform still imports, still assembles, and reports the
+# capability gap rather than failing obscurely at the first frame.
+inference = [
+    "numpy>=1.26,<3",
+    "onnxruntime>=1.19,<2",
+]
+
+# Video decoding for replay and (from Phase 3) live RTSP. Kept separate because
+# Phase 1 ships no source adapter that needs it.
+video = [
+    "av>=13,<19",
+]
+
+# The offline evaluation harness under `tools/vision_eval` — the programme's
+# measurement instrument. Not needed to serve traffic.
+eval = [
+    "numpy>=1.26,<3",
+    "onnxruntime>=1.19,<2",
+    "av>=13,<19",
+    "Pillow>=10.4,<12",
+]
+
+test = [
+    "pytest>=8.3,<9",
+    "pytest-asyncio>=0.24,<0.25",
+    "pytest-cov>=6.0,<7",
+    "httpx>=0.28,<0.29",
+    "aiosqlite>=0.20,<0.22",
+]
+
+lint = [
+    "ruff>=0.8.3,<0.9",
+    "black>=24.10,<25",
+]
+
+dev = [
+    "unityworks-vision-ai-backend[inference,video,eval,test,lint]",
+]
+
+[project.scripts]
+unityworks-backend = "app.main:run"
+
+[tool.setuptools.packages.find]
+include = ["app*", "vision_os*", "compliance*", "tools*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json"]
+
+# ── Test configuration ───────────────────────────────────────────────────────
+#
+# No `--cov` in addopts. The Vision OS suite carries timing budgets that are
+# meaningless under a trace function — its own conftest skips them when
+# `sys.gettrace()` is set — and making coverage the default would silently
+# disable that coverage instead. Run it explicitly: `pytest --cov=app`.
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = ["-q", "--tb=short"]
+markers = [
+    "slow: takes more than a second",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "PLC0415"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# The platform is migrated verbatim. Lint findings inside it are pre-existing
+# and out of scope for a migration phase — changing them would change code this
+# phase exists to move unchanged.
+"vision_os/**" = ["ALL"]
+"compliance/**" = ["ALL"]
+"tools/**" = ["ALL"]
+"tests/vision_os/**" = ["ALL"]
+"tests/compliance/**" = ["ALL"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = "^/(vision_os|compliance|tools)/"

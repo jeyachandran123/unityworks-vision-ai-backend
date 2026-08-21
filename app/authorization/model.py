@@ -1,0 +1,373 @@
+"""The authorization model.
+
+This module holds the single most security-critical decision in the migration:
+**how an application user becomes a Vision OS principal**.
+
+### Deny by default, and never by accident
+
+Vision OS's ``Grant`` treats an empty ``cameras`` tuple as *every camera in the
+tenant*, documented in its own adapter:
+
+    "``cameras`` empty means *every camera in the tenant* — the common case for a
+     site-wide operator. It does **not** mean 'no cameras': an empty grant would
+     be indistinguishable from a misconfigured one, so a principal with no
+     access is expressed by having no grant at all."
+
+That is a coherent rule inside the platform and a loaded gun at the application
+boundary, because the natural application-side value for "this user has no camera
+access yet" is an empty list. Phase 0 flagged it as the single most dangerous
+line in the migration.
+
+So this module never hands Vision OS an empty tuple by inference. Access is a
+three-state decision made explicitly here:
+
+    NONE          → no grant is issued at all; every call is refused before it
+                    reaches the platform
+    ALL_IN_TENANT → an explicit, deliberate widening; the caller must say so
+    LISTED        → exactly the named cameras
+
+``CameraScope`` cannot be constructed in a state where those are confusable, and
+``AccessDecision.to_grant()`` raises rather than guessing.
+"""
+
+from __future__ import annotations
+
+import enum
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from app.errors import ScopeError
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from vision_os.adapters.exposure.authorization import Grant
+    from vision_os.core.model.api import Principal, Scope
+
+
+class Role(enum.Enum):
+    """Product roles. A closed set — a role that is not here does not exist.
+
+    Deliberately not the reference backend's ``admin | developer | viewer``: that
+    is a coding-assistant model, and mapping it onto a compliance product would
+    put "viewer" in charge of deciding who may look at CCTV footage of a named
+    employee.
+    """
+
+    SUPER_ADMIN = "super_admin"
+    ORG_ADMIN = "org_admin"
+    RESTAURANT_MANAGER = "restaurant_manager"
+    KITCHEN_SUPERVISOR = "kitchen_supervisor"
+    HYGIENE_OFFICER = "hygiene_officer"
+    AUDITOR = "auditor"
+    DEVELOPER = "developer"
+
+    @property
+    def is_platform_role(self) -> bool:
+        """Whether this role may reach engineering surfaces (DevTools)."""
+        return self in (Role.SUPER_ADMIN, Role.DEVELOPER)
+
+
+class Permission(enum.Enum):
+    """Application-level permissions.
+
+    Distinct from Vision OS ``Action``. These govern *product* surfaces; Actions
+    govern the platform. Both are enforced, and neither substitutes for the
+    other — hiding a route is not closing it.
+
+    Phase 1 declares only the permissions the foundation needs. Product
+    permissions (incidents, reports, notifications) arrive with the features
+    they guard, so that no permission exists without something to protect.
+    """
+
+    # identity and administration
+    MANAGE_ORGANIZATION = "manage_organization"
+    MANAGE_USERS = "manage_users"
+    VIEW_USERS = "view_users"
+
+    # observation surfaces
+    VIEW_LIVE = "view_live"
+    VIEW_OBSERVATIONS = "view_observations"
+    #: Separate from VIEW_OBSERVATIONS on purpose. Never implied by it.
+    VIEW_EVIDENCE = "view_evidence"
+    VIEW_CAMERA_HEALTH = "view_camera_health"
+
+    # engineering
+    ACCESS_DEVTOOLS = "access_devtools"
+    #: Registering a demand spends money and causes computation. Not a read.
+    REGISTER_DEMAND = "register_demand"
+
+
+#: Role → permissions. Explicit, exhaustive, and flat: no inheritance, because
+#: an inherited permission is one nobody remembers granting.
+#:
+#: Two assignments are load-bearing and easy to get wrong:
+#:
+#:   KITCHEN_SUPERVISOR has no VIEW_EVIDENCE. It is the role most likely to be a
+#:   shared screen on a kitchen wall, and imagery of a named employee should not
+#:   be visible to whoever walks past it.
+#:
+#:   AUDITOR has no VIEW_LIVE. An auditor reviews the record; live monitoring is
+#:   an operational act with a different purpose and a different lawful basis.
+ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
+    Role.SUPER_ADMIN: frozenset(Permission),
+    Role.ORG_ADMIN: frozenset(
+        {
+            Permission.MANAGE_ORGANIZATION,
+            Permission.MANAGE_USERS,
+            Permission.VIEW_USERS,
+            Permission.VIEW_LIVE,
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_EVIDENCE,
+            Permission.VIEW_CAMERA_HEALTH,
+            Permission.REGISTER_DEMAND,
+        }
+    ),
+    Role.RESTAURANT_MANAGER: frozenset(
+        {
+            Permission.VIEW_USERS,
+            Permission.VIEW_LIVE,
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_EVIDENCE,
+            Permission.VIEW_CAMERA_HEALTH,
+        }
+    ),
+    Role.KITCHEN_SUPERVISOR: frozenset(
+        {
+            Permission.VIEW_LIVE,
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_CAMERA_HEALTH,
+        }
+    ),
+    Role.HYGIENE_OFFICER: frozenset(
+        {
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_EVIDENCE,
+            Permission.VIEW_CAMERA_HEALTH,
+        }
+    ),
+    Role.AUDITOR: frozenset(
+        {
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_EVIDENCE,
+        }
+    ),
+    Role.DEVELOPER: frozenset(
+        {
+            Permission.VIEW_LIVE,
+            Permission.VIEW_OBSERVATIONS,
+            Permission.VIEW_EVIDENCE,
+            Permission.VIEW_CAMERA_HEALTH,
+            Permission.ACCESS_DEVTOOLS,
+            Permission.REGISTER_DEMAND,
+        }
+    ),
+}
+
+
+def permissions_for(roles: frozenset[Role]) -> frozenset[Permission]:
+    """Union of the permissions of every held role. Empty for no roles."""
+    granted: set[Permission] = set()
+    for role in roles:
+        granted |= ROLE_PERMISSIONS.get(role, frozenset())
+    return frozenset(granted)
+
+
+class ScopeBreadth(enum.Enum):
+    """How wide a camera or site grant reaches. Three states, never two.
+
+    ``NONE`` and ``ALL_IN_TENANT`` are the two that an empty collection would
+    otherwise conflate, which is exactly the failure this enum exists to make
+    impossible.
+    """
+
+    NONE = "none"
+    LISTED = "listed"
+    ALL_IN_TENANT = "all_in_tenant"
+
+
+@dataclass(frozen=True, slots=True)
+class CameraScope:
+    """Which cameras a principal reaches, stated rather than inferred."""
+
+    breadth: ScopeBreadth
+    camera_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.breadth is ScopeBreadth.LISTED and not self.camera_ids:
+            raise ValueError(
+                "ScopeBreadth.LISTED requires at least one camera; an empty list "
+                "is ambiguous, so say ScopeBreadth.NONE when the answer is none"
+            )
+        if self.breadth is not ScopeBreadth.LISTED and self.camera_ids:
+            raise ValueError(
+                f"camera_ids must be empty for breadth {self.breadth.value}; "
+                "listing cameras alongside a wildcard hides which one is in force"
+            )
+
+    @property
+    def grants_anything(self) -> bool:
+        return self.breadth is not ScopeBreadth.NONE
+
+    @classmethod
+    def none(cls) -> CameraScope:
+        return cls(breadth=ScopeBreadth.NONE)
+
+    @classmethod
+    def listed(cls, camera_ids: tuple[str, ...]) -> CameraScope:
+        return cls(breadth=ScopeBreadth.LISTED, camera_ids=tuple(camera_ids))
+
+    @classmethod
+    def all_in_tenant(cls) -> CameraScope:
+        """Every camera in the tenant. Deliberate, never a default."""
+        return cls(breadth=ScopeBreadth.ALL_IN_TENANT)
+
+
+@dataclass(frozen=True, slots=True)
+class AccessDecision:
+    """Everything the application knows about one principal's reach.
+
+    Built once per request from the authenticated session, and never from
+    request input — the leak that ``Scope``'s design exists to prevent is
+    reintroduced the moment a client can name its own tenant.
+    """
+
+    subject: str
+    tenant_id: str
+    roles: frozenset[Role]
+    cameras: CameraScope
+    site_ids: tuple[str, ...] = ()
+    display_name: str = ""
+    permissions: frozenset[Permission] = field(default_factory=frozenset)
+
+    def __post_init__(self) -> None:
+        if not self.subject:
+            raise ValueError("an access decision must name a subject")
+        if not self.tenant_id:
+            raise ValueError(
+                "an access decision must name a tenant; tenancy is part of "
+                "identity rather than a filter applied afterwards"
+            )
+        if not self.permissions:
+            object.__setattr__(self, "permissions", permissions_for(self.roles))
+
+    def has(self, permission: Permission) -> bool:
+        return permission in self.permissions
+
+    def require(self, permission: Permission) -> None:
+        if not self.has(permission):
+            raise ScopeError(
+                f"this account does not hold '{permission.value}'",
+                details={"required": permission.value},
+            )
+
+    # ── the translation into Vision OS ───────────────────────────────────────
+
+    def to_principal(self) -> Principal:
+        """The platform-side identity. Constructed at the edge and never below it."""
+        from vision_os.core.model.api import Principal
+
+        return Principal(
+            subject=self.subject,
+            tenant_id=self._tenant(),
+            scopes=tuple(sorted(p.value for p in self.permissions)),
+            display_name=self.display_name,
+        )
+
+    def to_scope(self) -> Scope:
+        """The platform-side scope.
+
+        Raises rather than returning a tenant-wide scope when the decision grants
+        no cameras. A caller that reaches here with ``ScopeBreadth.NONE`` has a
+        bug, and the safe failure is loud.
+        """
+        from vision_os.core.model.api import Scope
+        from vision_os.core.model.ids import CameraId, SiteId
+
+        if not self.cameras.grants_anything:
+            raise ScopeError(
+                "this account is granted no cameras",
+                details={"subject": self.subject},
+            )
+
+        return Scope(
+            tenant_id=self._tenant(),
+            site_ids=tuple(SiteId(s) for s in self.site_ids),
+            camera_ids=tuple(CameraId(c) for c in self.cameras.camera_ids),
+        )
+
+    def to_grant(self) -> Grant:
+        """The platform-side grant.
+
+        The empty-tuple hazard is handled here and nowhere else:
+
+        * ``NONE`` raises — there is no such thing as a grant for nobody, and
+          issuing one with an empty camera tuple would silently mean *all*.
+        * ``ALL_IN_TENANT`` passes ``()`` **deliberately**, which is the
+          platform's documented wildcard.
+        * ``LISTED`` passes exactly the named cameras.
+        """
+        from vision_os.adapters.exposure.authorization import Grant
+        from vision_os.core.model.ids import CameraId
+
+        if not self.cameras.grants_anything:
+            raise ScopeError(
+                "refusing to build a Vision OS grant for a principal with no "
+                "camera access: an empty camera tuple means ALL cameras to the "
+                "platform, so the safe representation of 'none' is no grant",
+                details={"subject": self.subject},
+            )
+
+        cameras: tuple[CameraId, ...] = ()
+        if self.cameras.breadth is ScopeBreadth.LISTED:
+            cameras = tuple(CameraId(c) for c in self.cameras.camera_ids)
+
+        return Grant(
+            subject=self.subject,
+            tenant_id=self._tenant(),
+            actions=self._actions(),
+            cameras=cameras,
+        )
+
+    def _tenant(self):
+        from vision_os.core.model.ids import TenantId
+
+        return TenantId(self.tenant_id)
+
+    def _actions(self) -> frozenset:
+        """Product permissions → platform actions.
+
+        The two evidence-adjacent rules are preserved exactly as the platform
+        states them: ``READ_EVIDENCE`` is not implied by ``READ_OBSERVATIONS``,
+        and ``REGISTER_DEMAND`` is not a read.
+        """
+        from vision_os.core.model.api import Action
+
+        actions: set[Action] = set()
+
+        if self.has(Permission.VIEW_OBSERVATIONS):
+            actions |= {
+                Action.READ_STATE,
+                Action.READ_OBSERVATIONS,
+                Action.READ_CAPABILITY,
+                Action.READ_COVERAGE,
+            }
+        if self.has(Permission.VIEW_LIVE):
+            actions.add(Action.SUBSCRIBE)
+        if self.has(Permission.VIEW_CAMERA_HEALTH):
+            actions.add(Action.READ_COVERAGE)
+        if self.has(Permission.VIEW_EVIDENCE):
+            actions.add(Action.READ_EVIDENCE)
+        if self.has(Permission.REGISTER_DEMAND):
+            actions.add(Action.REGISTER_DEMAND)
+
+        return frozenset(actions)
+
+
+__all__ = [
+    "AccessDecision",
+    "CameraScope",
+    "Permission",
+    "ROLE_PERMISSIONS",
+    "Role",
+    "ScopeBreadth",
+    "permissions_for",
+]

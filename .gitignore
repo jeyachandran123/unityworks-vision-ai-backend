@@ -1,0 +1,39 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*-service-account.json
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# ── Test and tooling artefacts ───────────────────────────────────────────────
+.pytest_cache/
+.pytest-*.xml
+.pytest-*.log
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# ── Runtime data ─────────────────────────────────────────────────────────────
+# Evidence is CCTV imagery of identifiable people. It must never enter version
+# control, where deletion does not delete.
+data/
+media/
+crops/
+logs/
+
+# ── Models ───────────────────────────────────────────────────────────────────
+# yolov8n.onnx is the PRODUCTION DETECTOR and is committed deliberately: the
+# deployment must be reproducible from a checkout, and 13 MB is a fair price for
+# that. Everything else under models/ is an experiment.
+models/*
+!models/yolov8n.onnx
