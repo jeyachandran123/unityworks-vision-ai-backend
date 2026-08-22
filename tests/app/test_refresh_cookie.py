@@ -40,9 +40,7 @@ class TestTheTokenLeavesTheBody:
         body = (await client.post("/api/v1/auth/refresh")).json()
         assert "refresh_token" not in body
 
-    async def test_the_token_appears_nowhere_in_the_response_text(
-        self, seeded, client
-    ) -> None:
+    async def test_the_token_appears_nowhere_in_the_response_text(self, seeded, client) -> None:
         """Not in the body under any key, not in any other header."""
         response = await login(client, "manager@example.com")
         token = client.cookies.get(REFRESH_COOKIE)
@@ -75,11 +73,10 @@ class TestCookieFlags:
     async def test_it_is_secure_in_production(self, settings) -> None:
         from httpx import ASGITransport, AsyncClient
 
-        from app.main import create_app
-        from app.infrastructure.database import create_all_for_tests
-        from tests.app.conftest import make_user
-
         from app.configuration.settings import Settings
+        from app.infrastructure.database import create_all_for_tests
+        from app.main import create_app
+        from tests.app.conftest import make_user
 
         production = Settings(
             app_env="production",
@@ -99,9 +96,7 @@ class TestCookieFlags:
             session.add(org)
             session.add(user)
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="https://test"
-        ) as http:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as http:
             response = await http.post(
                 "/api/v1/auth/login",
                 json={
@@ -126,9 +121,7 @@ class TestRotation:
 
         assert first and second and first != second
 
-    async def test_refresh_rebuilds_the_decision_from_the_database(
-        self, seeded, client
-    ) -> None:
+    async def test_refresh_rebuilds_the_decision_from_the_database(self, seeded, client) -> None:
         """Not from the token. A role revoked five minutes ago must not be
         reissued for another fifteen."""
         await login(client, "manager@example.com")
@@ -138,7 +131,7 @@ class TestRotation:
 
 class TestSessionLifecycle:
     async def test_refresh_without_a_session_says_so(self, seeded, client) -> None:
-        """"No session" rather than "bad session" — a client that was never
+        """ "No session" rather than "bad session" — a client that was never
         logged in belongs at the login screen, not at a credential error."""
         response = await client.post("/api/v1/auth/refresh")
         assert response.status_code == 401
@@ -162,9 +155,7 @@ class TestSessionLifecycle:
         the worst state."""
         assert (await client.post("/api/v1/auth/logout")).status_code == 200
 
-    async def test_logout_works_with_an_expired_access_token(
-        self, seeded, client
-    ) -> None:
+    async def test_logout_works_with_an_expired_access_token(self, seeded, client) -> None:
         await login(client, "manager@example.com")
         response = await client.post(
             "/api/v1/auth/logout", headers={"Authorization": "Bearer expired-nonsense"}
@@ -177,31 +168,33 @@ class TestDevToolsReadRoutes:
 
     @pytest.mark.parametrize(
         "path",
-        ["/api/v1/devtools/vision", "/api/v1/devtools/sessions",
-         "/api/v1/devtools/capabilities", "/api/v1/devtools/state"],
+        [
+            "/api/v1/devtools/vision",
+            "/api/v1/devtools/sessions",
+            "/api/v1/devtools/capabilities",
+            "/api/v1/devtools/state",
+        ],
     )
-    async def test_a_developer_reaches_every_read_route(
-        self, seeded, client, path: str
-    ) -> None:
+    async def test_a_developer_reaches_every_read_route(self, seeded, client, path: str) -> None:
         headers = await bearer(client, "developer@example.com")
         assert (await client.get(path, headers=headers)).status_code == 200
 
     @pytest.mark.parametrize(
         "path",
-        ["/api/v1/devtools/vision", "/api/v1/devtools/sessions",
-         "/api/v1/devtools/capabilities", "/api/v1/devtools/state"],
+        [
+            "/api/v1/devtools/vision",
+            "/api/v1/devtools/sessions",
+            "/api/v1/devtools/capabilities",
+            "/api/v1/devtools/state",
+        ],
     )
-    async def test_a_manager_reaches_none_of_them(
-        self, seeded, client, path: str
-    ) -> None:
+    async def test_a_manager_reaches_none_of_them(self, seeded, client, path: str) -> None:
         headers = await bearer(client, "manager@example.com")
         response = await client.get(path, headers=headers)
         assert response.status_code == 403
         assert response.json()["code"] == "OUT_OF_SCOPE"
 
-    async def test_the_fixture_reports_the_known_observation_count(
-        self, seeded, client
-    ) -> None:
+    async def test_the_fixture_reports_the_known_observation_count(self, seeded, client) -> None:
         """The number the frontend smoke test asserts is rendered.
 
         This is the guard against the validation console's capability eroding
@@ -234,13 +227,14 @@ class TestDevToolsReadRoutes:
         assert "not_visible" in values
         assert "none" in values, "observed-absent must also be present and distinct"
 
-    async def test_every_fixture_response_is_labelled_as_one(
-        self, seeded, client
-    ) -> None:
+    async def test_every_fixture_response_is_labelled_as_one(self, seeded, client) -> None:
         """Nothing may mistake fixture data for live observation."""
         headers = await bearer(client, "developer@example.com")
-        for path in ("/api/v1/devtools/sessions", "/api/v1/devtools/capabilities",
-                     "/api/v1/devtools/state"):
+        for path in (
+            "/api/v1/devtools/sessions",
+            "/api/v1/devtools/capabilities",
+            "/api/v1/devtools/state",
+        ):
             body = (await client.get(path, headers=headers)).json()
             assert "fixture" in str(body)
 
@@ -259,9 +253,7 @@ class TestEvidencePrivilege:
         assert response.json()["code"] == "EVIDENCE_FORBIDDEN"
         assert response.json()["details"]["setting"] == "ALLOW_EVIDENCE"
 
-    async def test_a_devtools_user_without_view_evidence_is_refused(
-        self, settings
-    ) -> None:
+    async def test_a_devtools_user_without_view_evidence_is_refused(self, settings) -> None:
         """DevTools access does not carry imagery access with it."""
         from httpx import ASGITransport, AsyncClient
 
@@ -275,18 +267,14 @@ class TestEvidencePrivilege:
         app.state.database.connect()
         await create_all_for_tests(app.state.database)
         async with app.state.database.session_scope() as session:
-            org, user = make_user(
-                email="supervisor@example.com", roles=("kitchen_supervisor",)
-            )
+            org, user = make_user(email="supervisor@example.com", roles=("kitchen_supervisor",))
             session.add(org)
             session.add(user)
             # Give DevTools access without VIEW_EVIDENCE by adding the developer
             # role's gate only — here, a supervisor cannot reach DevTools at all,
             # which is itself the assertion.
 
-        async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://t"
-        ) as http:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as http:
             login_response = await http.post(
                 "/api/v1/auth/login",
                 json={

@@ -56,6 +56,102 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/audit": {
+      "get": {
+        "description": "The audit trail, tenant-scoped.\n\nIts own permission. Not implied by administration \u2014 knowing who looked at\nimagery of a named employee is its own kind of access.",
+        "operationId": "list_audit_api_v1_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resource_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resource_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Resource Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Audit Api V1 Audit Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Audit",
+        "tags": [
+          "product"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "description": "Exchange an email and password for a session.\n\n**The refresh token is never in the body.** It is set as an httpOnly,\nSecure, SameSite=Strict cookie scoped to `/api/v1/auth`, so page JavaScript\ncannot read it and no other request carries it. The access token is returned\nin the body deliberately: it is short-lived and belongs in memory, where a\npage reload discards it.",
@@ -173,6 +269,202 @@
         "summary": "Refresh",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/cameras": {
+      "get": {
+        "operationId": "list_cameras_api_v1_cameras_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Cameras Api V1 Cameras Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Cameras",
+        "tags": [
+          "product"
+        ]
+      },
+      "post": {
+        "description": "Register a camera. Created **disabled** \u2014 enabling is a separate act.",
+        "operationId": "create_camera_api_v1_cameras_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Camera Api V1 Cameras Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Camera",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_key}": {
+      "patch": {
+        "operationId": "update_camera_api_v1_cameras__camera_key__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_key",
+            "required": true,
+            "schema": {
+              "title": "Camera Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Camera Api V1 Cameras  Camera Key  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Camera",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_key}/frames": {
+      "get": {
+        "description": "Frame metadata for one camera. **Metadata only** \u2014 no pixels.",
+        "operationId": "list_frames_api_v1_cameras__camera_key__frames_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_key",
+            "required": true,
+            "schema": {
+              "title": "Camera Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Frames Api V1 Cameras  Camera Key  Frames Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Frames",
+        "tags": [
+          "product"
         ]
       }
     },
@@ -341,9 +633,356 @@
         ]
       }
     },
+    "/api/v1/evidence/{evidence_ref}": {
+      "delete": {
+        "description": "Erase the bytes, keep the tombstone.\n\nA reason is required. Deletion without one cannot be evidenced afterwards,\nand an erasure request that cannot be evidenced has not been answered.",
+        "operationId": "delete_evidence_api_v1_evidence__evidence_ref__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_ref",
+            "required": true,
+            "schema": {
+              "title": "Evidence Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Evidence Api V1 Evidence  Evidence Ref  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Evidence",
+        "tags": [
+          "product"
+        ]
+      },
+      "get": {
+        "description": "Evidence **metadata**. No bytes, no path, no storage credential.",
+        "operationId": "get_evidence_metadata_api_v1_evidence__evidence_ref__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_ref",
+            "required": true,
+            "schema": {
+              "title": "Evidence Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Evidence Metadata Api V1 Evidence  Evidence Ref  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evidence Metadata",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/evidence/{evidence_ref}/image": {
+      "get": {
+        "description": "The imagery itself. **Every call leaves an audit row.**\n\nTwo gates beyond the permission: `ALLOW_EVIDENCE` is a deployment decision\nand defaults off, and the record's own lifecycle refuses expired or deleted\nevidence even when the permission is held.",
+        "operationId": "get_evidence_image_api_v1_evidence__evidence_ref__image_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "evidence_ref",
+            "required": true,
+            "schema": {
+              "title": "Evidence Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evidence Image",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "operationId": "list_incidents_api_v1_incidents_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Incidents Api V1 Incidents Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Incidents",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/incidents/{incident_id}": {
+      "get": {
+        "operationId": "get_incident_api_v1_incidents__incident_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Incident Api V1 Incidents  Incident Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Incident",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/incidents/{incident_id}/acknowledge": {
+      "post": {
+        "operationId": "acknowledge_incident_api_v1_incidents__incident_id__acknowledge_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Acknowledge Incident Api V1 Incidents  Incident Id  Acknowledge Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Acknowledge Incident",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/incidents/{incident_id}/resolve": {
+      "post": {
+        "description": "Close an incident by explicit operator action.\n\n`kind` is fixed to `operator` here: this route *is* the operator action. An\nobservation-driven resolution comes from the pipeline, not from an HTTP\nrequest, and letting a client claim `kind=observation` would let the UI\nassert something only the platform can know.",
+        "operationId": "resolve_incident_api_v1_incidents__incident_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "incident_id",
+            "required": true,
+            "schema": {
+              "title": "Incident Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Resolve Incident Api V1 Incidents  Incident Id  Resolve Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Incident",
+        "tags": [
+          "product"
+        ]
+      }
+    },
     "/api/v1/status": {
       "get": {
-        "description": "Operator-facing status, in terms an operator can act on.\n\nPhase 1 answers the two signals that exist yet. Camera health, coverage and\nincidents arrive with the features that produce them \u2014 reporting a hardcoded\nzero for any of them now would be the exact failure this product must never\ncommit: an empty answer that reads as a clean result.",
+        "description": "Operator-facing status, in terms an operator can act on.\n\nCamera health and camera configuration are real. Coverage is not, and is\nnamed in `not_yet_reported` rather than zeroed \u2014 reporting a hardcoded zero\nwould be the exact failure this product must never commit: an empty answer\nthat reads as a clean result.",
         "operationId": "status_api_v1_status_get",
         "responses": {
           "200": {

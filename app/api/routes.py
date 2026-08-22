@@ -16,23 +16,22 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, Request, Response
+from fastapi import APIRouter, Body, Request, Response
 from loguru import logger
 
-from app.auth.cookies import clear_refresh_cookie, read_refresh_cookie, set_refresh_cookie
-from app.api.devtools import router as devtools_router
 from app.api.dependencies import (
     CurrentAccess,
     DbSession,
     auth_of,
     cache_of,
     database_of,
-    requires,
     settings_of,
     vision_of,
 )
-from app.authorization.model import Permission
-from app.errors import AuthenticationError, NoSessionError
+from app.api.devtools import router as devtools_router
+from app.auth.cookies import clear_refresh_cookie, read_refresh_cookie, set_refresh_cookie
+from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
+from app.errors import AppError, NoSessionError
 
 # ── health ───────────────────────────────────────────────────────────────────
 #
@@ -96,8 +95,45 @@ async def login(
     email = str(payload.get("email", "")).strip()
     password = str(payload.get("password", ""))
 
-    decision = await auth.authenticate(session, email=email, password=password)
+    trail = AuditTrail(session)
+    try:
+        decision = await auth.authenticate(session, email=email, password=password)
+    except AppError as exc:
+        # A failed login is the row that shows a password-spraying attempt. It
+        # records the email attempted — an identifier the caller already sent —
+        # and never the password, which `_scrub` would strip anyway.
+        #
+        # The tenant is resolved from the account when there is one, so an
+        # admin investigating attempts against their own staff finds them in
+        # their own trail. An unknown email has no tenant to belong to and falls
+        # back to the configured default, where it is still visible rather than
+        # discarded.
+        await trail.record(
+            action=AuditAction.LOGIN_FAILED,
+            organization_id=await _tenant_for_email(session, email)
+            or settings_of(request).default_tenant_id,
+            actor=email,
+            outcome=AuditOutcome.DENIED,
+            resource_type="session",
+            request_id=getattr(request.state, "request_id", ""),
+            detail={"reason": exc.code},
+        )
+        # Committed before re-raising: the session rolls back on the way out,
+        # and losing the record of a failed login because the login failed is
+        # exactly the wrong way round.
+        await session.commit()
+        raise
+
     issued = auth.issue(decision)
+
+    await trail.record(
+        action=AuditAction.LOGIN,
+        organization_id=decision.tenant_id,
+        actor=decision.subject,
+        actor_roles=tuple(sorted(r.value for r in decision.roles)),
+        resource_type="session",
+        request_id=getattr(request.state, "request_id", ""),
+    )
 
     set_refresh_cookie(response, issued.refresh_token, settings_of(request))
 
@@ -113,6 +149,24 @@ async def login(
         "expires_at": issued.expires_at.isoformat(),
         "user": _identity(decision),
     }
+
+
+async def _tenant_for_email(session, email: str) -> str:
+    """The organization an email belongs to, or `""` if no account has it.
+
+    Never raises and never reveals anything to the caller: it exists so a failed
+    login is filed where somebody will look for it, not to tell the client
+    whether the account exists.
+    """
+    from app.auth.service import load_user_by_email
+
+    if not email:
+        return ""
+    try:
+        user = await load_user_by_email(session, email)
+    except Exception:  # noqa: BLE001 - attribution is best effort
+        return ""
+    return user.organization_id if user else ""
 
 
 @auth_router.post("/refresh")
@@ -159,7 +213,7 @@ async def refresh(
 
 
 @auth_router.post("/logout")
-async def logout(request: Request, response: Response) -> dict[str, bool]:
+async def logout(request: Request, response: Response, session: DbSession) -> dict[str, bool]:
     """End the session by clearing the refresh cookie.
 
     Unauthenticated on purpose. Logging out must work when the access token has
@@ -168,6 +222,25 @@ async def logout(request: Request, response: Response) -> dict[str, bool]:
 
     Idempotent: logging out twice, or without a session, succeeds.
     """
+    # Audited only when the cookie identifies somebody. Clearing a cookie that
+    # was never set is not an event, and inventing an actor for it would put a
+    # row in the trail that names nobody.
+    token = read_refresh_cookie(request)
+    if token:
+        try:
+            claims = auth_of(request).verify_refresh(token)
+        except AppError:
+            claims = None
+        if claims is not None:
+            await AuditTrail(session).record(
+                action=AuditAction.LOGOUT,
+                organization_id=claims.tenant_id,
+                actor=claims.subject,
+                actor_roles=claims.roles,
+                resource_type="session",
+                request_id=getattr(request.state, "request_id", ""),
+            )
+
     clear_refresh_cookie(response, settings_of(request))
     return {"ok": True}
 
@@ -204,13 +277,13 @@ status_router = APIRouter(prefix="/api/v1", tags=["status"])
 
 
 @status_router.get("/status")
-async def status(request: Request, access: CurrentAccess) -> dict[str, Any]:
+async def status(request: Request, access: CurrentAccess, session: DbSession) -> dict[str, Any]:
     """Operator-facing status, in terms an operator can act on.
 
-    Phase 1 answers the two signals that exist yet. Camera health, coverage and
-    incidents arrive with the features that produce them — reporting a hardcoded
-    zero for any of them now would be the exact failure this product must never
-    commit: an empty answer that reads as a clean result.
+    Camera health and camera configuration are real. Coverage is not, and is
+    named in `not_yet_reported` rather than zeroed — reporting a hardcoded zero
+    would be the exact failure this product must never commit: an empty answer
+    that reads as a clean result.
     """
     vision = vision_of(request)
     database = database_of(request)
@@ -220,9 +293,15 @@ async def status(request: Request, access: CurrentAccess) -> dict[str, Any]:
 
     live = live_of(request)
     summary = live.summary()
-    sessions = live.visible(
-        tenant_id=access.tenant_id, camera_ids=_scope_cameras(access)
+    sessions = live.visible(tenant_id=access.tenant_id, camera_ids=_scope_cameras(access))
+
+    from app.domain.cameras import CameraService
+
+    rows = await CameraService(session).list(
+        organization_id=access.tenant_id, camera_keys=_scope_cameras(access)
     )
+    registered = len(rows)
+    enabled = sum(1 for row in rows if row.enabled)
 
     return {
         "service": {"ok": db_ok},
@@ -241,9 +320,16 @@ async def status(request: Request, access: CurrentAccess) -> dict[str, Any]:
             ],
         },
         "live_runtime": summary.to_wire(),
-        # Still named rather than zeroed. Reporting 0 incidents from a store
-        # that does not exist is the failure this product must never commit.
-        "not_yet_reported": ["coverage", "incidents"],
+        # Cameras now come from the database rather than an environment
+        # variable, so this is what the runtime would restore on a restart.
+        "cameras_registered": registered,
+        "cameras_enabled": enabled,
+        # Still named rather than zeroed. `incidents` left this list in Phase 5:
+        # the store exists, so the count is reported at /api/v1/incidents.
+        # `coverage` remains, because reporting 0 uncovered zones from a system
+        # that cannot compute coverage is the failure this product must never
+        # commit.
+        "not_yet_reported": ["coverage"],
     }
 
 

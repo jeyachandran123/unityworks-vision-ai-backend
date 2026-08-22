@@ -82,9 +82,7 @@ class EnvironmentSecretProvider:
             name = candidate[len(ENV_SCHEME) :].strip()
             value = self._environ.get(name, "")
             if not value:
-                raise MissingSecretError(
-                    f"environment variable '{name}' is unset or empty"
-                )
+                raise MissingSecretError(f"environment variable '{name}' is unset or empty")
             return value
 
         if candidate.startswith(FILE_SCHEME):

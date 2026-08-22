@@ -136,7 +136,9 @@ def configure_logging(settings: Settings) -> None:
 
     logger.remove()
     if settings.log_format == "json":
-        logger.add(sys.stderr, level=settings.log_level, serialize=True, backtrace=False, diagnose=False)
+        logger.add(
+            sys.stderr, level=settings.log_level, serialize=True, backtrace=False, diagnose=False
+        )
     else:
         logger.add(sys.stderr, level=settings.log_level, backtrace=False, diagnose=False)
 

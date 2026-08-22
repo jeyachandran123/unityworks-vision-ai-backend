@@ -116,6 +116,10 @@ select = ["E", "F", "W", "I", "UP", "B", "C4", "PLC0415"]
 ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
+# `app` is produced by a module-level `__getattr__`, so importing `app.main`
+# builds nothing. Ruff cannot see through that and reports the export as
+# undefined; the indirection is the point and stays.
+"app/main.py" = ["F822"]
 # The platform is migrated verbatim. Lint findings inside it are pre-existing
 # and out of scope for a migration phase — changing them would change code this
 # phase exists to move unchanged.

@@ -25,9 +25,7 @@ def python_files(*roots: str) -> list[Path]:
         if not base.is_dir():
             continue
         found.extend(
-            p
-            for p in base.rglob("*.py")
-            if "__pycache__" not in p.parts and ".venv" not in p.parts
+            p for p in base.rglob("*.py") if "__pycache__" not in p.parts and ".venv" not in p.parts
         )
     return sorted(found)
 

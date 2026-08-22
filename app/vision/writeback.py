@@ -110,7 +110,7 @@ class RegistryWriteBackSink:
 
     def emit(self, results: Any) -> None:
         """Apply every successful attribute from a batch of results."""
-        batch = results if isinstance(results, (list, tuple)) else (results,)
+        batch = results if isinstance(results, list | tuple) else (results,)
         for result in batch:
             self._apply_one(result)
 

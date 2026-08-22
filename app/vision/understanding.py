@@ -152,7 +152,7 @@ def build_understanding(
         platform,
         cropping,
         understanders=(adapter,),
-        attributes=attributes,          # ← the canonical instance
+        attributes=attributes,  # ← the canonical instance
         understanding_sink=sink,
     )
 
@@ -199,8 +199,7 @@ def assert_shared_registry(registry_layer: Any, understanding: Any, attributes: 
     m9 = registry_of(understanding)
     if m9 is not None and m9 is not attributes:
         raise SharedRegistryViolation(
-            "the understanding layer holds a different AttributeRegistry "
-            "instance than M7"
+            "the understanding layer holds a different AttributeRegistry " "instance than M7"
         )
 
 

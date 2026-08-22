@@ -130,16 +130,12 @@ async def capabilities(access: CurrentAccess) -> dict[str, Any]:
     verdict and one that will sit at UNKNOWN forever.
     """
     session = _fixture(access)
-    summary = session.api.capabilities(
-        _principal(access), _scope(access, session)
-    )
+    summary = session.api.capabilities(_principal(access), _scope(access, session))
     return {
         "kind": "fixture",
         "taxonomy_version": getattr(summary, "taxonomy_version", ""),
         "producible_classes": [str(c) for c in getattr(summary, "producible_classes", ())],
-        "producible_attributes": [
-            str(a) for a in getattr(summary, "producible_attributes", ())
-        ],
+        "producible_attributes": [str(a) for a in getattr(summary, "producible_attributes", ())],
     }
 
 
@@ -168,9 +164,7 @@ async def vision_state(access: CurrentAccess) -> dict[str, Any]:
         "partitions": [
             {
                 "camera_id": str(camera_id),
-                "object_count": sum(
-                    1 for o in objects if o["camera_id"] == str(camera_id)
-                ),
+                "object_count": sum(1 for o in objects if o["camera_id"] == str(camera_id)),
             }
             for camera_id in result.snapshot.partitions
         ],

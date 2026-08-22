@@ -142,8 +142,7 @@ def assert_shared_attribute_registry(
         m9 = registry_of(understanding)
         if m9 is not None and m9 is not attributes:
             raise SharedRegistryViolation(
-                "the understanding layer holds a different AttributeRegistry "
-                "instance than M7"
+                "the understanding layer holds a different AttributeRegistry " "instance than M7"
             )
 
 

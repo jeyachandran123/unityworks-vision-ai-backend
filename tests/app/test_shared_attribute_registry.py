@@ -36,8 +36,7 @@ from app.vision.composition import (
 from app.vision.runtime import VisionRuntime
 
 POLICIES = (
-    "config/policies/kitchen-safety.example.json,"
-    "config/policies/object-identity.example.json"
+    "config/policies/kitchen-safety.example.json," "config/policies/object-identity.example.json"
 )
 
 
@@ -132,12 +131,12 @@ class TestNeutralityGateSurvivedMigration:
         an observation; "this person is non-compliant" is a judgment, and it
         belongs to `compliance/`, outside the platform.
         """
+        from vision_os.core.model.ids import AttributeKey
         from vision_os.perception.registry.attributes import (
             AttributeRegistry,
             AttributeSchema,
             AttributeValueType,
         )
-        from vision_os.core.model.ids import AttributeKey
 
         registry = AttributeRegistry()
         with pytest.raises(Exception) as caught:

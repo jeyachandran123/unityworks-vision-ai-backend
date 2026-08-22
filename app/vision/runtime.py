@@ -29,7 +29,6 @@ from loguru import logger
 
 from app.configuration.settings import Settings
 from app.errors import ConfigurationInvalidError
-from app.vision.understanding import UnderstandingComposition, build_understanding
 from app.vision.composition import (
     VisionComposition,
     assert_shared_attribute_registry,
@@ -38,6 +37,7 @@ from app.vision.composition import (
     describe_composition,
     load_policies,
 )
+from app.vision.understanding import UnderstandingComposition, build_understanding
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,9 +83,7 @@ class VisionRuntime:
         return VisionStatus(
             assembled=True,
             attributes=tuple(described["attributes"]),
-            policies=tuple(
-                f"{p['policy_id']}@{p['version']}" for p in described["policies"]
-            ),
+            policies=tuple(f"{p['policy_id']}@{p['version']}" for p in described["policies"]),
         )
 
     # ── lifecycle ────────────────────────────────────────────────────────────
@@ -179,7 +177,7 @@ class VisionRuntime:
         registry_layer = build_registry_layer(
             platform,
             store=self._object_store(),
-            attributes=attributes,          # ← the Phase 6.9 parameter
+            attributes=attributes,  # ← the Phase 6.9 parameter
         )
 
         # ── Flow 5 + 6, bound in Phase 4 ────────────────────────────────────
@@ -213,9 +211,7 @@ class VisionRuntime:
         # implements neither.
         detection = tracking = None
         if bind_perception:
-            detection, tracking = self._build_perception(
-                platform, registry_layer, bound_detector
-            )
+            detection, tracking = self._build_perception(platform, registry_layer, bound_detector)
 
         # Fails assembly rather than degrading. A composition with two registries
         # runs perfectly and is silently wrong, which is the worst failure mode
@@ -440,8 +436,7 @@ def _taxonomy_from(policies: tuple[Any, ...], bound: Any = None) -> list[dict[st
             classes.add(str(name))
 
     return [
-        {"class_id": name, "geometry_kinds": ("box",)}
-        for name in sorted(c for c in classes if c)
+        {"class_id": name, "geometry_kinds": ("box",)} for name in sorted(c for c in classes if c)
     ]
 
 

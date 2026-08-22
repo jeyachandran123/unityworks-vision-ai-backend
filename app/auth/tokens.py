@@ -125,9 +125,7 @@ class TokenService:
         if roles:
             payload["rol"] = list(roles)
 
-        token = jwt.encode(
-            payload, self._signing_key, algorithm=self._settings.jwt_algorithm
-        )
+        token = jwt.encode(payload, self._signing_key, algorithm=self._settings.jwt_algorithm)
         return token, expires
 
     # ── verifying ────────────────────────────────────────────────────────────

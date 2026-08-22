@@ -70,9 +70,7 @@ def settings() -> Settings:
 @pytest_asyncio.fixture
 async def app(settings: Settings):
     application = create_app(settings)
-    async with AsyncClient(
-        transport=ASGITransport(app=application), base_url="http://test"
-    ) as _:
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as _:
         # Entering the client runs lifespan, which connects the engine.
         pass
     application.state.database.connect()
@@ -84,9 +82,7 @@ async def app(settings: Settings):
 async def client(app):
     # The engine and schema already exist on `app.state`; a second lifespan run
     # would dispose and rebuild them, dropping an in-memory SQLite database.
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as http:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as http:
         yield http
 
 
@@ -168,9 +164,7 @@ async def seeded(app):
 
 
 async def login(client: AsyncClient, email: str, password: str = "correct-horse-battery"):
-    return await client.post(
-        "/api/v1/auth/login", json={"email": email, "password": password}
-    )
+    return await client.post("/api/v1/auth/login", json={"email": email, "password": password})
 
 
 async def bearer(client: AsyncClient, email: str) -> dict[str, str]:

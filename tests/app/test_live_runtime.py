@@ -159,7 +159,9 @@ class TestSampler:
     def test_it_thins_a_fast_source_to_the_analysis_rate(self) -> None:
         sampler = FrameSampler(analysis_fps=4.0)  # one per 250 ms
         accepted = sum(
-            1 for index in range(100) if sampler.accepts(index * 40_000_000)  # 25 fps
+            1
+            for index in range(100)
+            if sampler.accepts(index * 40_000_000)  # 25 fps
         )
         # 100 frames at 25 fps is 4 s; at 4 fps that is ~16 frames.
         assert 15 <= accepted <= 17
@@ -223,9 +225,7 @@ class TestSourceLifecycle:
 
     async def test_capture_time_is_preserved_and_distinct_from_arrival(self) -> None:
         """§11 — freshness ages against capture time, not arrival."""
-        source = SyntheticFrameSource(
-            camera_id="cam-01", fps=25.0, count=5, interval_override_s=0
-        )
+        source = SyntheticFrameSource(camera_id="cam-01", fps=25.0, count=5, interval_override_s=0)
         produced = [f async for f in source.frames()]
 
         captured = [f.captured_at_ns for f in produced]
@@ -316,7 +316,7 @@ class TestSecretProvider:
         """A `literal:` reference contains the secret; only the scheme survives."""
         provider = EnvironmentSecretProvider({})
         with pytest.raises(SecretResolutionError) as caught:
-            provider.resolve(f"literal:")
+            provider.resolve("literal:")
         assert SECRET not in str(caught.value)
 
     def test_has_never_returns_the_value(self) -> None:

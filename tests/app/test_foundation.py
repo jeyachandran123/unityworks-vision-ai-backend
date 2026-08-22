@@ -20,7 +20,6 @@ from app.authorization.model import (
 from app.errors import ScopeError
 from tests.app.conftest import bearer, login
 
-
 # ── configuration ────────────────────────────────────────────────────────────
 
 
@@ -169,9 +168,8 @@ class TestTokens:
 
     def test_a_token_from_another_secret_is_rejected(self, settings) -> None:
         from app.auth.tokens import TokenService, TokenType
-        from app.errors import AuthenticationError
-
         from app.configuration.settings import Settings
+        from app.errors import AuthenticationError
 
         mine = TokenService(settings)
         # Constructed, not `model_copy`d: `model_copy(update=...)` skips
@@ -406,7 +404,9 @@ class TestLogin:
 
 class TestAuthenticatedAccess:
     async def test_me_reports_identity_and_reach(self, seeded, client) -> None:
-        response = await client.get("/api/v1/auth/me", headers=await bearer(client, "manager@example.com"))
+        response = await client.get(
+            "/api/v1/auth/me", headers=await bearer(client, "manager@example.com")
+        )
         assert response.status_code == 200
         body = response.json()
         assert body["camera_scope"]["breadth"] == "listed"
@@ -449,24 +449,28 @@ class TestAuthenticatedAccess:
         assert response.json()["tenant_id"] == "org-test"
 
     async def test_status_does_not_invent_a_clean_result(self, seeded, client) -> None:
-        """Reporting zero incidents before that feature exists would be the exact
-        failure this product must never commit: an empty answer that reads as a
-        clean one.
+        """Reporting zero for a signal the system cannot compute would be the
+        exact failure this product must never commit: an empty answer that reads
+        as a clean one.
 
-        Cameras left this list in Phase 3 — they are now reported from real
-        source state, and an absence of cameras is reported as an absence of
-        cameras rather than as a healthy zero.
+        Two signals have left this list as their stores arrived — cameras in
+        Phase 3 and incidents in Phase 5. `coverage` remains, and must, until
+        something can actually compute it.
         """
         response = await client.get(
             "/api/v1/status", headers=await bearer(client, "manager@example.com")
         )
         body = response.json()
-        assert "incidents" in body["not_yet_reported"]
-        assert "coverage" in body["not_yet_reported"]
+        assert body["not_yet_reported"] == ["coverage"]
+        # Incidents left the list because the store exists — not because a zero
+        # became acceptable.
+        assert "incidents" not in body["not_yet_reported"]
 
-        # Cameras are reported, and honestly: none configured, none streaming.
+        # Cameras are reported, and honestly: none registered, none streaming.
         assert body["cameras"]["configured"] == 0
         assert body["cameras"]["sessions"] == 0
+        assert body["cameras_registered"] == 0
+        assert body["cameras_enabled"] == 0
         assert body["live_runtime"]["streaming"] is False
 
 
@@ -513,9 +517,7 @@ class TestDevToolsAuthorization:
             "/api/v1/devtools/failure",
             "/api/v1/sessions/x/faults",
         ):
-            response = await client.get(
-                path, headers=await bearer(client, "developer@example.com")
-            )
+            response = await client.get(path, headers=await bearer(client, "developer@example.com"))
             assert response.status_code == 404, path
 
 
@@ -528,7 +530,7 @@ class TestErrorEnvelope:
     async def test_an_error_leaks_no_internal_detail(self, seeded, client) -> None:
         response = await login(client, "manager@example.com", "wrong-password")
         text = response.text.lower()
-        for leak in ("traceback", "sqlalchemy", "site-packages", ".py\"", "select "):
+        for leak in ("traceback", "sqlalchemy", "site-packages", '.py"', "select "):
             assert leak not in text
 
     async def test_a_vision_route_reports_unavailable_not_empty(self, seeded, client) -> None:

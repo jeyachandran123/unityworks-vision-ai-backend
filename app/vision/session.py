@@ -340,9 +340,7 @@ class VisionSession:
             raise
         finally:
             if self._state not in (SessionState.STOPPING, SessionState.STOPPED):
-                self._state = (
-                    SessionState.FAILED if self._error else SessionState.STOPPED
-                )
+                self._state = SessionState.FAILED if self._error else SessionState.STOPPED
 
 
 class LiveSession(VisionSession):

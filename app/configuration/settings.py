@@ -38,7 +38,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -160,6 +160,22 @@ class Settings(BaseSettings):
     evidence_store: Literal["memory", "local"] = "memory"
     evidence_path: str = "./data/evidence"
     evidence_retention_days: int = 30
+
+    # ── Retention ────────────────────────────────────────────────────────────
+    #
+    # Three categories, three policies. One global rule would either delete an
+    # audit trail on an evidence schedule or keep CCTV imagery on an audit
+    # schedule, and both are wrong for different reasons.
+    #
+    # Defaults are deliberately conservative in different directions: imagery is
+    # the most sensitive and expires soonest; the audit trail is the record of
+    # who looked at that imagery and outlives it by far.
+    evidence_retention_days: int = 30
+    incident_retention_days: int = 365
+    audit_retention_days: int = 730
+    #: Sweeps mark and erase. Off by default: deletion should begin because a
+    #: deployment decided so, not because a process started.
+    retention_sweep_enabled: bool = False
 
     # ── Observability ────────────────────────────────────────────────────────
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"

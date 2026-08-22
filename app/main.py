@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from loguru import logger
 
+from app.api.product import router as product_router
 from app.api.routes import build_router, devtools_router
 from app.api.websocket import router as websocket_router
 from app.auth.service import AuthService
@@ -93,6 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _install_error_handlers(app)
 
     app.include_router(build_router())
+    app.include_router(product_router)
     app.include_router(websocket_router)
     if cfg.feature_devtools:
         # The flag decides whether the routes exist at all; ACCESS_DEVTOOLS on
@@ -132,11 +134,19 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     VISION_READY.set(1 if await vision.start() else 0)
 
+    # Retention first, before anything is served. A record past its retention
+    # date must not be servable for the window between boot and the first sweep.
+    # Marking always happens; erasure only when the deployment enabled it.
+    await _sweep_retention(app)
+
     # The ONLY place a camera session starts. Not on import, not on a DevTools
-    # request, not as a side effect of anything else — and it starts nothing
-    # unless FEATURE_LIVE_CCTV is on and a channel is named.
+    # request, not as a side effect of anything else.
+    #
+    # The camera set now comes from the database, so restarting the process
+    # restores exactly the cameras that were running before it stopped — which
+    # is what "recovery" means here. A row that is not `enabled` opens no socket.
     live: LiveRuntime = app.state.live
-    started = await live.start_configured()
+    started = await _start_cameras_from_database(app)
     if started:
         logger.warning("live CCTV runtime started {} camera session(s)", started)
 
@@ -157,6 +167,77 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     await cache.disconnect()
     await database.disconnect()
     logger.info("Shutdown complete")
+
+
+async def _sweep_retention(app: FastAPI) -> None:
+    """Apply retention at boot. Never fatal.
+
+    A database that is briefly unreachable while the stack comes up must not
+    crash-loop the process, so a failed sweep is reported and start-up
+    continues — the next sweep will catch what this one missed. What it must
+    never do is fail *silently*: unswept data is a retention promise not kept.
+    """
+    from app.domain.retention import RetentionService
+
+    cfg: Settings = app.state.settings
+    database: Database = app.state.database
+    try:
+        async with database.session_scope() as session:
+            service = RetentionService(
+                session,
+                root=cfg.evidence_path,
+                evidence_days=cfg.evidence_retention_days,
+                incident_days=cfg.incident_retention_days,
+                audit_days=cfg.audit_retention_days,
+            )
+            report = await service.sweep(erase=cfg.retention_sweep_enabled)
+        logger.info("retention at boot: {}", report.as_dict())
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        logger.error(
+            "retention sweep failed at boot: {}: {}. Data past its retention "
+            "date may still be present.",
+            type(exc).__name__,
+            exc,
+        )
+
+
+async def _start_cameras_from_database(app: FastAPI) -> int:
+    """Read the enabled cameras and start them. **This is the recovery path.**
+
+    Returns 0 rather than raising if the database is unreachable: no camera is
+    better than no application, and `/health/ready` reports the database anyway.
+    """
+    from app.domain.cameras import CameraService, to_rtsp_config
+
+    cfg: Settings = app.state.settings
+    database: Database = app.state.database
+    live: LiveRuntime = app.state.live
+
+    try:
+        async with database.session_scope() as session:
+            rows = await CameraService(session).enabled_for_runtime(
+                organization_id=cfg.default_tenant_id
+            )
+            configs = [to_rtsp_config(row) for row in rows if row.host]
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        logger.error(
+            "could not read camera configuration: {}: {}. No camera session "
+            "started; fix the database and restart.",
+            type(exc).__name__,
+            exc,
+        )
+        return 0
+
+    if not configs:
+        # Not an error. A deployment with no enabled camera is a valid
+        # deployment, and it says so rather than failing to boot.
+        logger.info(
+            "no enabled camera rows; nothing to start. Cameras are managed at "
+            "/api/v1/cameras, not by CCTV_CHANNELS."
+        )
+        return 0
+
+    return await live.start_from_records(configs)
 
 
 def _install_error_handlers(app: FastAPI) -> None:

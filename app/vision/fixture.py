@@ -51,9 +51,9 @@ FIXTURE_SITE = "site-fixture"
 #: cannot draw NOT_VISIBLE pass its own smoke test.
 _SUBJECTS = (
     # (object_id, head_covering, hand_covering)
-    ("obj-fixture-1", "hairnet", "gloves"),        # fully observed, compliant
-    ("obj-fixture-2", "none", "gloves"),           # observed absent  → violation
-    ("obj-fixture-3", "hairnet", "not_visible"),   # refused          → UNKNOWN
+    ("obj-fixture-1", "hairnet", "gloves"),  # fully observed, compliant
+    ("obj-fixture-2", "none", "gloves"),  # observed absent  → violation
+    ("obj-fixture-3", "hairnet", "not_visible"),  # refused          → UNKNOWN
 )
 
 
@@ -88,8 +88,7 @@ def build_fixture_session(tenant_id: str) -> FixtureSession:
     from vision_os.adapters.persistence import InMemoryEvidenceStore
     from vision_os.adapters.synthesis import InMemoryObservationLog
     from vision_os.core.model.api import CapabilitySummary
-    from vision_os.core.model.ids import AttributeKey, CameraId, ClassId, TenantId
-    from vision_os.core.model.ids import SiteId
+    from vision_os.core.model.ids import AttributeKey, CameraId, ClassId, SiteId, TenantId
     from vision_os.exposure import AuditTrail, CountingAuditSink, ObservationApi
     from vision_os.kernel.clock import VirtualClock
     from vision_os.kernel.events import EventBus

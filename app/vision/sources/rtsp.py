@@ -212,9 +212,7 @@ class LiveRtspSource(FrameSource):
 
             attempt += 1
             if not self._reconnect.should_retry(attempt):
-                raise RuntimeError(
-                    f"giving up after {attempt - 1} reconnect attempts: {reason}"
-                )
+                raise RuntimeError(f"giving up after {attempt - 1} reconnect attempts: {reason}")
 
             self._status.reconnects += 1
             # A new epoch: the sequence restarts, and tracking must not associate
@@ -290,9 +288,7 @@ def _open_with_pyav(uri: str):
         if "401" in message or "unauthor" in message:
             raise RtspAuthenticationError("the DVR rejected these credentials") from exc
         if "404" in message or "not found" in message:
-            raise RtspStreamNotFoundError(
-                "the DVR has no stream at this path or channel"
-            ) from exc
+            raise RtspStreamNotFoundError("the DVR has no stream at this path or channel") from exc
         raise
 
 

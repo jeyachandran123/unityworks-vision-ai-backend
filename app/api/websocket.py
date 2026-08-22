@@ -91,9 +91,7 @@ async def live(socket: WebSocket) -> None:
                 "sessions": [_session_summary(s) for s in sessions],
                 "runtime": summary.to_wire(),
                 "note": (
-                    ""
-                    if streaming
-                    else "authenticated; no source is currently producing frames"
+                    "" if streaming else "authenticated; no source is currently producing frames"
                 ),
             }
         )
@@ -137,9 +135,7 @@ async def _authenticate(socket: WebSocket):
         raise _HandshakeFailure(CLOSE_UNAUTHENTICATED, "malformed frame") from exc
 
     if message.get("type") != "authenticate":
-        raise _HandshakeFailure(
-            CLOSE_UNAUTHENTICATED, "the first frame must be 'authenticate'"
-        )
+        raise _HandshakeFailure(CLOSE_UNAUTHENTICATED, "the first frame must be 'authenticate'")
 
     token = str(message.get("access_token", "")).strip()
     if not token:
@@ -168,9 +164,7 @@ async def _authenticate(socket: WebSocket):
         from app.infrastructure.observability import AUTHZ_DENIALS
 
         AUTHZ_DENIALS.labels(Permission.VIEW_LIVE.value).inc()
-        raise _HandshakeFailure(
-            CLOSE_FORBIDDEN, "this account may not view live monitoring"
-        )
+        raise _HandshakeFailure(CLOSE_FORBIDDEN, "this account may not view live monitoring")
 
     return decision
 

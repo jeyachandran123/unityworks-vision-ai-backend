@@ -104,8 +104,8 @@ class TestStalenessArithmetic:
     """`AttributeStatus` decides freshness. Its arithmetic must not drift."""
 
     def test_a_recent_attribute_is_fresh(self) -> None:
-        from vision_os.core.model.timebase import Duration, Instant
         from vision_os.core.model.ids import AttributeKey
+        from vision_os.core.model.timebase import Duration, Instant
         from vision_os.core.ports.cropping import AttributeStatus
 
         status = AttributeStatus(key=AttributeKey("head_covering"), observed_at=Instant(ns=0))
@@ -114,8 +114,8 @@ class TestStalenessArithmetic:
         assert not status.is_stale(now, Duration.from_millis(120_000))
 
     def test_an_old_attribute_is_stale(self) -> None:
-        from vision_os.core.model.timebase import Duration, Instant
         from vision_os.core.model.ids import AttributeKey
+        from vision_os.core.model.timebase import Duration, Instant
         from vision_os.core.ports.cropping import AttributeStatus
 
         status = AttributeStatus(key=AttributeKey("head_covering"), observed_at=Instant(ns=0))

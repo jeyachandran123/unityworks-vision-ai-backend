@@ -94,9 +94,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
-    last_login_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     organization: Mapped[Organization] = relationship(back_populates="users")
     role_assignments: Mapped[list[RoleAssignment]] = relationship(
@@ -116,9 +114,7 @@ class RoleAssignment(Base):
     """
 
     __tablename__ = "role_assignments"
-    __table_args__ = (
-        UniqueConstraint("user_id", "role", name="uq_role_assignment"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "role", name="uq_role_assignment"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(

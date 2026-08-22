@@ -275,9 +275,7 @@ class FrameSource(abc.ABC):
             self._transition(SourceState.ERROR, type(exc).__name__)
             return
 
-        self._transition(
-            SourceState.STOPPED, "stopped" if self._stopping else "source exhausted"
-        )
+        self._transition(SourceState.STOPPED, "stopped" if self._stopping else "source exhausted")
 
     def stop(self) -> None:
         """Ask the source to finish. Idempotent, and never blocks."""

@@ -220,9 +220,7 @@ class EvidenceRecord(Base):
     state: Mapped[str] = mapped_column(
         String(32), nullable=False, default=EvidenceState.RETAINED.value
     )
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     #: Where the bytes live. Opaque to callers; never a credential-bearing URL.
     storage_ref: Mapped[str] = mapped_column(String(512), nullable=False, default="")
@@ -230,9 +228,7 @@ class EvidenceRecord(Base):
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     media_type: Mapped[str] = mapped_column(String(64), nullable=False, default="image/jpeg")
 
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
@@ -328,13 +324,9 @@ class Incident(Base):
     )
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    acknowledged_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     acknowledged_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    resolved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     #: `observation` when a later grounded observation cleared it, or `operator`.
     #: A UI refresh is neither, and cannot resolve anything.

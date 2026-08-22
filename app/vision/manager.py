@@ -21,6 +21,7 @@ not the fact that it exists.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -140,6 +141,39 @@ class LiveRuntime:
 
         started = 0
         for config in cameras:
+            try:
+                await self.start_live(config)
+                started += 1
+            except Exception as exc:  # noqa: BLE001 - one camera, not the process
+                logger.error(
+                    "camera {} failed to start: {}: {}",
+                    config.camera_id,
+                    type(exc).__name__,
+                    exc,
+                )
+        return started
+
+    async def start_from_records(self, configs: Sequence[RtspCameraConfig]) -> int:
+        """Start the cameras the **database** says are enabled.
+
+        The durable replacement for `start_configured()`. The rule is unchanged
+        and the source of truth moved: a camera row that is not `enabled` opens
+        no socket. What changed is that the decision now survives a restart and
+        is auditable, instead of living in an environment variable nobody can
+        show you the history of.
+
+        One camera failing to start does not stop the others — sixteen kitchens
+        must not go dark because one DVR channel is unplugged.
+        """
+        if not self._settings.feature_live_cctv:
+            logger.info(
+                "live CCTV disabled (FEATURE_LIVE_CCTV=false); {} enabled camera " "row(s) ignored",
+                len(configs),
+            )
+            return 0
+
+        started = 0
+        for config in configs:
             try:
                 await self.start_live(config)
                 started += 1
