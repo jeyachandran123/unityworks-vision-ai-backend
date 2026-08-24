@@ -492,7 +492,7 @@ opened read-only for reference, and `.env.example` was never opened at all.
 ```diff
   NVIDIA_MODEL=nvidia/llama-3.1-nemotron-nano-vl-8b-v1
 - 
-+ VISION_NVIDIA_API_KEY=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
++ VISION_NVIDIA_API_KEY=nvapi-<REDACTED-ROTATE-THIS-KEY>
 ```
 
 `.env.example` is **git-tracked** (`git ls-files --error-unmatch` confirms). A

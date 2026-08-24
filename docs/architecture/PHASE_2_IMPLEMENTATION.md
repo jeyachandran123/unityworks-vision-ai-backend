@@ -265,7 +265,7 @@ session. Neither was written by Phase 1 or Phase 2.
 **`.env.example` is git-tracked and now contains a live NVIDIA API key:**
 
 ```
-VISION_NVIDIA_API_KEY=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
+VISION_NVIDIA_API_KEY=nvapi-<REDACTED-ROTATE-THIS-KEY>
 ```
 
 It is staged to be committed the next time that repository is committed, and a
