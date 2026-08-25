@@ -783,3 +783,102 @@ class TestStallWatchdog:
                 assert len(alive) == 1, f"{camera_id} has {len(alive)} worker threads"
         finally:
             await wall.stop_all()
+
+    @pytest.mark.asyncio
+    async def test_a_busy_publisher_is_not_mistaken_for_a_dead_camera(
+        self, monkeypatch, settings
+    ):
+        """The feedback loop this watchdog caused in production, pinned.
+
+        The first version compared `stats.last_frame_at`, which is set when a
+        frame is *published*. Under load, publishing fell behind, the watchdog
+        read that as a dead socket, tore down a healthy connection, and the
+        reconnect cost enough CPU to make the next check late too. All four
+        cameras ended up permanently `reconnecting` and API latency reached
+        tens of seconds — while the DVR was measured healthy throughout.
+
+        Here the source keeps reporting progress while nothing is published.
+        That must never be read as a stall.
+        """
+        from app.vision import wall as wall_module
+
+        monkeypatch.setattr(wall_module, "STALL_WATCHDOG_S", 0.1)
+        dials = []
+
+        class _Status:
+            def __init__(self):
+                self.frames_produced = 0
+
+        class _ReceivingButUnpublished:
+            """Frames arrive at the source; none are ever publishable."""
+
+            def __init__(self, *a, **k):
+                dials.append(1)
+                self.status = _Status()
+                self._stop = False
+
+            async def frames(self):
+                while not self._stop:
+                    # The source received a frame — `frames_produced` moves.
+                    self.status.frames_produced += 1
+                    # But it carries nothing `_publish` will accept, so
+                    # `last_frame_at` never advances. That is a backlog, not a
+                    # dead camera.
+                    yield _FakeFrame(payload=b"", width=0, height=0)
+                    await asyncio.sleep(0.01)
+
+            def stop(self):
+                self._stop = True
+
+        self._install(monkeypatch, _ReceivingButUnpublished, 0.1)
+
+        wall = CameraWall(settings)
+        await wall.start_cameras([FakeCamera(12)])
+        try:
+            await asyncio.sleep(0.8)
+            stream = wall.get("cam-12")
+
+            assert stream.stats.stalls == 0, (
+                "a receiving source was torn down as stalled — the feedback loop is back"
+            )
+            assert len(dials) == 1, "a healthy connection was needlessly re-dialled"
+        finally:
+            await wall.stop_all()
+
+    @pytest.mark.asyncio
+    async def test_repeated_failures_back_off_instead_of_hammering(
+        self, monkeypatch, settings
+    ):
+        """A camera that cannot connect must not be re-dialled every 2s forever.
+
+        Four cameras plus their analysis sessions retrying on a flat two-second
+        timer is what turned one unreachable DVR into a storm.
+        """
+        from app.vision import wall as wall_module
+
+        monkeypatch.setattr(wall_module, "STALL_WATCHDOG_S", 5.0)
+        at = []
+
+        class _AlwaysFails:
+            def __init__(self, *a, **k):
+                at.append(time.monotonic())
+
+            async def frames(self):
+                raise RuntimeError("cannot reach the recorder")
+                yield  # pragma: no cover - unreachable, keeps this a generator
+
+            def stop(self):
+                pass
+
+        self._install(monkeypatch, _AlwaysFails, 5.0)
+
+        wall = CameraWall(settings)
+        await wall.start_cameras([FakeCamera(13)])
+        try:
+            await asyncio.sleep(4.0)
+            assert len(at) >= 2, "it never retried at all"
+            gaps = [b - a for a, b in zip(at, at[1:], strict=False)]
+            # Escalating, not flat: the second wait must exceed the first.
+            assert gaps[-1] > gaps[0], f"retries are not backing off: {gaps}"
+        finally:
+            await wall.stop_all()

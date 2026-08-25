@@ -201,6 +201,10 @@ class CameraStream:
             "source_fps": self.stats.source_fps,
             "viewers": self.stats.viewers,
             "reconnects": self.stats.reconnects,
+            # Surfaced per camera, not only in the nested stats block: a
+            # watchdog that is firing is the difference between "the DVR is
+            # down" and "we are tearing down our own healthy connections".
+            "stalls": self.stats.stalls,
             "frames_decoded": self.stats.frames_decoded,
             "seconds_since_frame": (
                 round(time.monotonic() - last, 2) if last is not None else None
@@ -287,6 +291,10 @@ class CameraStream:
         # password in `.env` produced sixteen cameras stuck at CONNECTING.
         secrets = EnvironmentSecretProvider(self._secret_environment)
         started_at = time.monotonic()
+        #: Consecutive failed sessions. Reset by a session that delivered, so a
+        #: camera that works for an hour and then drops retries promptly rather
+        #: than inheriting an hour-old backoff.
+        attempt = 0
 
         while not self._stop_event.is_set():
             source = LiveRtspSource(config, secrets=secrets, reconnect=reconnect)
@@ -296,6 +304,7 @@ class CameraStream:
                     if self._stop_event.is_set():
                         break
                     self._publish(frame, started_at)
+                    attempt = 0
             except Exception as exc:  # noqa: BLE001 - one camera, not the wall
                 self.stats.decode_errors += 1
                 self.stats.last_error = f"{type(exc).__name__}: {exc}"
@@ -322,7 +331,24 @@ class CameraStream:
             # so there is no cost to checking often.
             self.stats.reconnects += 1
             self._state = StreamState.RECONNECTING
-            for _ in range(20):
+
+            # **Backed off, not a flat retry.**
+            #
+            # This waited a fixed 2s however many times it had failed, so a
+            # camera that could not connect was re-dialled every two seconds
+            # indefinitely — four cameras plus their analysis sessions
+            # hammering one consumer DVR, and paying the CPU for a fresh
+            # connection each time. Reusing the source's own policy means the
+            # wall and the analysis path escalate the same way (1s → 60s) and a
+            # persistent failure costs one attempt a minute rather than thirty.
+            attempt += 1
+            delay = 2.0
+            try:
+                delay = max(0.5, float(reconnect.delay_for(attempt)) / 1000.0)
+            except Exception:  # noqa: BLE001 - a policy that cannot advise is not fatal
+                pass
+            deadline = time.monotonic() + delay
+            while time.monotonic() < deadline:
                 if self._stop_event.is_set():
                     break
                 await asyncio.sleep(0.1)
@@ -351,9 +377,31 @@ class CameraStream:
         # swamping a short one. Capped at a second because polling a ten-second
         # window faster than that buys nothing.
         interval = min(1.0, max(0.01, STALL_WATCHDOG_S / 4))
+        seen = -1
 
         while not self._stop_event.is_set():
             await asyncio.sleep(interval)
+
+            # **Progress is measured at the source, not at publish.**
+            #
+            # An earlier version compared `stats.last_frame_at`, which is set
+            # when a frame is *encoded and published*. That conflates two very
+            # different things: a socket that has gone quiet, and a busy
+            # process that has not got round to publishing yet. Under load it
+            # read the second as the first, tore down healthy connections, and
+            # the reconnects cost enough CPU to make the next check late too —
+            # a feedback loop that put every camera into permanent
+            # `reconnecting` and pushed API latency to tens of seconds. The DVR
+            # was fine throughout.
+            #
+            # `frames_produced` moves when the source receives a frame,
+            # whatever this process does with it afterwards, so a backlog can
+            # never masquerade as a dead camera.
+            produced = int(getattr(getattr(source, "status", None), "frames_produced", 0) or 0)
+            if produced != seen:
+                seen = produced
+                continue
+
             last = self.stats.last_frame_at
             if last is None:
                 # Still connecting. `first_frame` latency is a different
