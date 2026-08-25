@@ -32,6 +32,7 @@ from loguru import logger
 
 from app.api.product import router as product_router
 from app.api.routes import build_router, devtools_router
+from app.api.wall import router as wall_router
 from app.api.websocket import router as websocket_router
 from app.auth.service import AuthService
 from app.auth.tokens import TokenService
@@ -45,8 +46,12 @@ from app.infrastructure.observability import (
     metrics_payload,
     request_context_middleware,
 )
+from app.vision.demands import register_policy_demands
+from app.vision.ingest import FrameIngest
 from app.vision.manager import LiveRuntime
 from app.vision.runtime import VisionRuntime
+from app.vision.taps import TapBus
+from app.vision.wall import CameraWall
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -79,6 +84,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.auth = AuthService(TokenService(cfg))
     app.state.vision = VisionRuntime(cfg)
     app.state.live = LiveRuntime(cfg)
+    # Live viewing. Independent of Vision OS by design: the wall owns its own
+    # sessions and never calls the perception path.
+    app.state.wall = CameraWall(cfg)
+    # Bounded rings over the platform's own bus. Attached at start-up when a
+    # platform exists; harmless and empty when one does not.
+    app.state.taps = TapBus()
+    app.state.ingest = None
+    app.state.demands = None
+    app.state.notifier = None
 
     app.add_middleware(
         CORSMiddleware,
@@ -95,6 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_router())
     app.include_router(product_router)
+    app.include_router(wall_router)
     app.include_router(websocket_router)
     if cfg.feature_devtools:
         # The flag decides whether the routes exist at all; ACCESS_DEVTOOLS on
@@ -132,7 +147,44 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             "time with the dependency named; other routes are unaffected"
         )
 
-    VISION_READY.set(1 if await vision.start() else 0)
+    assembled = await vision.start()
+    VISION_READY.set(1 if assembled else 0)
+
+    # The seam. Frames reach the platform only because this line runs, and it
+    # runs before any camera starts so every session goes through it.
+    if assembled and vision.composition is not None:
+        live_runtime: LiveRuntime = app.state.live
+        ingest = FrameIngest(vision.composition, ledger=live_runtime.ledger)
+        live_runtime.bind_ingest(ingest)
+        app.state.ingest = ingest
+        app.state.taps.attach(getattr(vision.composition.platform, "bus", None))
+
+        # Without this the platform correctly analyses nothing: M8 skips every
+        # candidate with `no_demand`, and zero model calls is the right answer
+        # to a question nobody asked. This is the application stating what it is
+        # willing to pay to look at.
+        app.state.demands = register_policy_demands(
+            vision.composition,
+            freshness_ms=cfg.vision_demand_freshness_ms,
+        )
+        logger.info("Vision OS ingest bound — frames will reach the perception path")
+
+        # The application's own decision layer. Vision OS reports what it sees
+        # and knows nothing about rules, incidents or users; this reads the
+        # Observation API like any other consumer and writes to the Incident
+        # domain. Nothing in `vision_os` imports it or is aware it runs.
+        app.state.compliance = _build_compliance_driver(app, cfg, vision)
+    else:
+        # Said plainly. A deployment whose cameras run but whose frames reach no
+        # model is a deployment that looks healthy and observes nothing, and
+        # that must never be discovered from a dashboard reading zero.
+        app.state.ingest = None
+        app.state.demands = None
+        app.state.compliance = None
+        logger.warning(
+            "Vision OS is not assembled — camera frames will be acquired and "
+            "released without reaching detection"
+        )
 
     # Retention first, before anything is served. A record past its retention
     # date must not be servable for the window between boot and the first sweep.
@@ -145,6 +197,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     # The camera set now comes from the database, so restarting the process
     # restores exactly the cameras that were running before it stopped — which
     # is what "recovery" means here. A row that is not `enabled` opens no socket.
+    # The camera wall. Started from the same durable camera rows, and started
+    # whether or not Vision OS assembled — viewing must not depend on analysis.
+    await _start_camera_wall(app)
+
     live: LiveRuntime = app.state.live
     started = await _start_cameras_from_database(app)
     if started:
@@ -162,6 +218,9 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("Shutting down")
+    await app.state.wall.stop_all()
+    if vision.composition is not None:
+        app.state.taps.detach(getattr(vision.composition.platform, "bus", None))
     await live.stop_all()
     await vision.stop()
     await cache.disconnect()
@@ -238,6 +297,147 @@ async def _start_cameras_from_database(app: FastAPI) -> int:
         return 0
 
     return await live.start_from_records(configs)
+
+
+def _build_compliance_driver(app: FastAPI, cfg, vision):
+    """Load the deployment's rules and start the evaluation pass.
+
+    A rule document that will not load is reported and the driver is left off,
+    rather than starting one that silently decides nothing: a compliance system
+    that is quietly not running is worse than one that is visibly absent.
+    """
+    from app.vision.compliance_driver import ComplianceDriver
+    from compliance import RuleDocumentError, load_rules
+
+    if not cfg.compliance_rules:
+        logger.warning(
+            "COMPLIANCE_RULES is not set — observations will be produced and "
+            "no compliance decision will be made"
+        )
+        return None
+
+    try:
+        rules = load_rules(cfg.compliance_rules)
+    except RuleDocumentError as exc:
+        logger.error("compliance rules not loaded: {}. No verdicts will be produced.", exc)
+        return None
+    if rules is None:
+        return None
+
+    producible = frozenset(vision.status().to_wire().get("attributes", ()))
+    unproducible = frozenset(rules.required_attributes) - producible
+    if unproducible:
+        # Named at boot rather than left to look like caution. A rule waiting on
+        # an attribute nothing observes sits at UNKNOWN forever, which reads as
+        # a careful system and is actually a silent misconfiguration.
+        logger.warning(
+            "compliance rules depend on attribute(s) nothing observes: {}. "
+            "Those conditions can only ever be UNKNOWN.",
+            sorted(unproducible),
+        )
+
+    from app.domain.notifications import build_notifier
+
+    try:
+        notifier = build_notifier(cfg)
+    except ValueError as exc:
+        # A typo in a channel name must not look like a working deployment that
+        # happens to tell nobody.
+        logger.error("notifications not configured: {}. No one will be told.", exc)
+        notifier = None
+    app.state.notifier = notifier
+
+    driver = ComplianceDriver(
+        settings=cfg,
+        vision=vision,
+        database=app.state.database,
+        rules=rules,
+        interval_s=cfg.compliance_interval_s,
+        # Evidence comes from the wall's already-encoded latest frame, so
+        # capturing costs nothing on the analysis path.
+        wall=app.state.wall,
+        notifier=notifier,
+    )
+    driver.start()
+    logger.info(
+        "compliance engine started — ruleset {} with {} rule(s), every {}s; "
+        "evidence capture {}, notifications {}",
+        rules.version,
+        len(rules.rules),
+        cfg.compliance_interval_s,
+        "on" if cfg.evidence_capture else "off",
+        notifier.channel_id if notifier else "off",
+    )
+    return driver
+
+
+async def _start_camera_wall(app: FastAPI) -> int:
+    """Open a viewing stream for every enabled camera row.
+
+    Separate from `_start_cameras_from_database`, which starts *analysis*
+    sessions. A deployment may reasonably watch sixteen cameras and analyse
+    none, and this is the line that keeps those two decisions apart.
+    """
+    from app.domain.cameras import CameraService
+
+    cfg: Settings = app.state.settings
+    database: Database = app.state.database
+    wall: CameraWall = app.state.wall
+    cameras: list = []
+    elsewhere: dict[str, int] = {}
+
+    if not cfg.feature_camera_wall:
+        logger.info("camera wall disabled (FEATURE_CAMERA_WALL=false)")
+        return 0
+
+    try:
+        async with database.session_scope() as session:
+            service = CameraService(session)
+            cameras = await service.list(organization_id=cfg.default_tenant_id)
+            if not cameras:
+                elsewhere = await _cameras_in_other_tenants(
+                    session, cfg.default_tenant_id
+                )
+    except Exception as exc:  # noqa: BLE001 - reported, never fatal
+        logger.error(
+            "camera wall could not read its camera list: {}: {}",
+            type(exc).__name__,
+            exc,
+        )
+        return 0
+
+    if not cameras:
+        if elsewhere:
+            # The failure that produced "0 channels, 16 connecting": cameras
+            # exist, but in a tenant this deployment does not serve. Silence
+            # here reads as "no cameras configured", which sends somebody to
+            # look at the DVR instead of at DEFAULT_TENANT_ID.
+            logger.error(
+                "camera wall found no cameras for tenant '{}', but {} camera "
+                "row(s) exist in tenant(s) {}. DEFAULT_TENANT_ID does not match "
+                "the tenant that owns the cameras.",
+                cfg.default_tenant_id,
+                sum(elsewhere.values()),
+                sorted(elsewhere),
+            )
+        else:
+            logger.info("camera wall: no camera rows configured")
+        return 0
+    return await wall.start_cameras(cameras)
+
+
+async def _cameras_in_other_tenants(session, tenant_id: str) -> dict[str, int]:
+    """Camera counts per tenant, excluding this one. For diagnosing a mismatch."""
+    from sqlalchemy import func, select
+
+    from app.domain.models import Camera
+
+    result = await session.execute(
+        select(Camera.organization_id, func.count())
+        .where(Camera.organization_id != tenant_id)
+        .group_by(Camera.organization_id)
+    )
+    return {row[0]: int(row[1]) for row in result.all()}
 
 
 def _install_error_handlers(app: FastAPI) -> None:

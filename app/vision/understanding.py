@@ -82,6 +82,7 @@ def build_understanding(
     policies: tuple[Any, ...] = (),
     provider: str | None = None,
     static_value: str | None = None,
+    api_key: str = "",
 ) -> UnderstandingComposition:
     """Assemble cropping and understanding over an existing platform and M7.
 
@@ -120,12 +121,18 @@ def build_understanding(
     # needs a value inside the attribute's registered domain, and the registry is
     # not visible from the provider module — so the caller supplies it as a
     # default the environment can still override.
-    defaults = {"VISION_STATIC_VALUE": static_value} if static_value else None
+    defaults: dict[str, str] = {}
+    if static_value:
+        defaults["VISION_STATIC_VALUE"] = static_value
+    if api_key:
+        # Named for the platform's own key, so this composition root does not
+        # decide which provider the credential belongs to.
+        defaults["VISION_NVIDIA_API_KEY"] = api_key
     try:
         adapter, note = build_understander(
             producible=tuple(_attribute_keys(attributes)),
             provider=provider,
-            defaults=defaults,
+            defaults=defaults or None,
         )
     except ProviderConfigurationError as exc:
         # Names the missing configuration without quoting a credential.
@@ -147,11 +154,21 @@ def build_understanding(
     )
 
     # ── Flow 6: extract meaning, and hold it in M7 ───────────────────────────
+    #
+    # `prompt_templates` is the seam that was left empty. Without it the prompt
+    # provider holds nothing, and M9 refuses every request with
+    # `PROMPT_UNAVAILABLE` → `UnderstandingOutcome.UNSUPPORTED` *before* any
+    # model call. On real CCTV that presented as 120 crops taken, 120 results
+    # produced, 120 failed, zero attributes and zero write-backs — with no
+    # error anywhere, because refusing to ask is the correct behaviour when
+    # there is no declared question.
+    templates = _prompt_templates(policies)
     sink = RegistryWriteBackSink(registry_layer.registry)
     understanding = build_understanding_layer(
         platform,
         cropping,
         understanders=(adapter,),
+        prompt_templates=templates,
         attributes=attributes,  # ← the canonical instance
         understanding_sink=sink,
     )
@@ -209,6 +226,47 @@ def assert_shared_registry(registry_layer: Any, understanding: Any, attributes: 
 def _attribute_keys(attributes: Any) -> list[Any]:
     schemas = getattr(attributes, "schemas", None)
     return list(schemas.keys()) if isinstance(schemas, dict) else []
+
+
+def _prompt_templates(policies: tuple[Any, ...]) -> tuple[Any, ...]:
+    """The prompt each policy declares, as the provider's own template type.
+
+    **The policy owns the wording; this owns nothing.** `SemanticPolicy` already
+    knows how to render itself into a `PromptTemplate` — preamble, per-attribute
+    question, output keys, applicable classes and token ceiling all come from the
+    document. This function calls that and collects the results.
+
+    So no question text, no attribute name and no domain vocabulary occurs in
+    this function. Two policies from entirely different domains register by the
+    same path, and adding a third needs no change here (§6) — a property a test
+    enforces by reading this source.
+
+    A policy that declares no prompt is skipped rather than given a generated
+    one. An improvised question would produce a confident answer to something
+    nobody wrote down, which is worse than the honest `PROMPT_UNAVAILABLE` that
+    M9 raises instead (§9).
+    """
+    templates = []
+    for policy in policies or ():
+        build = getattr(policy, "build_prompt_template", None)
+        if not callable(build):
+            continue
+        try:
+            template = build()
+        except Exception as exc:  # noqa: BLE001 - one policy, not the assembly
+            # Named, never swallowed: a policy whose prompt will not build is a
+            # capability this deployment silently lacks, and the symptom
+            # downstream is a rule that is permanently UNKNOWN.
+            logger.error(
+                "policy '{}' declares a prompt that could not be built: {}: {}",
+                getattr(policy, "policy_id", "?"),
+                type(exc).__name__,
+                exc,
+            )
+            continue
+        if template is not None:
+            templates.append(template)
+    return tuple(templates)
 
 
 def _declared_keys(attributes: Any) -> tuple[str, ...]:

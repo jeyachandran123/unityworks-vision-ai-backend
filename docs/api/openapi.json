@@ -492,6 +492,30 @@
         ]
       }
     },
+    "/api/v1/devtools/compliance": {
+      "get": {
+        "description": "The live compliance verdicts, and the rules that produced them.\n\nVerdicts are recomputed from current Vision State on each call rather than\nread from a cache, so what this returns is what the rules say *now*. It does\nnot write: incidents are opened by the driver's own pass, and a read that\nraised incidents would make every refresh of a dashboard a business event.",
+        "operationId": "compliance_state_api_v1_devtools_compliance_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Compliance State Api V1 Devtools Compliance Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Compliance State",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
     "/api/v1/devtools/evidence/{blob_ref}": {
       "get": {
         "description": "Retrieve evidence imagery.\n\nTwo gates beyond DevTools, and neither is implied by the other:\n\n1. `ALLOW_EVIDENCE` \u2014 a deployment decision. Off by default.\n2. `VIEW_EVIDENCE` \u2014 the caller's own privilege. Never implied by\n   `VIEW_OBSERVATIONS`: *\"Reading 'a person was here' and viewing their image\n   are categorically different acts.\"*",
@@ -556,6 +580,54 @@
           }
         },
         "summary": "Live Runtime",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/metrics": {
+      "get": {
+        "description": "The **real** platform's own counters, gauges and histograms.\n\nEvery other diagnostic here is either a fixture (`/state`,\n`/capabilities`) or describes the acquisition side (`/live`). None of them\ncan answer the question an engineer actually has about a running kitchen:\n*did a person get detected, was a model asked about them, did the answer\ncome back, and was it written to the object?*\n\n`metrics_view` and `health_view` were built in Phase 6 to answer exactly\nthat and were never given a route, so the numbers existed in the process\nand could not be read from outside it. This is that route, and it declares\nno metric names of its own \u2014 the vocabulary is the platform's.",
+        "operationId": "platform_metrics_api_v1_devtools_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Platform Metrics Api V1 Devtools Metrics Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Platform Metrics",
+        "tags": [
+          "devtools"
+        ]
+      }
+    },
+    "/api/v1/devtools/observations": {
+      "get": {
+        "description": "Vision State for the **real** running platform, not the fixture.\n\n`/state` answers from `build_fixture_session` and always has \u2014 it says\n`\"kind\": \"fixture\"` and is honest about it. But the exposure layer built\nover the live synthesis state has had no route at all, so the observations\nthe platform actually produced from real cameras could not be read from\noutside the process.\n\nScope is the caller's own cameras, exactly as `/state` does it, and\n`_render` is shared with it so `not_visible` survives to the wire here for\nthe same reason it does there.\n\n**`StateFilter` is left at its default.** Phase 6A.4 traced an empty result\nto that default excluding `PROVISIONAL` objects and widening it was\nexplicitly rejected then: an object the registry has not confirmed is not\nsomething a compliance decision may rest on, and showing it here to make a\nscreen look populated would be the same mistake in a different place.",
+        "operationId": "real_observations_api_v1_devtools_observations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Real Observations Api V1 Devtools Observations Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Real Observations",
         "tags": [
           "devtools"
         ]
@@ -1001,6 +1073,211 @@
         "summary": "Status",
         "tags": [
           "status"
+        ]
+      }
+    },
+    "/api/v1/wall/cameras": {
+      "get": {
+        "description": "Every camera this caller may watch, with its live state.\n\n**No filtering by usefulness.** A camera that is disabled, offline or\npointed at a store cupboard is still listed, because a monitoring wall whose\noperator cannot see that channel 7 is dark is worse than no wall. The only\nthing that removes a camera here is authorization.",
+        "operationId": "list_wall_cameras_api_v1_wall_cameras_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Wall Cameras Api V1 Wall Cameras Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Wall Cameras",
+        "tags": [
+          "camera-wall"
+        ]
+      }
+    },
+    "/api/v1/wall/cameras/{camera_id}": {
+      "get": {
+        "description": "One camera, for the detail view. Carries no credential and no URL.",
+        "operationId": "camera_detail_api_v1_wall_cameras__camera_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "title": "Camera Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Camera Detail Api V1 Wall Cameras  Camera Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Camera Detail",
+        "tags": [
+          "camera-wall"
+        ]
+      }
+    },
+    "/api/v1/wall/cameras/{camera_id}/stream.mjpg": {
+      "get": {
+        "description": "`multipart/x-mixed-replace` JPEG. Authorized by ticket, not by header.\n\nDeliberately **not** behind `requires(...)`: an `<img>` tag cannot send an\nAuthorization header, so this route authorizes on the signed ticket the\ncaller obtained from an authenticated request. The ticket names the tenant,\nthe camera and the subject, and all three are checked here.",
+        "operationId": "stream_camera_api_v1_wall_cameras__camera_id__stream_mjpg_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "title": "Camera Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ticket",
+            "required": true,
+            "schema": {
+              "title": "Ticket",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tenant",
+            "required": true,
+            "schema": {
+              "title": "Tenant",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subject",
+            "required": true,
+            "schema": {
+              "title": "Subject",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fps",
+            "required": false,
+            "schema": {
+              "default": 4.0,
+              "maximum": 25.0,
+              "minimum": 0.5,
+              "title": "Fps",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream Camera",
+        "tags": [
+          "camera-wall"
+        ]
+      }
+    },
+    "/api/v1/wall/cameras/{camera_id}/ticket": {
+      "post": {
+        "description": "Exchange an authenticated session for a one-camera viewing ticket.",
+        "operationId": "issue_ticket_api_v1_wall_cameras__camera_id__ticket_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_id",
+            "required": true,
+            "schema": {
+              "title": "Camera Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Issue Ticket Api V1 Wall Cameras  Camera Id  Ticket Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Ticket",
+        "tags": [
+          "camera-wall"
         ]
       }
     },

@@ -29,6 +29,7 @@ from loguru import logger
 
 from app.configuration.settings import Settings
 from app.errors import ConfigurationInvalidError
+from app.vision.bridges import TrackingToRegistryBridge
 from app.vision.composition import (
     VisionComposition,
     assert_shared_attribute_registry,
@@ -61,16 +62,23 @@ class VisionStatus:
 class VisionRuntime:
     """Owns the platform for the process lifetime."""
 
-    __slots__ = ("_composition", "_reason", "_settings")
+    __slots__ = ("_bridge", "_composition", "_reason", "_settings")
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._composition: VisionComposition | None = None
+        #: The L3→L4 adapter, kept so DevTools can report what crossed the seam.
+        self._bridge: TrackingToRegistryBridge | None = None
         self._reason = "not started"
 
     @property
     def composition(self) -> VisionComposition | None:
         return self._composition
+
+    @property
+    def bridge(self) -> TrackingToRegistryBridge | None:
+        """The L3→L4 adapter, for DevTools. `None` when perception is unbound."""
+        return self._bridge
 
     @property
     def assembled(self) -> bool:
@@ -106,19 +114,97 @@ class VisionRuntime:
             return False
 
         try:
-            self._composition = self.assemble()
+            self._composition = self.assemble(
+                bind_perception=self._settings.vision_bind_perception,
+            )
         except Exception as exc:  # noqa: BLE001 - reported, never fatal
             self._reason = f"{type(exc).__name__}: {exc}"
             logger.error("Vision OS failed to assemble: {}", self._reason)
             return False
 
+        started = await self._boot_layers(self._composition)
+
         logger.info(
-            "Vision OS assembled — {} attribute(s) declared",
+            "Vision OS assembled — {} attribute(s) declared, perception {}, " "layers started: {}",
             len(self._composition.declared_attributes),
+            "bound" if self._composition.detection is not None else "NOT bound",
+            ", ".join(started) or "none",
         )
         return True
 
+    async def _boot_layers(self, composition: VisionComposition) -> tuple[str, ...]:
+        """Start each layer runtime that has one.
+
+        Assembly wires the layers; it does not run them. `DetectionRuntime`
+        refuses work until `start()` has warmed the detector — `on_admitted`
+        returns immediately while `_started` is false — so a stack that is
+        assembled and never booted accepts every frame and does nothing with any
+        of them, silently. That is the exact failure this method exists to
+        prevent, and it is why the started list is logged.
+
+        This mirrors `VisionSystem.boot()` for the layers it owns, and
+        deliberately does **not** call `platform.boot()`: that attaches cameras
+        through the bindings factory, and acquisition in this application belongs
+        to `LiveRuntime`, which owns the sources. Booting both would be two
+        acquisition paths for the same cameras.
+
+        Warm-up order is the pipeline's own: a downstream stage must be ready
+        before the one that feeds it, or the first frames are handed to a
+        consumer that is not yet listening.
+        """
+        started: list[str] = []
+        for name in (
+            "synthesis",
+            "state",
+            "understanding",
+            "cropping",
+            "registry_layer",
+            "tracking",
+            "detection",
+        ):
+            layer = getattr(composition, name, None)
+            runtime = getattr(layer, "runtime", None)
+            starter = getattr(runtime, "start", None)
+            if not callable(starter):
+                continue
+            try:
+                await starter()
+                started.append(name)
+            except Exception as exc:  # noqa: BLE001 - one layer, not the process
+                # Reported and named. A layer that failed to start is a
+                # capability this deployment does not have, and it must be
+                # visible rather than inferred later from an empty result.
+                logger.error(
+                    "Vision OS layer '{}' failed to start: {}: {}",
+                    name,
+                    type(exc).__name__,
+                    exc,
+                )
+        return tuple(started)
+
     async def stop(self) -> None:
+        if self._composition is not None:
+            for name in (
+                "detection",
+                "tracking",
+                "registry_layer",
+                "cropping",
+                "understanding",
+                "state",
+                "synthesis",
+            ):
+                runtime = getattr(getattr(self._composition, name, None), "runtime", None)
+                stopper = getattr(runtime, "stop", None)
+                if callable(stopper):
+                    try:
+                        await stopper()
+                    except Exception as exc:  # noqa: BLE001 - shutdown continues
+                        logger.warning(
+                            "layer '{}' did not stop cleanly: {}: {}",
+                            name,
+                            type(exc).__name__,
+                            exc,
+                        )
         self._composition = None
         self._reason = "stopped"
 
@@ -144,7 +230,9 @@ class VisionRuntime:
                 frames; a caller may omit it to assemble the semantic layers
                 alone, which is what registry and freshness tests do.
         """
+        from vision_os.exposure_bootstrap import build_exposure_layer
         from vision_os.registry_bootstrap import build_registry_layer
+        from vision_os.synthesis_bootstrap import build_synthesis_layer
 
         policies = load_policies(self._settings.vision_semantic_policy)
         document = self._config_document()
@@ -195,8 +283,12 @@ class VisionRuntime:
                     registry_layer,
                     attributes,
                     policies=policies,
-                    provider=provider,
+                    # An explicit argument wins; otherwise the deployment's
+                    # configured provider, which the platform cannot read for
+                    # itself because `.env` never reaches `os.environ`.
+                    provider=provider or (self._settings.vision_understander_provider or None),
                     static_value=static_value,
+                    api_key=self._settings.vision_understander_api_key.get_secret_value(),
                 )
             except ConfigurationInvalidError as exc:
                 logger.warning("understanding not bound: {}", exc)
@@ -213,6 +305,87 @@ class VisionRuntime:
         if bind_perception:
             detection, tracking = self._build_perception(platform, registry_layer, bound_detector)
 
+        # ── Flow 7: publish what M7 holds ───────────────────────────────────
+        #
+        # Never composed before this phase. Attributes reached M7 and stopped
+        # there: `synthesis.built = 0`, `state.appended = 0`, and the Observation
+        # API served nothing — a system that had done all the expensive work and
+        # could not show any of it.
+        #
+        # `attach=True` wires the runtime to the registry's own declared sink, so
+        # a registry result becomes an observation without passing through
+        # understanding. That is the platform's dotted edge, not a new path.
+        synthesis = None
+        try:
+            synthesis = build_synthesis_layer(
+                platform,
+                registry_layer,
+                # The canonical instance again. A second registry here would put
+                # attributes the schema considers illegal into the permanent
+                # record — the one place they can never be taken back out.
+                attributes=attributes,
+                attach=True,
+            )
+        except Exception as exc:  # noqa: BLE001 - reported, never fatal
+            logger.error(
+                "synthesis not bound: {}: {}. Attributes will reach M7 and no "
+                "observation will be published.",
+                type(exc).__name__,
+                exc,
+            )
+
+        # ── The second synthesis seam: M9 results → attribute observations ──
+        #
+        # `attach=True` above wires only the *registry* seam, which carries
+        # presence and spatial facts. Attribute facts arrive on a different
+        # seam, `attach_understanding`, and it had never been called — so
+        # Phase 7 measured 180 attributes written to M7, `synthesis.built`
+        # counting presence and spatial only, and
+        # `synthesis.attributes_published = 0`. Every confirmed person the
+        # Observation API returned carried `attrs = 0`, because state is
+        # projected from observations (07_STATE §1.1 makes the observation the
+        # only write path) and no attribute observation was ever published.
+        #
+        # This does not make a second copy of the attribute and does not
+        # change what M7 holds: the platform's own helper *chains* onto the
+        # existing sink, so `RegistryWriteBackSink` still writes to M7 exactly
+        # as before and synthesis additionally publishes the observation that
+        # carries the fact into Vision State.
+        if synthesis is not None and understanding is not None:
+            try:
+                from vision_os.synthesis_bootstrap import attach_understanding
+
+                attach_understanding(understanding, synthesis.runtime)
+            except Exception as exc:  # noqa: BLE001 - reported, never fatal
+                logger.error(
+                    "understanding not attached to synthesis: {}: {}. PPE "
+                    "attributes will reach M7 and never appear on an object.",
+                    type(exc).__name__,
+                    exc,
+                )
+
+        # ── Flow 8: expose what Vision State holds ──────────────────────────
+        #
+        # Also never composed. `VisionComposition.api` has been `None` since
+        # Phase 1, so the platform's own `ObservationApi` — with its authorizer,
+        # scoping and audit trail already built — was unreachable, and DevTools
+        # served a fixture instead of the live camera.
+        #
+        # The state manager is the API's **only** window onto the platform,
+        # which is what makes the L6/L7 split real rather than nominal. Passing
+        # `synthesis.state` here is the whole wiring.
+        exposure = None
+        if synthesis is not None:
+            try:
+                exposure = build_exposure_layer(platform, synthesis.state)
+            except Exception as exc:  # noqa: BLE001 - reported, never fatal
+                logger.error(
+                    "exposure not bound: {}: {}. Vision State will hold "
+                    "observations that no API can serve.",
+                    type(exc).__name__,
+                    exc,
+                )
+
         # Fails assembly rather than degrading. A composition with two registries
         # runs perfectly and is silently wrong, which is the worst failure mode
         # available to it.
@@ -220,7 +393,7 @@ class VisionRuntime:
 
         return VisionComposition(
             system=None,
-            api=None,
+            api=exposure.api if exposure is not None else None,
             platform=platform,
             attributes=attributes,
             registry_layer=registry_layer,
@@ -229,6 +402,8 @@ class VisionRuntime:
             detection=detection,
             tracking=tracking,
             policies=policies,
+            synthesis=synthesis,
+            exposure=exposure,
             understanding_composition=composition,
         )
 
@@ -241,18 +416,29 @@ class VisionRuntime:
         platform; wiring them is composition, and reimplementing either would be
         a second pipeline.
         """
-        from vision_os.detection_bootstrap import build_detection_layer
-        from vision_os.tracking_bootstrap import build_tracking_layer
-
-        tracking = build_tracking_layer(platform, tracking_sink=None)
-
         # The model manager fetches weights through an ArtifactStorePort. The
         # provider already resolved where they are; this puts them somewhere the
         # manager can fetch from, which is the store's whole job.
         from vision_os.adapters.models import InMemoryArtifactStore
+        from vision_os.detection_bootstrap import build_detection_layer
+        from vision_os.tracking_bootstrap import build_tracking_layer
 
         artifacts = InMemoryArtifactStore()
         artifacts.put(_ARTIFACT_URI, _artifact_bytes(bound))
+
+        # Tracking first: detection needs it as its declared consumer.
+        #
+        # Tracking → registry goes through an adapter rather than by assigning a
+        # private attribute. `TrackingRuntime` calls its sink as `sink(outcome)`;
+        # `RegistryRuntime` exposes `await on_tracked(camera_id, update)`. The
+        # two do not match, and because tracking guards its sink (invariant V9)
+        # the mismatch was counted as `sink_failures` and never surfaced —
+        # detection and tracking ran while registry, cropping, understanding,
+        # synthesis and state all stayed at zero. `TrackingToRegistryBridge`
+        # translates the shape and counts what crosses.
+        bridge = TrackingToRegistryBridge(registry_layer.runtime)
+        tracking = build_tracking_layer(platform, tracking_sink=bridge)
+        self._bridge = bridge
 
         detection = build_detection_layer(
             platform,
@@ -261,19 +447,28 @@ class VisionRuntime:
             detection_consumer=tracking.runtime,
         )
 
-        # Tracking → registry. The registry runtime is the declared consumer;
-        # attaching it here is the Flow 3/4 seam and nothing more.
-        tracking.runtime._sink = registry_layer.runtime  # noqa: SLF001
         return detection, tracking
 
     def _build_platform(self, bindings_factory: Any, *, document: Any = None) -> Any:
         from vision_os.adapters.configuration import InMemoryConfigSource
         from vision_os.bootstrap import build_platform
         from vision_os.conformance import platform_registry
-        from vision_os.kernel.clock import VirtualClock
+        from vision_os.kernel.clock import SystemClock, VirtualClock
         from vision_os.kernel.config import ConfigLayer
 
         document = document if document is not None else self._config_document()
+
+        # A virtual clock does not advance on its own. Under one, the detection
+        # scheduler's inference budget expires the instant it is set, every frame
+        # fails `timeout`, and — because detection publishes a *transient*
+        # failure rather than raising — the pipeline reports itself healthy while
+        # observing nothing. That is invariant V8's exact failure mode, and it is
+        # why the clock is a named deployment decision.
+        deterministic = self._settings.vision_deterministic_clock
+        document["platform"] = {
+            **document.get("platform", {}),
+            "clock_mode": "virtual" if deterministic else "system",
+        }
 
         def _no_sources(camera):
             raise ConfigurationInvalidError(
@@ -284,8 +479,35 @@ class VisionRuntime:
         return build_platform(
             config_sources={ConfigLayer.SITE: InMemoryConfigSource(document)},
             bindings_factory=bindings_factory or _no_sources,
-            clock=VirtualClock(),
+            clock=VirtualClock() if deterministic else SystemClock(),
             conformance=platform_registry(),
+            allocator=self._frame_pool(document),
+        )
+
+    def _frame_pool(self, document: dict[str, Any]) -> Any:
+        """A frame pool sized for the cameras this deployment actually feeds.
+
+        The platform's own default multiplies `slots_per_camera` by
+        `len(cameras)`, and this application declares no cameras on purpose
+        (see `_config_document`) — so the default arrives sized for one camera
+        however many are running. Four live cameras against that pool
+        exhausted it on essentially every frame: `PoolExhaustedError` on
+        publish, nothing reaching detection, and sessions still reporting
+        `running` because a publish failure is recorded rather than raised.
+
+        Sized here instead, from the fan-in the deployment states and the
+        history window the document asks the buffer to hold.
+        """
+        from vision_os.adapters.memory import HostMemoryPool
+
+        buffer = document.get("buffer", {})
+        cameras = max(1, int(self._settings.vision_analysis_cameras))
+        slots = max(1, int(buffer.get("slots_per_camera", 8))) * cameras
+        # The same 1.5 headroom the platform's own default applies, for frames
+        # pinned by a reader while the next one arrives.
+        slots = int(slots * 1.5)
+        return HostMemoryPool(
+            slots=slots, bytes_per_slot=int(buffer.get("bytes_per_slot", 1920 * 1080 * 3))
         )
 
     def _object_store(self) -> Any:
@@ -302,7 +524,9 @@ class VisionRuntime:
         wildcard meaning anywhere in the platform.
         """
         return {
-            "platform": {"deployment_profile": "embedded", "clock_mode": "virtual"},
+            # `clock_mode` is overwritten by `_build_platform` from settings;
+            # stated here so the document is valid on its own.
+            "platform": {"deployment_profile": "embedded", "clock_mode": "system"},
             "buffer": {
                 "slots_per_camera": 8,
                 "bytes_per_slot": 1920 * 1080 * 3,
@@ -352,6 +576,21 @@ class VisionRuntime:
             # ── Understanding (M9) ──────────────────────────────────────────
             "understanding": {
                 "enabled": True,
+            },
+            # ── Exposure (M14) ──────────────────────────────────────────────
+            #
+            # Enabled so Vision State has a reader. `authz.tenant_reads` rather
+            # than the shipped `authz.deny_all` default: this application has
+            # already authenticated the caller and resolved their tenant and
+            # camera scope at the HTTP edge, and the platform's authorizer is
+            # the second gate that confines the query to that tenant.
+            #
+            # Not `authz.static`, which would hand every caller one fixed grant
+            # — that is right for the DevTools fixture and wrong for a live
+            # multi-tenant API.
+            "api": {
+                "enabled": True,
+                "authorizer": "authz.tenant_reads",
             },
             # ── Synthesis + State, so observations reach the API ────────────
             "synthesis": {"enabled": True, "suppression_policy": "suppression.exact"},

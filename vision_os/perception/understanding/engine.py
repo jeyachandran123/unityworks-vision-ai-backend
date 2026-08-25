@@ -43,6 +43,8 @@ says so — never a plausible default.
 
 from __future__ import annotations
 
+import threading
+
 import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -127,6 +129,7 @@ class UnderstandingEngine:
 
     __slots__ = (
         "_breakers",
+        "_guard",
         "_cache",
         "_clock",
         "_coercion",
@@ -179,6 +182,16 @@ class UnderstandingEngine:
         self._semaphores: dict[str, object] = {}
         self._requests = 0
         self._failures = 0
+        # Guards this engine's own bookkeeping when `understand_batch` runs
+        # requests concurrently: the two counters below, the lazily-created
+        # breaker and semaphore maps, and the rejection window.
+        #
+        # Deliberately NOT held across a model call. The semaphore, the cache,
+        # the metrics engine and the event bus each carry their own lock, so the
+        # only unsynchronised state left is this object's, and holding a lock
+        # over the network would serialise exactly what the concurrency exists
+        # to overlap.
+        self._guard = threading.Lock()
         self._rejection_window: list[bool] = []
 
     # --- public API: understand ---------------------------------------------- #
@@ -192,12 +205,14 @@ class UnderstandingEngine:
         unparseable output — comes back as a result whose ``outcome`` names it and
         whose ``decision_path`` shows how the engine got there.
         """
-        self._requests += 1
+        with self._guard:
+            self._requests += 1
         attempt = _Attempt(records=[], started_ns=self._clock.monotonic().ns)
         try:
             return self._understand(request, crops, attempt)
         except Exception as exc:  # noqa: BLE001 - the engine is a firewall
-            self._failures += 1
+            with self._guard:
+                self._failures += 1
             self._metrics.counter(
                 MetricName.UNDERSTANDING_FAILURES,
                 camera_id=str(request.camera_id),
@@ -539,11 +554,67 @@ class UnderstandingEngine:
         """
         pixels = crops or {}
         results: dict[RequestId, UnderstandingResult] = {}
-        for request in requests:
-            results[request.request_id] = self.understand(
-                request, crops=pixels.get(request.request_id, ())
-            )
+        if not requests:
+            return results
+
+        workers = self._batch_workers(requests)
+        if workers <= 1:
+            # The declared budget is one, or there is nothing to overlap.
+            for request in requests:
+                results[request.request_id] = self.understand(
+                    request, crops=pixels.get(request.request_id, ())
+                )
+            return results
+
+        # Bounded, and bounded by the platform's own number. `understand()` is
+        # synchronous and spends nearly all of its time blocked on a model, so
+        # threads are the right primitive — `ModelSemaphore` is already built on
+        # `threading.Condition` for exactly this reason, and it still caps
+        # in-flight work per model underneath this pool.
+        #
+        # Results are keyed by `request_id`, never by position or completion
+        # order. That is what makes an out-of-order completion harmless, and a
+        # test asserts it.
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(
+            max_workers=workers, thread_name_prefix="vos-understand"
+        ) as pool:
+            futures = {
+                pool.submit(
+                    self.understand,
+                    request,
+                    crops=pixels.get(request.request_id, ()),
+                ): request.request_id
+                for request in requests
+            }
+            for future, request_id in futures.items():
+                # `understand()` never raises by contract; the guard is here so
+                # that a violation of that contract degrades one request rather
+                # than losing the whole batch — and every id still appears in
+                # the mapping, which the docstring above promises.
+                try:
+                    results[request_id] = future.result()
+                except Exception as exc:  # noqa: BLE001
+                    results[request_id] = self._failed(
+                        _request_by_id(requests, request_id),
+                        UnderstandingOutcome.UNAVAILABLE,
+                        _Attempt(records=[], started_ns=0),
+                        detail=f"{type(exc).__name__}: {exc}",
+                    )
         return results
+
+    def _batch_workers(self, requests: Sequence[UnderstandingRequest]) -> int:
+        """How many of this batch may be in flight at once.
+
+        Read from the configuration the platform already declares — the same
+        numbers `_semaphore_for` uses. Never more than the batch itself, so a
+        single-request batch spawns no pool at all.
+        """
+        limit = max(
+            1, min(self._config.max_concurrency, self._config.remote_concurrency)
+        )
+        return min(limit, len(requests))
 
     def plan_batches(self, requests: Sequence[UnderstandingRequest]):
         """How these requests would group. Exposed for tests and telemetry.
@@ -838,28 +909,41 @@ class UnderstandingEngine:
         return new_ulid(now_ms=self._clock.now().ns // 1_000_000)
 
     def _breaker_for(self, model_id: ModelId) -> CircuitBreaker:
-        breaker = self._breakers.get(model_id)
+        with self._guard:
+            breaker = self._breakers.get(model_id)
         if breaker is None:
             breaker = CircuitBreaker(
                 model_id=model_id,
                 threshold=self._config.circuit_breaker_threshold,
                 cooldown_ns=self._config.circuit_breaker_cooldown_ms * 1_000_000,
             )
-            self._breakers[model_id] = breaker
+            with self._guard:
+                # Re-check under the lock: two threads may have raced here, and
+                # the loser must adopt the winner's breaker rather than install
+                # a second one — two breakers for one model means neither sees
+                # the real failure rate.
+                breaker = self._breakers.setdefault(model_id, breaker)
         return breaker
 
     def _semaphore_for(self, bound: BoundUnderstander):
         from .cache import ModelSemaphore
 
-        semaphore = self._semaphores.get(bound.adapter_id)
+        with self._guard:
+            semaphore = self._semaphores.get(bound.adapter_id)
         if semaphore is None:
             limit = (
                 self._config.remote_concurrency
                 if bound.capabilities.is_remote
                 else self._config.max_concurrency
             )
-            semaphore = ModelSemaphore(max(1, limit))
-            self._semaphores[bound.adapter_id] = semaphore
+            with self._guard:
+                # `setdefault`, not assignment. A racing thread that installed
+                # its own semaphore first must win, or the two would each admit
+                # `limit` callers and the configured bound would silently
+                # double — the unbounded concurrency this design forbids.
+                semaphore = self._semaphores.setdefault(
+                    bound.adapter_id, ModelSemaphore(max(1, limit))
+                )
         return semaphore
 
     # --- alarms ------------------------------------------------------------------ #
@@ -873,15 +957,20 @@ class UnderstandingEngine:
         hold, and that is a deploy-time problem showing up at inference time.
         """
         window = self._config.schema_drift_window
-        self._rejection_window.append(bool(validation.ceiling_violations))
-        if len(self._rejection_window) > window:
-            del self._rejection_window[:-window]
-        if len(self._rejection_window) < window:
+        with self._guard:
+            self._rejection_window.append(bool(validation.ceiling_violations))
+            if len(self._rejection_window) > window:
+                del self._rejection_window[:-window]
+            short = len(self._rejection_window) < window
+        if short:
             return
-        rate = sum(self._rejection_window) / len(self._rejection_window)
+        with self._guard:
+            sample = list(self._rejection_window)
+        rate = sum(sample) / len(sample) if sample else 0.0
         if rate < self._config.schema_drift_threshold:
             return
-        self._rejection_window.clear()
+        with self._guard:
+            self._rejection_window.clear()
         self._events.publish(
             SchemaDriftSuspected(
                 occurred_at=self._clock.now(),
@@ -998,3 +1087,12 @@ def blob_ref(payload: bytes) -> BlobRef:
     persisting the bytes is M13's job through P22.
     """
     return BlobRef("sha256:" + hashlib.sha256(payload).hexdigest())
+
+
+def _request_by_id(requests, request_id):
+    """The request a future belonged to. Identity is never inferred by order."""
+    for request in requests:
+        if request.request_id == request_id:
+            return request
+    return requests[0]
+

@@ -30,6 +30,7 @@ from loguru import logger
 from app.configuration.settings import Settings
 from app.errors import ConfigurationInvalidError, NotFoundError
 from app.vision.frames import LiveFrame
+from app.vision.ledger import FrameLedger
 from app.vision.secrets import EnvironmentSecretProvider, SecretProvider
 from app.vision.session import SessionSpec, VisionSession, session_for
 from app.vision.sources.base import FrameSource, SourceKind
@@ -69,13 +70,46 @@ class LiveRuntime:
         on_frame=None,
     ) -> None:
         self._settings = settings
-        self._secrets = secrets or EnvironmentSecretProvider()
+        # The deployment's configured secrets, layered over the process
+        # environment — not a bare `EnvironmentSecretProvider()`.
+        #
+        # pydantic-settings loads `.env` onto the Settings object and never into
+        # `os.environ`, so a bare provider cannot see a password that is sitting
+        # correctly in the deployment's configuration. Phase 6B.1 fixed exactly
+        # this for the camera wall; this is the same trap in the *other*
+        # composition root, and it kept every Vision OS session at
+        # `RtspAuthenticationError: environment variable 'CCTV_PASSWORD' is
+        # unset or empty` while the wall — same host, same DVR, same
+        # credential — streamed all four cameras happily.
+        self._secrets = secrets or EnvironmentSecretProvider(settings.secret_environment())
         self._sessions: dict[str, VisionSession] = {}
+        #: One ledger for the process, shared by every session. Shared rather
+        #: than per-session because Frame-by-Frame is a view across cameras, and
+        #: a ledger per session would mean stitching them back together in the
+        #: API — with no single place that knows the whole timeline.
+        self.ledger = FrameLedger()
         self._lock = asyncio.Lock()
         #: Set by the composition root so a frame reaches Vision OS. Absent, the
-        #: runtime still proves source, session and backpressure behaviour —
-        #: which is what the development path exercises today.
+        #: runtime still proves source, session and backpressure behaviour, and
+        #: the frame ledger reports `counts_reported=false` — which is how a
+        #: deployment with no perception stack says so rather than looking like
+        #: one where every frame saw nothing.
         self._on_frame = on_frame
+
+    def bind_ingest(self, on_frame) -> None:
+        """Attach the Vision OS seam. Called once, by the lifespan.
+
+        Sessions read `self._on_frame` when they start, so binding before any
+        camera starts is what makes every session go through the platform.
+        Rebinding while sessions are running would leave the already-started ones
+        on the old callback, which is why this is a start-up call and not a
+        setter anyone may reach for.
+        """
+        self._on_frame = on_frame
+
+    @property
+    def ingest_bound(self) -> bool:
+        return self._on_frame is not None
 
     # ── inspection ───────────────────────────────────────────────────────────
 
@@ -268,7 +302,7 @@ class LiveRuntime:
                     )
 
             handler = self._handler_for(spec)
-            session = session_for(source, spec, handler=handler)
+            session = session_for(source, spec, handler=handler, ledger=self.ledger)
             self._sessions[session.session_id] = session
 
         await session.start()

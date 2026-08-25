@@ -65,6 +65,131 @@ async def vision_diagnostics(request: Request) -> dict[str, Any]:
     return payload
 
 
+@router.get("/observations", dependencies=[_REQUIRE_DEVTOOLS])
+async def real_observations(request: Request, access: CurrentAccess) -> dict[str, Any]:
+    """Vision State for the **real** running platform, not the fixture.
+
+    `/state` answers from `build_fixture_session` and always has — it says
+    `"kind": "fixture"` and is honest about it. But the exposure layer built
+    over the live synthesis state has had no route at all, so the observations
+    the platform actually produced from real cameras could not be read from
+    outside the process.
+
+    Scope is the caller's own cameras, exactly as `/state` does it, and
+    `_render` is shared with it so `not_visible` survives to the wire here for
+    the same reason it does there.
+
+    **`StateFilter` is left at its default.** Phase 6A.4 traced an empty result
+    to that default excluding `PROVISIONAL` objects and widening it was
+    explicitly rejected then: an object the registry has not confirmed is not
+    something a compliance decision may rest on, and showing it here to make a
+    screen look populated would be the same mistake in a different place.
+    """
+    vision = vision_of(request)
+    exposure = getattr(getattr(vision, "composition", None), "exposure", None)
+    if exposure is None:
+        return {
+            "kind": "real",
+            "available": False,
+            "reason": "no exposure layer; Vision OS is not assembled",
+            "objects": [],
+        }
+
+    from vision_os.core.model.api import Scope
+    from vision_os.core.model.ids import CameraId, TenantId
+
+    cameras = _visible_cameras(access)
+    if cameras is None:
+        live = live_of(request)
+        cameras = tuple(
+            s.camera_id for s in live.visible(tenant_id=access.tenant_id, camera_ids=None)
+        )
+
+    scope = Scope(
+        tenant_id=TenantId(access.tenant_id),
+        camera_ids=tuple(CameraId(c) for c in cameras),
+    )
+    result = exposure.api.query_state(_principal(access), scope)
+    objects = [_render(obj) for obj in result.objects]
+    return {
+        "kind": "real",
+        "available": True,
+        "cameras_queried": list(cameras),
+        "complete": bool(getattr(result, "complete", True)),
+        "object_count": len(objects),
+        "objects": objects,
+    }
+
+
+@router.get("/compliance", dependencies=[_REQUIRE_DEVTOOLS])
+async def compliance_state(request: Request) -> dict[str, Any]:
+    """The live compliance verdicts, and the rules that produced them.
+
+    Verdicts are recomputed from current Vision State on each call rather than
+    read from a cache, so what this returns is what the rules say *now*. It does
+    not write: incidents are opened by the driver's own pass, and a read that
+    raised incidents would make every refresh of a dashboard a business event.
+    """
+    driver = getattr(request.app.state, "compliance", None)
+    if driver is None:
+        return {
+            "available": False,
+            "reason": "no compliance engine; rules unloaded or Vision OS unassembled",
+        }
+
+    from app.vision.compliance_driver import _finding_wire
+
+    cameras = await driver.cameras()
+    run, findings = driver.evaluate(driver.snapshot(tuple(cameras)))
+
+    rules = driver.evaluator.rules
+    return {
+        "available": True,
+        "ruleset_version": rules.version,
+        "rules": [
+            {
+                "rule_id": r.rule_id,
+                "version": r.version,
+                "severity": r.severity,
+                "attributes": sorted(r.attributes),
+            }
+            for r in rules.rules
+        ],
+        "summary": run.to_wire(),
+        "last_applied_pass": driver.last_pass.to_wire(),
+        "findings": [_finding_wire(f) for f in findings],
+    }
+
+
+@router.get("/metrics", dependencies=[_REQUIRE_DEVTOOLS])
+async def platform_metrics(request: Request) -> dict[str, Any]:
+    """The **real** platform's own counters, gauges and histograms.
+
+    Every other diagnostic here is either a fixture (`/state`,
+    `/capabilities`) or describes the acquisition side (`/live`). None of them
+    can answer the question an engineer actually has about a running kitchen:
+    *did a person get detected, was a model asked about them, did the answer
+    come back, and was it written to the object?*
+
+    `metrics_view` and `health_view` were built in Phase 6 to answer exactly
+    that and were never given a route, so the numbers existed in the process
+    and could not be read from outside it. This is that route, and it declares
+    no metric names of its own — the vocabulary is the platform's.
+    """
+    from app.vision.taps import health_view, metrics_view
+
+    vision = vision_of(request)
+    platform = getattr(getattr(vision, "composition", None), "platform", None)
+    if platform is None:
+        return {"assembled": False, "reason": vision.status().to_wire().get("reason", "")}
+
+    return {
+        "assembled": True,
+        "metrics": metrics_view(platform),
+        "health": health_view(platform),
+    }
+
+
 @router.get("/sessions", dependencies=[_REQUIRE_DEVTOOLS])
 async def sessions(request: Request, access: CurrentAccess) -> dict[str, Any]:
     """Sessions available to inspect — **real ones first**.

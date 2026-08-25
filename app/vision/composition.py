@@ -51,6 +51,14 @@ class VisionComposition:
     detection: Any = None
     tracking: Any = None
     policies: tuple[Any, ...] = ()
+    #: Flow 7: the observation builder, the state manager and the log. Without
+    #: it M7 holds attributes that no consumer can read — `synthesis.built` and
+    #: `state.appended` stay at zero and the Observation API has nothing to
+    #: serve, which is indistinguishable from a camera that saw nothing.
+    synthesis: Any = None
+    #: Flow 8: the ObservationApi, its authorizer, hub and audit trail. `None`
+    #: means Vision State holds observations that no consumer can reach.
+    exposure: Any = None
     #: Flow 5/6 and the M9 → M7 sink, when a provider was configured.
     understanding_composition: Any = None
 

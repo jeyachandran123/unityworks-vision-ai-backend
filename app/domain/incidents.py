@@ -86,7 +86,15 @@ class IncidentService:
             # Still happening. Move the clock, keep the original snapshot — the
             # incident is about when it *started*, and re-freezing it would erase
             # that.
-            existing.observed_at = max(existing.observed_at, observed_at)
+            #
+            # Both sides are normalised to aware UTC first. The column is
+            # `DateTime(timezone=True)`, which Postgres round-trips with its
+            # offset intact and SQLite returns naive — so comparing a stored
+            # value against a freshly built one raised `can't compare
+            # offset-naive and offset-aware datetimes` on the repeat-finding
+            # path, and only on the repeat, which is the path a continuous
+            # violation takes every single time after the first.
+            existing.observed_at = max(_aware(existing.observed_at), _aware(observed_at))
             if evidence_refs:
                 existing.evidence_refs = _merge_refs(existing.evidence_refs, evidence_refs)
             return existing, False
@@ -263,6 +271,16 @@ class IncidentService:
             )
         )
         return result.scalars().first()
+
+
+def _aware(value: datetime) -> datetime:
+    """A timezone-aware view of a stored timestamp.
+
+    Naive values are read as UTC, which is what every writer here stores.
+    Assuming local time instead would silently shift an incident's clock by the
+    server's offset.
+    """
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
 def _merge_refs(existing: str, incoming: tuple[str, ...]) -> str:

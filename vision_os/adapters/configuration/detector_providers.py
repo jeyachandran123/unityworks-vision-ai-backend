@@ -81,8 +81,16 @@ def resolve_detector_provider(env: Mapping[str, str] | None = None) -> str:
 
 
 def default_weights_path() -> Path:
-    """``backend/models/yolov8n.onnx``, relative to this package."""
-    return Path(__file__).resolve().parents[4] / DEFAULT_WEIGHTS
+    """``<repository root>/models/yolov8n.onnx``, relative to this package.
+
+    Four levels up (``configuration`` → ``adapters`` → ``vision_os`` →
+    repository root) lands on the repository that vendors this package, which
+    is where the weights are shipped. It was five, which pointed one directory
+    *above* the repository and therefore at nothing — so Vision OS refused to
+    assemble on a checkout that had the weights all along, and the detector
+    binding tests, which skip when this path is absent, had never run.
+    """
+    return Path(__file__).resolve().parents[3] / DEFAULT_WEIGHTS
 
 
 def _setting(env: Mapping[str, str], name: str, default: str = "") -> str:

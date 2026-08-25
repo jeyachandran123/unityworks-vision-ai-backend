@@ -279,7 +279,24 @@ def _open_with_pyav(uri: str):
                 # partial UDP frames become decode errors that look like a broken
                 # camera.
                 "rtsp_transport": "tcp",
-                "stimeout": "10000000",  # 10 s, microseconds
+                # Socket read timeout, in microseconds. **Both spellings are
+                # passed on purpose.**
+                #
+                # FFmpeg renamed this option: the RTSP demuxer took `stimeout`
+                # until it was replaced by `timeout`. On libavformat 62 (the
+                # version in this environment) `stimeout` is silently ignored —
+                # measured directly against a socket that accepts and then goes
+                # quiet, which is exactly how this DVR abandons a connection:
+                #
+                #     stimeout  ->  still blocked after 60 s
+                #     timeout   ->  aborted after 3.2 s, as configured
+                #
+                # That is what left camera 14 dark for 38 minutes with zero
+                # reconnect attempts: the read never returned, so the retry loop
+                # around it never ran. An unrecognised option is harmless, so
+                # both are sent and whichever the linked FFmpeg understands wins.
+                "timeout": "10000000",  # 10 s
+                "stimeout": "10000000",  # 10 s, pre-rename FFmpeg
                 "max_delay": "500000",
             },
         )
@@ -295,7 +312,17 @@ def _open_with_pyav(uri: str):
 def _iterate(container):
     """Decode frames to BGR24 with their presentation timestamps."""
     stream = container.streams.video[0]
-    stream.thread_type = "AUTO"
+    # `thread_type = "AUTO"` lets FFmpeg pick its own internal decode-thread
+    # count per container — unbounded by this code, and sized as if this
+    # container were the only decoder in the process. Phase 6B.3 gives every
+    # camera its own OS thread, so sixteen containers now run genuinely
+    # concurrently instead of one at a time; sixteen "AUTO" containers on a
+    # 12-core host multiplied out to 369 total threads and made the server
+    # unresponsive — worse than the single-thread starvation it replaced.
+    # Parallelism now comes from the sixteen camera threads themselves, so
+    # each container decodes on a single internal thread.
+    stream.thread_type = "NONE"
+    stream.codec_context.thread_count = 1
     time_base = float(stream.time_base or 0) or 1 / 25
     base_ns = time.time_ns()
 

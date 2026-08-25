@@ -45,6 +45,7 @@ from app.vision.frames import (
     LiveFrame,
     LiveFrameQueue,
 )
+from app.vision.ledger import FrameLedger, frame_ref_for
 from app.vision.sources.base import CameraHealth, FrameSource, SourceKind, SourceState
 
 #: Called for each admitted frame. Returns nothing; failures are logged and the
@@ -121,6 +122,7 @@ class VisionSession:
         source: FrameSource,
         *,
         handler: FrameHandler | None = None,
+        ledger: FrameLedger | None = None,
     ) -> None:
         if source.camera_id != spec.camera_id:
             # Camera identity comes from configuration and must agree end to end.
@@ -132,6 +134,10 @@ class VisionSession:
         self.spec = spec
         self.source = source
         self._handler = handler
+        # Observation only. The ledger never gates, delays or alters a frame —
+        # it records that one existed. There is still exactly one processing
+        # boundary, and this is not a second one.
+        self._ledger = ledger
         self._queue = LiveFrameQueue(spec.queue_capacity)
         self._sampler = FrameSampler(spec.analysis_fps)
         self._state = SessionState.CREATED
@@ -266,6 +272,21 @@ class VisionSession:
 
     # ── the loop ─────────────────────────────────────────────────────────────
 
+    def _note_frame(self, frame: LiveFrame, elapsed_ms: float, *, error: str = "") -> None:
+        """Mark a frame processed. Timing only — never a count.
+
+        Counts belong to whatever actually ran the perception path, and it
+        annotates them itself. Writing zeroes here would make every frame in an
+        uninstrumented deployment look like a frame that genuinely saw nothing.
+        """
+        if self._ledger is None:
+            return
+        self._ledger.annotate(
+            frame_ref_for(self.camera_id, frame.epoch, frame.sequence),
+            processing_ms=elapsed_ms,
+            error=error or None,
+        )
+
     async def _produce(self) -> None:
         """Drain the source into the bounded queue, sampling on the way in."""
         try:
@@ -313,6 +334,22 @@ class VisionSession:
                     self._stats.frames_dropped += 1
                     continue
 
+                # Recorded *before* the handler runs, so a frame that crashes
+                # the pipeline still appears in the timeline. A frame missing
+                # from the ledger would look like one the source never emitted,
+                # which is the opposite of what happened.
+                if self._ledger is not None:
+                    self._ledger.record(
+                        camera_id=self.camera_id,
+                        sequence=frame.sequence,
+                        epoch=frame.epoch,
+                        captured_at_ns=frame.captured_at_ns,
+                        received_at_ns=frame.received_at_ns,
+                        width=getattr(frame, "width", 0),
+                        height=getattr(frame, "height", 0),
+                        source_kind=self.kind.value,
+                    )
+
                 started = time.perf_counter()
                 try:
                     if self._handler is not None:
@@ -328,9 +365,15 @@ class VisionSession:
                         type(exc).__name__,
                         exc,
                     )
+                    self._note_frame(
+                        frame,
+                        (time.perf_counter() - started) * 1000,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
                     continue
 
                 elapsed_ms = (time.perf_counter() - started) * 1000
+                self._note_frame(frame, elapsed_ms)
                 self._stats.frames_processed += 1
                 self._stats.total_processing_ms += elapsed_ms
                 self._stats.last_frame_at_ns = frame.captured_at_ns

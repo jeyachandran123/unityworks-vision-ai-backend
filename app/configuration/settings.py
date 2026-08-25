@@ -38,7 +38,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -116,9 +116,85 @@ class Settings(BaseSettings):
     vision_semantic_policy: str = ""
     vision_verification_rules: str = ""
     compliance_rules: str = ""
+    #: How often the compliance pass reads Vision State and moves the incident
+    #: queue. A timer rather than a subscription keeps a slow database off the
+    #: platform's publish path; the cost is latency bounded by this interval.
+    compliance_interval_s: float = 5.0
     #: Boot the platform at application startup. Off in Phase 1: no source
     #: adapter is bound yet, so a running platform would have nothing to read.
+    #: Open a live viewing stream per enabled camera at start-up.
+    #:
+    #: On by default, unlike the Vision OS flags: a monitoring wall is what an
+    #: operator expects a CCTV product to do, and it costs a decode per camera
+    #: rather than a model call per person.
+    feature_camera_wall: bool = True
     vision_autostart: bool = False
+    #: Bind detection and tracking at start-up.
+    #:
+    #: Off by default because binding loads detector weights and warms a device,
+    #: which a deployment that only wants the observation API should not pay for.
+    #: With it off the platform still registers, crops, understands and serves —
+    #: what stops is finding things in pixels, and `/devtools/architecture`
+    #: reports the layer as unbound rather than letting it look absent.
+    vision_bind_perception: bool = False
+    #: How many cameras this deployment will actually feed into the platform.
+    #:
+    #: The platform sizes its frame pool as
+    #: ``slots_per_camera × len(cameras) × jitter_factor``, and this
+    #: application deliberately declares **no** cameras in the platform
+    #: configuration document — they are a domain entity, and listing them
+    #: there would start a second acquisition path for cameras the app is
+    #: already feeding. The cost of that honesty is that `len(cameras)` is 0,
+    #: `max(1, 0)` is 1, and the pool comes out sized for a single camera no
+    #: matter how many are running.
+    #:
+    #: Four live cameras against a one-camera pool exhausted it continuously:
+    #: every frame failed to publish with `PoolExhaustedError`, so nothing
+    #: reached detection at all while the sessions reported themselves healthy.
+    #: This states the fan-in explicitly rather than inferring it from a list
+    #: that is empty on purpose.
+    vision_analysis_cameras: int = 1
+    #: Run the platform on a virtual clock.
+    #:
+    #: **Off.** A virtual clock does not advance unless a test advances it, so
+    #: every duration the platform measures against it — inference timeouts,
+    #: lease deadlines, attribute validity windows, staleness — stops meaning
+    #: elapsed time. Determinism is worth having in a replay-verification run and
+    #: is wrong everywhere else, so it is named rather than inherited.
+    vision_deterministic_clock: bool = False
+    #: How old an attribute may be before the platform pays to re-ask.
+    #:
+    #: **The cost lever.** It is what makes `FRESH_ENOUGH` fire, and
+    #: `FRESH_ENOUGH` is the largest saving in a working deployment. Too short
+    #: spends money re-asking about things that have not changed; too long
+    #: reports stale claims as current. 60 s is a starting point for kitchen
+    #: PPE, where a hairnet does not come off between one minute and the next.
+    vision_demand_freshness_ms: int = 60_000
+    #: Which understander the platform should bind.
+    #:
+    #: Empty lets the platform read its own `VISION_UNDERSTANDER_PROVIDER` from
+    #: the process environment. That is the trap this field exists to close:
+    #: pydantic-settings loads `.env` into *this object*, not into `os.environ`,
+    #: so a deployment whose `.env` named a real provider silently bound the
+    #: static fallback instead — and the only symptom was every model result
+    #: arriving as a failed outcome.
+    vision_understander_provider: str = ""
+    #: The understanding provider's credential.
+    #:
+    #: A `SecretStr`, so it cannot be printed by accident, and it is handed to
+    #: the platform's provider registry as a composition default rather than
+    #: exported to `os.environ` — a process-wide variable is readable by every
+    #: library in the process, including the ones that log their configuration.
+    #: Empty means the platform reads its own environment, which is the correct
+    #: behaviour for a deployment that manages the key elsewhere.
+    #: Read from `VISION_NVIDIA_API_KEY` as well, because that is the name the
+    #: platform's own provider registry uses and the name deployments already
+    #: have in their `.env`. Aliasing beats asking every deployment to rename a
+    #: working variable.
+    vision_understander_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices("VISION_UNDERSTANDER_API_KEY", "VISION_NVIDIA_API_KEY"),
+    )
 
     # ── CCTV / live runtime ──────────────────────────────────────────────────
     #
@@ -135,6 +211,15 @@ class Settings(BaseSettings):
     #: A REFERENCE, resolved through the secret provider — never a password.
     #: `env:CCTV_PASSWORD`, `file:/run/secrets/dvr`, `literal:…` (development).
     cctv_credential_ref: str = ""
+    #: The DVR password itself, when the deployment keeps it in configuration.
+    #:
+    #: `cctv_credential_ref` names *where* the secret is; this is the value for
+    #: the common case where "where" is this application's own `.env`.
+    #: pydantic-settings loads `.env` into this object and **not** into
+    #: `os.environ`, so a provider reading `os.environ` cannot see it — which is
+    #: exactly how sixteen cameras sat at CONNECTING with a correct password on
+    #: disk. `secret_environment()` closes that gap.
+    cctv_password: SecretStr = SecretStr("")
     #: Independent of the camera's own frame rate: a 25 fps stream must not
     #: become 25 fps of detection and VLM work.
     cctv_analysis_fps: float = 4.0
@@ -157,6 +242,20 @@ class Settings(BaseSettings):
     # a laptop, and that is precisely the behaviour this backend must not carry.
     serve_frames: bool = False
     allow_evidence: bool = False
+    #: Capture a frame as durable evidence when a violation opens an incident.
+    #:
+    #: Separate from `allow_evidence`, which governs whether stored imagery may
+    #: be **served**. Writing and reading are different authorisations: a
+    #: deployment may want a durable record with retrieval still closed, and
+    #: turning one on must never silently turn on the other. Off by default —
+    #: storing images of identifiable people is a deployment decision, never
+    #: an inherited one.
+    evidence_capture: bool = False
+    #: Where a new incident is announced: `log`, `file`, `null`, or `off`.
+    #: Deliberately small — a new destination is a new adapter behind the same
+    #: port, not a new setting shape.
+    notification_channel: str = "log"
+    notification_file_path: str = "./var/notifications.jsonl"
     evidence_store: Literal["memory", "local"] = "memory"
     evidence_path: str = "./data/evidence"
     evidence_retention_days: int = 30
@@ -230,6 +329,28 @@ class Settings(BaseSettings):
         return value
 
     # ── Production hardening ─────────────────────────────────────────────────
+
+    def secret_environment(self) -> dict[str, str]:
+        """Process environment, with deployment-configured secrets layered on.
+
+        The secret provider resolves `env:NAME` against a mapping. Passing this
+        instead of `os.environ` means a value in `.env` resolves exactly as one
+        exported by an orchestrator would, and neither is copied into the
+        process environment where every library in the process could read it.
+
+        A real environment variable still wins: an operator supplying a rotated
+        credential for one run must not be overridden by a stale file.
+        """
+        import os
+
+        overlay = dict(os.environ)
+        password = self.cctv_password.get_secret_value()
+        if password and not overlay.get("CCTV_PASSWORD"):
+            overlay["CCTV_PASSWORD"] = password
+        key = self.vision_understander_api_key.get_secret_value()
+        if key and not overlay.get("VISION_NVIDIA_API_KEY"):
+            overlay["VISION_NVIDIA_API_KEY"] = key
+        return overlay
 
     def assert_production_safe(self) -> None:
         """Refuse to serve production traffic with development defaults.
