@@ -217,6 +217,18 @@ class EvidenceRecord(Base):
     #: Why this image was retained. Retention without a purpose is collection.
     purpose: Mapped[str] = mapped_column(String(255), nullable=False, default="")
 
+    #: **Where in this image the subject is.** JSON text: the alert subject's
+    #: normalized box, the other objects cut from the same frame, and the
+    #: handles of the crops taken from it.
+    #:
+    #: Durable rather than derived, and that is the whole point. The boxes live
+    #: in a bounded in-memory ring that holds a couple of minutes of frames; an
+    #: incident is read for days. Recomputing a box later would mean running a
+    #: detector over the stored JPEG and highlighting whoever it found — which
+    #: is *a* person in the picture, not necessarily the one the verdict was
+    #: about. Frozen here at capture, the highlight is the subject or nothing.
+    geometry: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
     state: Mapped[str] = mapped_column(
         String(32), nullable=False, default=EvidenceState.RETAINED.value
     )

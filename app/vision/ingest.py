@@ -136,6 +136,19 @@ class FrameIngest:
             self._note_publish_failure(exc, frame)
             return
 
+        # Keep the frame a decision may later have to be defended with.
+        #
+        # This is the last place the app holds the analysed pixels: the buffer
+        # slot above is leased for extraction and released, a `Crop` keeps only
+        # its own crop, and the camera wall keeps only its newest JPEG. An
+        # incident opened forty seconds later therefore had nothing left to
+        # photograph but the room as it had since become.
+        #
+        # Bounded and cheap: only frames the analysis path actually looked at,
+        # a ring per camera, and the encode runs here on the analysis worker
+        # thread rather than on the API loop.
+        self._remember(frame, frame_ref)
+
         try:
             await detection.runtime.on_admitted(frame_ref, self._fidelity())
             self.audit.frames_admitted += 1
@@ -148,6 +161,35 @@ class FrameIngest:
                 frame.sequence,
                 type(exc).__name__,
                 exc,
+            )
+
+    def _remember(self, frame: LiveFrame, frame_ref: Any) -> None:
+        """Retain the analysed frame for evidence. **Never raises.**
+
+        Evidence is never worth a frame: if encoding or storing fails, the
+        pipeline carries on and the incident falls back to its old behaviour,
+        labelled as such.
+        """
+        try:
+            from app.vision.decision_frames import DECISION_FRAMES, encode_jpeg
+
+            width = int(getattr(frame, "width", 0) or 0)
+            height = int(getattr(frame, "height", 0) or 0)
+            jpeg = encode_jpeg(frame.payload or b"", width, height)
+            if not jpeg:
+                return
+            DECISION_FRAMES.remember(
+                camera_id=str(frame.camera_id),
+                frame_ref=str(frame_ref),
+                captured_at_ns=int(frame.captured_at_ns),
+                width=width,
+                height=height,
+                jpeg=jpeg,
+            )
+        except Exception as exc:  # noqa: BLE001 - diagnostic, never fatal
+            logger.debug(
+                "decision frame not retained for {} {}: {}: {}",
+                frame.camera_id, frame.sequence, type(exc).__name__, exc,
             )
 
     # -- publishing -----------------------------------------------------------

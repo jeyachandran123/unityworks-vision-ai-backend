@@ -391,6 +391,15 @@ class VisionRuntime:
         # available to it.
         assert_shared_attribute_registry(registry_layer, understanding, attributes)
 
+        # ── Which object was cut out of which frame ─────────────────────────
+        #
+        # The frame itself is retained at ingest; this records what was taken
+        # from it, so an incident can be joined back to the exact frame *and*
+        # the exact box within it rather than to a later photograph of the
+        # room. Chained onto the Crop Manager's declared sink exactly as
+        # `attach_understanding` chains onto it — this adds no path.
+        _attach_decision_subjects(composition.cropping if composition else None)
+
         return VisionComposition(
             system=None,
             api=exposure.api if exposure is not None else None,
@@ -619,6 +628,97 @@ class VisionRuntime:
 #: Where the detector's weights are published for the model manager to fetch.
 #: One name, used by both the declaration and the store, so they cannot disagree.
 _ARTIFACT_URI = "mem://detector.bin"
+
+
+def _attach_decision_subjects(cropping: Any) -> None:
+    """Record each crop against the frame it came from. **Never fatal.**
+
+    The Crop Manager's sink is `(EvaluationResult, crops)` and is already
+    chained by `attach_understanding_to_cropping`; this chains ahead of
+    whatever is there, so understanding still receives every crop unchanged.
+
+    A `Crop` carries `source_frame`, `source_box`, `object_id` and its own
+    pixels — everything needed to say *this object, this box, this frame* — and
+    all of it is thrown away once the model has answered. Keeping it here is
+    what lets an incident opened a minute later show the person it is about.
+
+    ### Why the crop pixels are kept here and nowhere else
+
+    This sink is the **only** place the exact image the model was asked about
+    still exists. Re-cutting one later from a retained frame would produce a
+    similar picture and a different one: the crop strategy pads, the quality
+    gate may have refused a different candidate, and "similar" is not what an
+    operator is being shown. So the bytes are encoded here, once, on the
+    analysis worker loop — `VisionSession._consume` hands the whole ingest
+    chain to `ANALYSIS.run`, so nothing on this path touches the API loop.
+
+    `RetentionMode.NEVER_PERSIST` is honoured exactly: a deployment in
+    12_SECURITY §2.3's no-evidence mode keeps the **box** (four floats, so the
+    highlight still works) and no imagery at all.
+    """
+    runtime = getattr(cropping, "runtime", None)
+    if runtime is None:
+        return
+
+    from app.vision.decision_frames import DECISION_FRAMES, encode_jpeg
+
+    existing = getattr(runtime, "_sink", None)
+
+    def sink(result: Any, crops: Any) -> None:
+        try:
+            # `Crop` does not carry the object's class; the `CropRequest` that
+            # produced it does. Evidence must be able to say *what* it is a
+            # picture of, or §4's "do not present a chair as decision evidence"
+            # is unenforceable.
+            classes = {
+                str(request.object_id): str(getattr(request, "class_id", "") or "")
+                for request in getattr(result, "requests", ()) or ()
+            }
+            for crop in crops or ():
+                object_id = getattr(crop, "object_id", None)
+                box = getattr(crop, "source_box", None)
+                if object_id is None or box is None:
+                    continue
+                DECISION_FRAMES.attach_subject(
+                    camera_id=str(getattr(crop, "camera_id", "")),
+                    frame_ref=str(getattr(crop, "source_frame", "")),
+                    object_id=str(object_id),
+                    box=(box.x1, box.y1, box.x2, box.y2),
+                    crop_jpeg=_crop_jpeg(crop, encode_jpeg),
+                    crop_id=str(getattr(crop, "crop_id", "")),
+                    # The crop reaching this sink is one the gate admitted and
+                    # the understanding layer is about to be handed. A crop cut
+                    # and then refused never arrives here.
+                    sent_to_model=True,
+                    object_class=classes.get(str(object_id), ""),
+                )
+        except Exception as exc:  # noqa: BLE001 - evidence never breaks the path
+            logger.debug(
+                "decision subjects not recorded: {}: {}", type(exc).__name__, exc
+            )
+        if existing is not None:
+            existing(result, crops)
+
+    runtime._sink = sink  # noqa: SLF001 - the Crop Manager's declared seam
+    logger.info("decision-frame subjects attached to the crop seam")
+
+
+def _crop_jpeg(crop: Any, encode: Any) -> bytes | None:
+    """The exact pixels the model was handed, as a JPEG. Never raises.
+
+    `None` rather than an empty image when there is nothing to keep, so the
+    caller records a box with no picture instead of a picture of nothing.
+    """
+    from vision_os.core.model.crop import RetentionMode
+
+    if getattr(crop, "retention", None) is RetentionMode.NEVER_PERSIST:
+        return None
+    pixels = getattr(crop, "pixels", None)
+    if pixels is None:
+        return None
+    width, height = getattr(crop, "output_size", (0, 0))
+    jpeg = encode(bytes(pixels), int(width), int(height))
+    return jpeg or None
 
 
 def _artifact_bytes(bound: Any) -> bytes:

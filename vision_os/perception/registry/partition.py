@@ -280,6 +280,15 @@ class RegistryPartition:
         """Internal handle. Callers inside the layer only."""
         return self._records.get(object_id)
 
+    def project(self, record: ObjectRecord) -> VisualObject:
+        """Freeze one record, for a caller that already holds it.
+
+        The sweep needs this: it must publish an object's final transition
+        alongside the object itself, and by the time the update is assembled
+        the record has been evicted and `objects()` can no longer see it.
+        """
+        return self._project(record)
+
     def records(self) -> tuple[ObjectRecord, ...]:
         return tuple(self._records[key] for key in sorted(self._records))
 

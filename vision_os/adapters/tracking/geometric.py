@@ -96,6 +96,69 @@ MOTION_HYSTERESIS = 3
 #: Heading reversals within the retained window that make motion "erratic".
 ERRATIC_DIRECTION_CHANGES = 3
 
+#: How much better than the ordinary gate a LOST track must score to reclaim an
+#: identity. Expressed as a fraction of `AssociationPolicy.max_cost` so there is
+#: one number to tune, not two that can drift apart. Half is deliberately
+#: conservative: a person returning on their own predicted trajectory scores far
+#: below this, while a different person who merely happens to be nearby does not.
+LOST_RECOVERY_COST_FACTOR = 0.5
+
+#: The same bar for a COASTING track, and the reason `tracking.terminated` was
+#: still zero after the LOST gate above was added: **these tracks never reached
+#: LOST.** Every frame, a departed person's coasting track won some other
+#: person's detection, `_on_hit` reset `coast_frames` to zero, and the track
+#: went back to CONFIRMED. The strict bar had been placed one stage too late.
+#:
+#: That anything at all was reachable is arithmetic rather than bad luck. The
+#: gate in `CostMatrixBuilder` widens with prediction uncertainty so a track can
+#: survive an occlusion — `3.0 * (0.05 * seconds_unmeasured)` — and live
+#: analysis measured 1.72 s per frame. Two missed frames open it to 0.51, wider
+#: than half the frame, and from there every person present is a geometric
+#: candidate with only `max_cost` left to stop them.
+#:
+#: **Measured, not chosen.** 2,286 continuous real frames of camera 12 — about
+#: twenty minutes of a working kitchen — through the production detector and
+#: this policy. Identity comes from unbroken dense-IoU chains in the footage,
+#: never from a model's opinion about who somebody is:
+#:
+#:     scenario                              n     min    med    p95    max
+#:     SAME_PERSON genuine recovery       8490   0.002  0.123  0.482  0.669
+#:     DIFFERENT_PERSON wrong association  795   0.446  0.626  0.696  0.700
+#:
+#: `max_cost` admits everything to 0.700, which is why every one of those 795
+#: was available to be taken. 0.60 puts the ceiling at 0.420:
+#:
+#:     ceiling  genuine recoveries kept   wrong associations admitted
+#:       0.420           91.3%                   0 of 795
+#:       0.455           93.5%                   1 of 795
+#:       0.500           96.1%                   6 of 795
+#:       0.700          100.0%                 795 of 795   ← before this fix
+#:
+#: 0.455 was the first value tried, and the single sample it admits is the
+#: reason it was tightened: two people standing shoulder to shoulder with
+#: overlapping boxes, cost 0.446 — checked frame by frame in the footage rather
+#: than assumed to be a labelling artefact. That is precisely the association
+#: this gate exists to refuse, so the ceiling belongs below it.
+#:
+#: The distributions do overlap above 0.446, so the ~9% of genuine recoveries
+#: refused is a real cost, paid deliberately: a person denied recovery gets a
+#: **new identity**, while a wrong recovery transplants one person's PPE history
+#: onto another. 03_MODULES M6 settles which to prefer — *"prefer terminating a
+#: track over a wrong association"*.
+#:
+#: Looser than the LOST factor on purpose. A shorter absence earns more benefit
+#: of the doubt; `test_coasting_is_more_forgiving_than_lost` pins the ordering.
+COAST_RECOVERY_COST_FACTOR = 0.60
+
+#: The recovery ceiling per state, as a fraction of `AssociationPolicy.max_cost`.
+#: A state absent from this table keeps the ordinary gate — which is the point:
+#: TENTATIVE and CONFIRMED tracks are being *measured*, and narrowing the live
+#: case would fragment ordinary tracking rather than protect anyone.
+_RECOVERY_COST_FACTOR = {
+    TrackState.COASTING: COAST_RECOVERY_COST_FACTOR,
+    TrackState.LOST: LOST_RECOVERY_COST_FACTOR,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class GeometricConfig:
@@ -326,6 +389,61 @@ class GeometricTracker:
             detection_boxes=[b for b in boxes if b is not None],
             detection_scores=scores,
         )
+
+        # An UNMEASURED track must clear a STRICTER bar than a live one.
+        #
+        # Every state shared one gate here, so a track for a person who had
+        # walked out could win the nearest detection on ordinary cost and be
+        # "recovered" onto somebody else — carrying its object identity and PPE
+        # history with it. Measured live: recovered ran at twice the creation
+        # rate while `tracking.terminated` stayed at zero for a whole session,
+        # because a track that keeps being re-matched never accumulates the
+        # consecutive misses termination needs. Downstream that is a violation
+        # raised against a person who left minutes earlier, and an attribute
+        # attached to whoever happened to be standing nearby.
+        #
+        # **Both unmeasured states, not just LOST.** Gating LOST alone left the
+        # counter at zero, because these tracks never reached LOST: the wrong
+        # match arrived while they were still COASTING, `_on_hit` reset
+        # `coast_frames`, and the lifecycle started again from CONFIRMED. The
+        # bar has to sit at the first frame a track goes unmeasured, which is
+        # the frame the wrong detection is available.
+        #
+        # Recovery is NOT removed. `(COASTING, CONFIRMED)` and
+        # `(LOST, CONFIRMED)` are both deliberate windows, and the same person
+        # continuing along their own trajectory still returns to their identity
+        # — that case scores far below the ordinary gate because the prediction
+        # lands on them. What is refused is the *marginal* match: a detection
+        # that only just squeaks inside `max_cost`, which for an unmeasured
+        # track is far more likely to be a different person standing nearby
+        # than the original returning. Both bars are measured against real
+        # camera-12 footage; see the constants above.
+        #
+        # Both are fractions of the gate already configured rather than
+        # invented, so there is one number to tune and not three that can drift
+        # apart. No new signal, no appearance model.
+        #
+        # Masked here rather than by filtering `records` at the call site:
+        # `records`, `predictions` and the assignment result are index-aligned
+        # through `_filter_ambiguous`, `_second_stage` and `_apply`, and
+        # renumbering them is how a track gets bound to the wrong detection.
+        # `candidates` is a sparse (track_index, detection_index, cost) list,
+        # so dropping rows changes nothing else.
+        #
+        # M6, and `_filter_ambiguous` below: *prefer terminating a track over a
+        # wrong association*. A new identity costs a track id; a wrong one
+        # costs a person's compliance record.
+        max_cost = self._association_policy.max_cost
+        ceilings = {
+            index: max_cost * _RECOVERY_COST_FACTOR[record.state]
+            for index, record in enumerate(records)
+            if record.state in _RECOVERY_COST_FACTOR
+        }
+        if ceilings:
+            candidates = tuple(
+                c for c in candidates if c.cost <= ceilings.get(c.track_index, max_cost)
+            )
+
         result = self._associator.assign(
             track_count=len(records),
             detection_count=len(indices),
@@ -522,6 +640,9 @@ class GeometricTracker:
             coast_frames=record.coast_frames,
             age_frames=record.age_frames,
             break_reason=break_reason,
+            # Already accumulated on the line above; the guard needs no new
+            # bookkeeping, only the number the record was keeping anyway.
+            since_measurement_ns=record.since_measurement_ns,
         )
         record.state = transition.current
         record.last_updated = now

@@ -166,6 +166,12 @@ class TestCanonicalOwnership:
             "split",
             "apply_attribute",
             "expire_stale",
+            # Advancing horizons and *reporting* what that changed. `ingest`
+            # already publishes its lifecycle changes; the scheduled pass did
+            # not, so nothing downstream could learn that a departed object had
+            # aged out — it stayed a live subject. Read-and-age, like
+            # `expire_stale` beside it; still no write path for a consumer.
+            "sweep",
             "restore",
             "set_regions",
             "partition_stats",

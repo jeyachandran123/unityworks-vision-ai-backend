@@ -199,15 +199,40 @@ class RegistryRuntime:
         self._maybe_report()
 
     def _expire(self) -> None:
+        """Age the population, and **publish what changed**.
+
+        The sweep is the only thing that ages a camera nobody is walking in
+        front of, and it used to be silent: it mutated the partition and
+        returned ids. Whatever consumes this sink learns about lifecycle only
+        from a `RegistryUpdate`, so a departed person stayed present downstream
+        indefinitely while this layer had long since aged and evicted them —
+        measured on a live site as 74 objects still reported present against 27
+        the registry actually held.
+
+        Published here rather than through a second notification path: this is
+        the same sink `on_tracked` already uses, so the sweep's transitions
+        travel exactly the route the per-frame ones do, and this layer still
+        does not know what is on the other end of it.
+        """
         try:
-            removed = self._registry.expire_stale(self._clock.now())
+            updates = self._registry.sweep(self._clock.now())
         except Exception:  # noqa: BLE001 - maintenance never stops ingestion
             self._metrics.counter(
                 MetricName.REGISTRY_FAILURES, reason="expiry"
             ).increment()
             return
-        if removed:
-            self._dirty.update(self._registry.partitions)
+
+        if not updates:
+            return
+
+        self._dirty.update(self._registry.partitions)
+        if self._sink is None:
+            return
+        for update in updates:
+            try:
+                self._sink(update)
+            except Exception:  # noqa: BLE001 - a bad sink must not break the sweep
+                self._stats.sink_failures += 1
 
     def _flush(self, *, force: bool = False) -> None:
         """Persist dirty partitions. Failures degrade durability, not ingestion."""

@@ -38,6 +38,7 @@ from typing import Any
 
 from loguru import logger
 
+from app.vision.analysis_loop import ANALYSIS
 from app.vision.frames import (
     DEFAULT_QUEUE_CAPACITY,
     DropReason,
@@ -353,7 +354,15 @@ class VisionSession:
                 started = time.perf_counter()
                 try:
                     if self._handler is not None:
-                        await self._handler(frame)
+                        # Off the API event loop. The handler is CPU-bound
+                        # (ingest + YOLO) and awaiting it here is what took
+                        # `/health` to 31s and `/auth/login` to 58s while four
+                        # cameras ran. `ANALYSIS.run` executes it on one
+                        # dedicated worker loop and awaits the result here, so
+                        # ordering, identity and timestamps are unchanged —
+                        # this session still finishes one frame before it
+                        # starts the next.
+                        await ANALYSIS.run(self._handler(frame))
                 except asyncio.CancelledError:
                     raise
                 except Exception as exc:  # noqa: BLE001 - one frame, not the night

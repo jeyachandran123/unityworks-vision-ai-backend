@@ -113,6 +113,23 @@ class LifecyclePolicy:
     becomes long-term memory."""
 
     max_tracks_per_camera: int = 256
+
+    #: Wall-clock ceiling on an unmeasured track, in nanoseconds.
+    #:
+    #: The frame horizons above are counted in FRAMES, which assumes frames
+    #: arrive at a roughly known rate. Under live analysis they do not: this
+    #: deployment measured ~0.5 fps, at which `max_coast_frames` plus
+    #: `max_lost_frames` is 40+ seconds — and on a slower camera, minutes. A
+    #: person who left stayed a live compliance subject for the whole of it.
+    #:
+    #: Derived, not invented: 20 frames (5 coast + 15 lost) at the platform's
+    #: own 4 fps analysis default is 5 seconds, so 30 s is that horizon with a
+    #: 6x allowance for a slow or bursty camera. It only ever *shortens* a
+    #: track's life, never extends it, so the frame logic remains authoritative
+    #: whenever frames are flowing normally.
+    #:
+    #: 0 disables the guard and restores pure frame-counted behaviour.
+    max_unmeasured_ns: int = 30_000_000_000
     """Bounded track table (T8). A crowd degrades by refusing new tracks."""
 
     def __post_init__(self) -> None:
@@ -226,6 +243,7 @@ class LifecycleMachine:
         coast_frames: int,
         age_frames: int,
         break_reason: BreakReason = BreakReason.DETECTOR_MISS,
+        since_measurement_ns: int = 0,
     ) -> Transition:
         """No detection was associated with this track this frame.
 
@@ -240,6 +258,22 @@ class LifecycleMachine:
                 "a terminated track cannot miss; it no longer exists",
                 previous=state.value,
                 current="miss",
+            )
+
+        # Wall-clock ceiling, checked before the frame horizons so a slow
+        # camera cannot hold a departed person indefinitely. TENTATIVE is left
+        # to its own rule below: it terminates on the first miss regardless, so
+        # this would only duplicate that.
+        if (
+            self._policy.max_unmeasured_ns > 0
+            and state is not TrackState.TENTATIVE
+            and since_measurement_ns >= self._policy.max_unmeasured_ns
+        ):
+            return self._to(
+                state,
+                TrackState.TERMINATED,
+                TransitionReason.LOST_WINDOW_EXPIRED,
+                break_reason,
             )
 
         if age_frames >= self._policy.max_age_frames:

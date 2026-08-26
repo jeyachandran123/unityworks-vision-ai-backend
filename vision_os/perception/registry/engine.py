@@ -175,6 +175,13 @@ class ObjectRegistry:
         self._regions: dict[CameraId, RegionTracker] = {}
         self._epochs: dict[CameraId, int] = {}
         self._camera_time: dict[CameraId, Instant] = {}
+        #: The last frame each camera actually produced. The sweep is not tied
+        #: to a frame — it runs on a timer precisely so a quiet camera still
+        #: ages — but a `RegistryUpdate` must name one, and the truthful answer
+        #: for "this object has now aged out" is the last frame that saw it.
+        #: Inventing a frame reference here would put a provenance lie into the
+        #: observation log, which is the system of record (V5).
+        self._last_frame: dict[CameraId, FrameRef] = {}
         self._frames = 0
         self._failures = 0
         self._degraded_reason = ""
@@ -449,39 +456,107 @@ class ObjectRegistry:
 
         Returns the ids removed. Called on a schedule rather than per frame,
         because a camera that goes quiet must still see its objects age.
+
+        Kept as-is because it is M7's documented signature; the transitions it
+        makes are available from :meth:`sweep`, which this delegates to.
+        """
+        removed: list[ObjectId] = []
+        for update in self.sweep(now):
+            removed.extend(update.expired)
+        return tuple(removed)
+
+    def sweep(self, now: Instant | None = None) -> tuple[RegistryUpdate, ...]:
+        """Advance horizons, and **say what changed**. One update per camera.
+
+        `ingest` reports its lifecycle changes in a `RegistryUpdate`, which is
+        how anything downstream can learn that an object moved. The sweep did
+        none of that: it mutated the partition, published
+        `ObjectLifecycleChanged` on the event bus — which **nothing subscribes
+        to** — and returned a list of ids.
+
+        So the only mechanism that ages a camera nobody is walking in front of
+        was invisible to every consumer. Measured on a live site: this layer
+        held 27 objects while the layer consumers actually read held 74, every
+        one still reported present, the median last seen 279 seconds earlier.
+
+        Returning the same shape `ingest` does is the point — the sweep travels
+        the seam that already exists rather than getting one of its own, and
+        this module still names nothing downstream of it.
+
+        Two details that matter:
+
+        * **`objects` includes what was evicted.** A consumer resolving a
+          changed id against `objects` finds nothing once the record is gone,
+          so an object swept all the way to EXPIRED and removed in the same
+          pass would have its final transition dropped — leaving consumers
+          holding the last thing they were told, which is the defect this
+          fixes. The projection is taken *before* eviction.
+        * **Cameras with nothing to say are omitted**, so a quiet site does not
+          push empty updates downstream every interval.
         """
         moment = now or self._clock.now()
-        removed: list[ObjectId] = []
+        updates: list[RegistryUpdate] = []
+
         for camera_id in sorted(self._partitions):
             partition = self._partitions[camera_id]
+            changes: list[tuple[ObjectId, LifecycleState, LifecycleState]] = []
+            removed: list[ObjectId] = []
+            departed: list[VisualObject] = []
+
             for record in partition.records():
                 if record.lifecycle.is_terminal:
                     if record.lifecycle is LifecycleState.EXPIRED:
+                        departed.append(partition.project(record))
                         partition.evict(record.object_id)
                         removed.append(record.object_id)
                     continue
                 transition = self._drive_horizons(record, moment)
-                if transition is not None:
-                    # An object the sweep moves out of a measurable state has no
-                    # live track; closing the binding is what lets it be a
-                    # re-entry candidate later.
-                    if not transition.current.is_measurable:
-                        partition.close_bindings(record, now=moment)
-                    partition.set_lifecycle(record, transition.current)
-                    self._publish_lifecycle(
-                        camera_id,
-                        record.object_id,
-                        transition.previous,
-                        transition.current,
-                        transition.trigger.value,
-                    )
-                    if transition.current is LifecycleState.EXPIRED:
-                        partition.evict(record.object_id)
-                        tracker = self._regions.get(camera_id)
-                        if tracker is not None:
-                            tracker.forget(record.object_id, at=moment)
-                        removed.append(record.object_id)
-        return tuple(removed)
+                if transition is None:
+                    continue
+                # An object the sweep moves out of a measurable state has no
+                # live track; closing the binding is what lets it be a
+                # re-entry candidate later.
+                if not transition.current.is_measurable:
+                    partition.close_bindings(record, now=moment)
+                partition.set_lifecycle(record, transition.current)
+                changes.append(
+                    (record.object_id, transition.previous, transition.current)
+                )
+                self._publish_lifecycle(
+                    camera_id,
+                    record.object_id,
+                    transition.previous,
+                    transition.current,
+                    transition.trigger.value,
+                )
+                if transition.current is LifecycleState.EXPIRED:
+                    departed.append(partition.project(record))
+                    partition.evict(record.object_id)
+                    tracker = self._regions.get(camera_id)
+                    if tracker is not None:
+                        tracker.forget(record.object_id, at=moment)
+                    removed.append(record.object_id)
+
+            if not changes and not removed:
+                continue
+
+            frame_ref = self._last_frame.get(camera_id)
+            if frame_ref is None:
+                # The camera has never delivered a frame, so nothing can have
+                # aged out of it. Nothing truthful to report.
+                continue
+
+            updates.append(
+                RegistryUpdate(
+                    camera_id=camera_id,
+                    frame_ref=frame_ref,
+                    objects=partition.objects() + tuple(departed),
+                    lifecycle_changes=tuple(changes),
+                    expired=tuple(removed),
+                )
+            )
+
+        return tuple(updates)
 
     # --- configuration --------------------------------------------------------- #
 
@@ -606,6 +681,7 @@ class ObjectRegistry:
         now = self._advance_time(camera_id, update)
         partition = self._partition(camera_id)
         regions = self._region_tracker(camera_id)
+        self._last_frame[camera_id] = update.frame_ref
 
         crossing_epoch = self._epochs.get(camera_id, update.tracker_epoch) != update.tracker_epoch
         self._epochs[camera_id] = update.tracker_epoch

@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -262,10 +263,52 @@ class ComplianceDriver:
 
     # -- evidence and notification ------------------------------------------
 
+    #: How far before a finding's observation instant a retained frame may sit
+    #: and still be the frame that decision was made on. One analysis interval
+    #: at the measured live rate is ~1.7 s; this allows for a slow pass without
+    #: reaching back to an unrelated sighting. A frame *after* the observation
+    #: is never accepted at any tolerance — that is the defect itself.
+    DECISION_FRAME_TOLERANCE_NS = 30_000_000_000
+
+    def _decision_frame(self, *, camera_key: str, finding: Any):
+        """The retained frame this finding's subject was actually seen in.
+
+        Keyed by object and observation time rather than by frame reference,
+        because that is what a finding carries: the attribute's `observed_at`
+        and the object it belongs to. Returns None when nothing suitable was
+        retained, and the caller then falls back *and says so*.
+        """
+        try:
+            from app.vision.decision_frames import DECISION_FRAMES
+
+            object_id = str(finding.subject.object_id)
+            observed_at = _observed_at_ns(finding)
+            if observed_at:
+                # Strictly at or before the observation. No fallback to "the
+                # latest frame this object appeared in": that is the *later
+                # room state* by another name, and the first version of this
+                # method did exactly that — a real cam-13 incident came back
+                # with a frame 25.8 s after its own observation, still labelled
+                # a decision frame. If nothing suitable was retained, the
+                # caller stores a context frame and says so.
+                return DECISION_FRAMES.nearest_before(
+                    camera_key, object_id, observed_at,
+                    tolerance_ns=self.DECISION_FRAME_TOLERANCE_NS,
+                )
+            # No observation instant at all. The newest frame this object was
+            # genuinely seen in is the best available claim, and it is still a
+            # frame containing the subject rather than a photograph of the room.
+            return DECISION_FRAMES.latest_for_object(camera_key, object_id)
+        except Exception as exc:  # noqa: BLE001 - evidence is not the incident
+            logger.debug(
+                "decision frame lookup failed: {}: {}", type(exc).__name__, exc
+            )
+            return None
+
     async def _capture_evidence(
         self, session: Any, *, camera_key: str, finding: Any
     ) -> str:
-        """Store a frame from this camera as durable evidence. Returns its ref.
+        """Store **the frame the decision was made on** as durable evidence.
 
         **Off unless the deployment turns it on.** Storing images of
         identifiable people is a deployment decision, and `EVIDENCE_CAPTURE` is
@@ -273,53 +316,112 @@ class ComplianceDriver:
         it to be served are different authorisations, and enabling one must
         never silently enable the other.
 
-        The frame comes from the camera wall's latest JPEG, which is already
-        encoded and already bounded, so capturing costs no work on the analysis
-        path. **It is the frame current when the incident was raised, not a
-        replay of the exact frame the verdict was computed from** — the
-        compliance pass runs on a timer and the ledger deliberately retains no
-        payloads. Its own `captured_at` records when it was taken, so nothing
-        here claims to be the observation frame.
+        ### Why this no longer photographs the room
+
+        This used to take the camera wall's *current* JPEG. A compliance pass
+        runs on a timer, so the picture was routinely of a scene the subject had
+        already left. Measured on camera 13:
+
+            attribute observed at   14:04:40Z   hand_covering = none
+            incident opened at      14:05:29Z
+            evidence frame stamped  14:05:17Z   ← 37 s after the observation
+
+        The verdict was true and the photograph was of an empty kitchen, which
+        is indefensible for an operator being asked to act on it.
+
+        `DECISION_FRAMES` retains the analysed frames and the object boxes cut
+        from them, so this looks the subject up by **object and observation
+        time** and stores the frame that object was actually seen in. The
+        record's `captured_at` is that frame's capture time, not now, and its
+        `frame_ref` names the frame — so the evidence can be joined back to the
+        observation rather than merely trusted.
+
+        **The fallback is labelled, never silent.** If the decision frame has
+        aged out of the ring, the wall's current JPEG is stored with a purpose
+        of `…:context-frame` instead of `…:decision-frame`, so nothing ever
+        claims to be the decision frame without being it.
 
         A failure to capture never fails the incident. An incident without a
         picture is still a violation somebody must act on.
         """
         if not getattr(self._settings, "evidence_capture", False):
             return ""
-        if self._wall is None:
-            return ""
 
-        stream = self._wall.get(camera_key)
-        if stream is None:
-            return ""
-        _, jpeg = stream.latest(0, 0.0)
-        if not jpeg:
-            return ""
+        decision = self._decision_frame(camera_key=camera_key, finding=finding)
+        if decision is not None:
+            jpeg = decision.jpeg
+            captured_at = datetime.fromtimestamp(
+                decision.captured_at_ns / 1_000_000_000, tz=UTC
+            )
+            frame_ref = decision.frame_ref
+            kind = "decision-frame"
+        else:
+            if self._wall is None:
+                return ""
+            stream = self._wall.get(camera_key)
+            if stream is None:
+                return ""
+            _, jpeg = stream.latest(0, 0.0)
+            if not jpeg:
+                return ""
+            captured_at = datetime.now(UTC)
+            frame_ref = ""
+            kind = "context-frame"
 
         from app.domain import evidence as evidence_domain
 
         ref = _evidence_ref_of(finding) or f"finding:{finding.finding_id}"
+        store = evidence_domain.EvidenceStore(session, root=self._settings.evidence_path)
+        exhibits = _exhibits(decision, finding=finding, evidence_ref=ref)
         try:
-            await evidence_domain.EvidenceStore(
-                session, root=self._settings.evidence_path
-            ).put(
+            # The frame first, always. Its manifest names the crops by handles
+            # this function chose, so it is complete before any of them exists —
+            # and a crop that then fails to store costs a thumbnail, not the
+            # photograph the operator actually needs.
+            await store.put(
                 organization_id=self._settings.default_tenant_id,
                 evidence_ref=ref,
                 camera_key=camera_key,
                 payload=bytes(jpeg),
-                captured_at=datetime.now(UTC),
-                purpose=f"compliance:{finding.rule_id}",
+                captured_at=captured_at,
+                purpose=f"compliance:{finding.rule_id}:{kind}",
                 retention_days=self._settings.evidence_retention_days,
+                frame_ref=frame_ref,
                 object_id=str(finding.subject.object_id),
+                geometry=exhibits.manifest,
                 media_type="image/jpeg",
             )
-            return ref
         except Exception as exc:  # noqa: BLE001 - evidence is not the incident
             logger.warning(
                 "evidence capture failed for {} on {}: {}: {}",
                 finding.rule_id, camera_key, type(exc).__name__, exc,
             )
             return ""
+
+        for exhibit in exhibits.crops:
+            try:
+                await store.put(
+                    organization_id=self._settings.default_tenant_id,
+                    evidence_ref=exhibit.evidence_ref,
+                    camera_key=camera_key,
+                    payload=exhibit.jpeg,
+                    # The crop was cut from this frame, so it was taken at this
+                    # frame's instant. Stamping it `now` would put the picture
+                    # and the picture-of-part-of-it minutes apart.
+                    captured_at=captured_at,
+                    purpose=f"compliance:{finding.rule_id}:decision-crop",
+                    retention_days=self._settings.evidence_retention_days,
+                    frame_ref=frame_ref,
+                    object_id=exhibit.object_id,
+                    geometry=exhibit.geometry,
+                    media_type="image/jpeg",
+                )
+            except Exception as exc:  # noqa: BLE001 - one exhibit, not the set
+                logger.warning(
+                    "decision crop {} not stored: {}: {}",
+                    exhibit.evidence_ref, type(exc).__name__, exc,
+                )
+        return ref
 
     async def _notify(self, incident: Any, finding: Any, run: CompliancePass) -> None:
         """Announce a new incident. **Never fails the incident.**
@@ -443,6 +545,148 @@ class ComplianceDriver:
         return run
 
 
+#: How many crops one incident may keep. The alert subject first, then the
+#: others in the frame. A gallery is a reading aid, and past a handful it stops
+#: being one — while every extra crop is another image of an identifiable
+#: person written to disk. Bounded here rather than left to the crowd.
+MAX_CROPS_PER_INCIDENT = 6
+
+
+@dataclass(slots=True)
+class _CropExhibit:
+    """One crop, ready to be stored as evidence in its own right."""
+
+    evidence_ref: str
+    object_id: str
+    jpeg: bytes
+    geometry: str
+
+
+@dataclass(slots=True)
+class _Exhibits:
+    """What an incident is allowed to show, decided once."""
+
+    manifest: str = ""
+    crops: tuple[_CropExhibit, ...] = ()
+
+
+def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
+    """The subject's box, its neighbours', and the crops. **Never raises.**
+
+    ### Why this is decided here and frozen
+
+    The boxes live in a bounded in-memory ring holding a couple of minutes of
+    analysed frames. An incident is read for days. Whatever is not written down
+    now cannot be recovered later — and the tempting recovery, running a
+    detector over the stored JPEG, would highlight *a* person in the picture
+    rather than the one the verdict was about.
+
+    ### What may be shown as decision evidence
+
+    Only objects of the **finding's own class**, cut from the **same analysed
+    frame**. A PPE finding about a person must not present a chair as though it
+    contributed to the verdict, and an object whose class was never recorded
+    cannot be asserted to be a person — so it is left out of the context set
+    rather than guessed at. The subject itself is always present: its class
+    comes from the finding, which always carries one.
+
+    ### Labels
+
+    `Person #1`, `Person #2` … assigned left to right across the frame, which
+    is how somebody looking at the picture would number them. Presentation
+    only: the `object_id` travels beside every label so the trace back to the
+    platform's own identity never depends on a display string.
+    """
+    try:
+        subjects = dict(getattr(decision, "subjects", {}) or {})
+    except Exception:  # noqa: BLE001 - evidence is not the incident
+        return _Exhibits()
+    if not subjects:
+        return _Exhibits()
+
+    subject_id = str(finding.subject.object_id)
+    subject_class = str(getattr(finding.subject, "class_id", "") or "")
+
+    relevant = {
+        object_id: entry
+        for object_id, entry in subjects.items()
+        if object_id == subject_id
+        or (subject_class and entry.object_class == subject_class)
+    }
+    if subject_id not in relevant:
+        # The subject was not cut from this frame. Nothing here can be said to
+        # be evidence *for this finding*, and a gallery of other people would
+        # be worse than none.
+        return _Exhibits()
+
+    ordered = sorted(relevant.items(), key=lambda item: (item[1].box[0], item[1].box[1]))
+    labels = {
+        object_id: f"{_class_noun(subject_class)} #{index}"
+        for index, (object_id, _entry) in enumerate(ordered, start=1)
+    }
+
+    def _describe(object_id: str, entry: Any) -> dict[str, Any]:
+        return {
+            "object_id": object_id,
+            "class": entry.object_class or subject_class,
+            "label": labels[object_id],
+            "box": [round(float(v), 6) for v in entry.box],
+            "is_subject": object_id == subject_id,
+            "sent_to_model": bool(entry.sent_to_model),
+        }
+
+    # The subject's crop first, so the cap never spends its budget on
+    # bystanders and drops the one image the alert is actually about.
+    with_pixels = [
+        (object_id, entry)
+        for object_id, entry in ordered
+        if entry.crop_jpeg
+    ]
+    with_pixels.sort(key=lambda item: item[0] != subject_id)
+
+    crops: list[_CropExhibit] = []
+    crop_refs: dict[str, str] = {}
+    for object_id, entry in with_pixels[:MAX_CROPS_PER_INCIDENT]:
+        ref = f"{evidence_ref}.crop.{object_id}"
+        crop_refs[object_id] = ref
+        crops.append(
+            _CropExhibit(
+                evidence_ref=ref,
+                object_id=object_id,
+                jpeg=bytes(entry.crop_jpeg),
+                geometry=json.dumps(
+                    {"kind": "decision-crop", **_describe(object_id, entry)}
+                ),
+            )
+        )
+
+    def _entry(object_id: str, entry: Any) -> dict[str, Any]:
+        described = _describe(object_id, entry)
+        described["crop_ref"] = crop_refs.get(object_id, "")
+        return described
+
+    manifest = {
+        "kind": "decision-frame",
+        "frame": {
+            "frame_ref": str(getattr(decision, "frame_ref", "")),
+            "width": int(getattr(decision, "width", 0) or 0),
+            "height": int(getattr(decision, "height", 0) or 0),
+        },
+        "subject": _entry(subject_id, relevant[subject_id]),
+        "context": [
+            _entry(object_id, entry)
+            for object_id, entry in ordered
+            if object_id != subject_id
+        ],
+    }
+    return _Exhibits(manifest=json.dumps(manifest), crops=tuple(crops))
+
+
+def _class_noun(class_id: str) -> str:
+    """`person` → `Person`. The operator-facing word for a platform class."""
+    return (class_id or "object").replace("_", " ").strip().capitalize()
+
+
 def _evidence_ref_of(finding: Any) -> str:
     """The platform's own evidence handle for this finding, if it issued one.
 
@@ -455,6 +699,24 @@ def _evidence_ref_of(finding: Any) -> str:
         if ref:
             return str(ref)
     return ""
+
+
+def _observed_at_ns(finding: Any) -> int:
+    """When the attribute this verdict rests on was observed.
+
+    The **failed** condition first: that is the observation the alert is about,
+    and it is the one whose frame an operator needs to see. A held or
+    unresolved condition may carry a different, later instant, and picking that
+    one would quietly reintroduce the "later room state" this exists to stop.
+    """
+    conditions = tuple(getattr(finding, "conditions", ()))
+    failed = [c for c in conditions if getattr(c, "outcome", None) is not None
+              and str(getattr(c.outcome, "value", c.outcome)) == "failed"]
+    for condition in failed or conditions:
+        observed = getattr(condition, "observed_at_ns", None)
+        if observed:
+            return int(observed)
+    return 0
 
 
 def _summary(finding: Any) -> str:

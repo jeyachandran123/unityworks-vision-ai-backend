@@ -32,6 +32,7 @@ supports.
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -69,6 +70,7 @@ class EvidenceStore:
         object_id: str = "",
         observation_id: str = "",
         media_type: str = "image/jpeg",
+        geometry: str = "",
     ) -> EvidenceRecord:
         """Store bytes and record what they are.
 
@@ -103,6 +105,7 @@ class EvidenceStore:
             content_hash=f"blake2b:{digest}",
             size_bytes=len(payload),
             media_type=media_type,
+            geometry=geometry,
         )
         self._session.add(record)
         return record
@@ -254,9 +257,15 @@ def to_wire(record: EvidenceRecord) -> dict[str, Any]:
     Carries no bytes, no filesystem path and no storage credential. `storage_ref`
     is deliberately omitted — it is an internal locator, and a caller who has it
     is a caller tempted to bypass the lifecycle checks above.
+
+    `geometry` is parsed rather than passed through as a string, so a caller
+    receives a document instead of a document-shaped string it has to trust and
+    parse itself. A row whose geometry is unreadable yields `None`: the image is
+    still evidence, it simply cannot say where in itself the subject was.
     """
     return {
         "evidence_ref": record.evidence_ref,
+        "geometry": _geometry(record.geometry),
         "camera_key": record.camera_key,
         "frame_ref": record.frame_ref,
         "object_id": record.object_id,
@@ -278,6 +287,22 @@ def to_wire(record: EvidenceRecord) -> dict[str, Any]:
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
+
+
+def _geometry(raw: str) -> dict[str, Any] | None:
+    """The stored geometry document, or `None`.
+
+    Never raises. Geometry is an aid to reading a picture; a malformed one must
+    cost the caller the highlight, not the evidence.
+    """
+    if not raw:
+        return None
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        logger.debug("evidence geometry is not readable JSON; serving without it")
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 __all__ = ["EvidenceStore", "to_wire"]

@@ -46,6 +46,7 @@ from app.infrastructure.observability import (
     metrics_payload,
     request_context_middleware,
 )
+from app.vision.analysis_loop import ANALYSIS
 from app.vision.demands import register_policy_demands
 from app.vision.ingest import FrameIngest
 from app.vision.manager import LiveRuntime
@@ -147,6 +148,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             "time with the dependency named; other routes are unaffected"
         )
 
+    # Started before any session can submit to it. CPU-bound perception runs
+    # there instead of on this loop; see `app/vision/analysis_loop.py`.
+    ANALYSIS.start()
+
     assembled = await vision.start()
     VISION_READY.set(1 if assembled else 0)
 
@@ -223,6 +228,8 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.taps.detach(getattr(vision.composition.platform, "bus", None))
     await live.stop_all()
     await vision.stop()
+    # After the sessions that submit to it, before the process exits.
+    ANALYSIS.stop()
     await cache.disconnect()
     await database.disconnect()
     logger.info("Shutdown complete")
