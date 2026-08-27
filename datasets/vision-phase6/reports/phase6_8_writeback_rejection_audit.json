@@ -1,0 +1,27 @@
+{
+  "video": "Screen Recording 2026-08-17 122832.mp4",
+  "attribute": "head_covering",
+  "sample_fps": 4.0,
+  "target_fps": 4.0,
+  "frames_decoded": 435,
+  "cursor_final": 44,
+  "understanding_stats": {
+    "crops_consumed": 166,
+    "dropped_on_overflow": 0,
+    "requests_made": 166,
+    "results_produced": 165,
+    "results_failed": 0,
+    "attributes_produced": 308,
+    "sink_failures": 0
+  },
+  "writeback_audit": {
+    "applied": 0,
+    "rejected": 308,
+    "no_object_id": 0,
+    "failed_outcome": 0,
+    "reasons": {
+      "AttributeRejectedError: attribute 'hand_covering' is not registered; the registry holds only attributes that have ": 164,
+      "AttributeRejectedError: attribute 'head_covering' is not registered; the registry holds only attributes that have ": 144
+    }
+  }
+}

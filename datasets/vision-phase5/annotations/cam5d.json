@@ -1,0 +1,198 @@
+{
+  "schema_version": "2.0.0",
+  "source": "give_next_seconds_video_of.mp4 + i_want_sec_video_of_this_vi (1).mp4",
+  "frames": [
+    {
+      "frame_id": "5d/N_0096",
+      "video_id": "cam5d-N",
+      "camera_id": "kitchen-cam-E",
+      "restaurant_id": "restaurant-02",
+      "frame_index": 96,
+      "timestamp_ms": 4000.0,
+      "image_path": "review/frames_5d/N_0096.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "multi_worker",
+        "mixed_ppe_states"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1,
+            "x2": 0.145,
+            "y2": 0.4
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef jacket, wiping a tray; bare head, dark hair, clear hairline",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "w2",
+          "box": {
+            "x1": 0.355,
+            "y1": 0.105,
+            "x2": 0.52,
+            "y2": 0.93
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef shirt + apron, stirring a sauce vessel; bare head, dark hair",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "w3",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.38,
+            "x2": 0.175,
+            "y2": 0.96
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "present",
+              "observability": "observable",
+              "note": "chef jacket; dark head covering with a defined edge, distinct from bare scalp",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "w4",
+          "box": {
+            "x1": 0.79,
+            "y1": 0.03,
+            "x2": 0.9,
+            "y2": 0.56
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "at the shelf; head cut off by the top frame edge - not inspectable",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "5d/D_0096",
+      "video_id": "cam5d-D",
+      "camera_id": "kitchen-cam-E",
+      "restaurant_id": "restaurant-02",
+      "frame_index": 96,
+      "timestamp_ms": 4000.0,
+      "image_path": "review/frames_5d/D_0096.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "multi_worker",
+        "mixed_ppe_states"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.095,
+            "x2": 0.14,
+            "y2": 0.42
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef jacket; bare head, dark hair, clear hairline",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "w2",
+          "box": {
+            "x1": 0.36,
+            "y1": 0.105,
+            "x2": 0.52,
+            "y2": 0.93
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef shirt + apron at the vessel; bare head, dark hair",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "w3",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.38,
+            "x2": 0.18,
+            "y2": 0.96
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "present",
+              "observability": "observable",
+              "note": "chef jacket; dark head covering clearly worn",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

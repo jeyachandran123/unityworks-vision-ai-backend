@@ -1,0 +1,9 @@
+understander: nvidia (understander.nvidia_vl)
+output_sizes: {'head_covering': (448, 448)}
+
+=== head_covering ===
+confusion: {'absent': {'absent': 19}}
+  absent       support= 19 predicted= 19 precision= 100.0% recall= 100.0%
+accuracy 100.0
+vlm calls 40 | gate rejections 0
+latency {'mean_ms': 2051.9, 'median_ms': 1637.2, 'p95_ms': 3208.9, 'total_s': 83.1}

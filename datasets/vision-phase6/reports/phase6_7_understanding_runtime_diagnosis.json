@@ -1,0 +1,2240 @@
+{
+  "video": "Screen Recording 2026-08-17 122832.mp4",
+  "attribute": "head_covering",
+  "sample_fps": 4.0,
+  "target_fps": 4.0,
+  "validity_ms": 120000,
+  "synthetic_time": false,
+  "frames_decoded": 435,
+  "cursor_final": 62,
+  "exhausted": false,
+  "virtual_elapsed_ms": 15750,
+  "video_duration_s": 115.9,
+  "triggers": {
+    "first_sight": 4,
+    "attribute_missing": 200
+  },
+  "skips": {
+    "no_demand": 118,
+    "quality_insufficient": 44
+  },
+  "crops_delivered_to_sink": 204,
+  "understanding_stats": {
+    "frames_consumed": 62,
+    "frames_failed": 0,
+    "crops_consumed": 204,
+    "dropped_on_overflow": 0,
+    "batches_run": 62,
+    "requests_made": 204,
+    "results_produced": 202,
+    "results_failed": 0,
+    "attributes_produced": 384,
+    "sink_failures": 0,
+    "failure_rate": 0.0
+  },
+  "m7_writebacks": 0,
+  "writeback_sample": [],
+  "longest_track": {
+    "evals": 124,
+    "writebacks": 0,
+    "duration_ms": 15250
+  },
+  "events": [
+    {
+      "k": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 1000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 1000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 1000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 1250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 1250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 1250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 1250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 1500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 1500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 1500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 1500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 1750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 1750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 1750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 1750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 1750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 1750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 2000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 2000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 2000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 2000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 2250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 2250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 2250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 2250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 2500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 2500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 2500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 2500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 2750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 2750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 2750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 2750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 2750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 2750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 3000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 3000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 3000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 3000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TN4TQFM3KNQPGJ540",
+      "clock_ms": 3250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TXR5HZEE1K8JW9C3V",
+      "clock_ms": 3250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 3250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 3250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FM6Y83NB8FNF85RMTT",
+      "clock_ms": 3500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 3500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 3750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 3750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 3750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 4000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 4250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 4500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 4750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 4750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 4750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 5000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 5250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 5500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 5750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 5750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 5750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 6000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 6250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 6500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 6500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 6750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 6750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 6750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 6750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 7000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 7000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 7250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 7250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 7500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 7500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 7750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 7750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 7750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 7750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 8000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 8000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 8250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 8250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 8500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 8500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 8750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 8750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 8750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 8750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 9000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 9000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 9250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063AXXVNTJ28E21NBS74",
+      "clock_ms": 9250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 9500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 9750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 9750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 9750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 10000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 10250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 10500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 10750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 10750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 10750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 11000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 11250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 11250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 11500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 11500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 11750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 11750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 11750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 11750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 12000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 12000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 12250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 12250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 12500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 12500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 12750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 12750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 12750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 12750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 13000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 13000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 13250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 13250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 13500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 13500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 13750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 13750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 13750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 13750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 14000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000AQRRETTHN15KEKHZ26X",
+      "clock_ms": 14000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 14250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z80KJ2BFSN3ZSTD7HC",
+      "clock_ms": 14500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 14750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 14750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15000
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000ECYQYWK8JSRCK6Y2W9V",
+      "clock_ms": 15000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15000
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15000
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15250
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000ECYQYWK8JSRCK6Y2W9V",
+      "clock_ms": 15250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15250
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15250
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15500
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000ECYQYWK8JSRCK6Y2W9V",
+      "clock_ms": 15500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15500
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15500
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15750
+    },
+    {
+      "k": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TY0BPDJZA3B2YATR9",
+      "clock_ms": 15750
+    },
+    {
+      "k": "SKIP",
+      "reason": "no_demand",
+      "track": "0000000ECYQYWK8JSRCK6Y2W9V",
+      "clock_ms": 15750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15750
+    },
+    {
+      "k": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007T05C0VYX47DWBTAAX",
+      "clock_ms": 15750
+    }
+  ]
+}

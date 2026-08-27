@@ -1,0 +1,32 @@
+{
+  "phase": "5 - hand_covering, camera C",
+  "status": "INSUFFICIENT DATA",
+  "ground_truth": {
+    "frames_sampled": 20,
+    "sampling": "every 75th frame (0.4 fps), deterministic",
+    "distinct_persons": 1,
+    "person_observations": 16,
+    "hand_covering": {
+      "present": 3,
+      "absent": 0,
+      "not_visible": 1,
+      "unknown": 12
+    }
+  },
+  "measurable": {
+    "hand_covering_ABSENT_precision": "NOT MEASURABLE - 0 ground-truth ABSENT observations",
+    "hand_covering_ABSENT_recall": "NOT MEASURABLE - 0 ground-truth ABSENT observations",
+    "hand_covering_PRESENT_precision": "NOT MEASURABLE - 3 observations, 1 person",
+    "hand_covering_PRESENT_recall": "NOT MEASURABLE - 3 observations, 1 person",
+    "NOT_VISIBLE_precision_recall": "NOT MEASURABLE - 1 observation",
+    "UNKNOWN_precision_recall": "NOT MEASURABLE - annotator uncertainty, not a system target",
+    "person_detection_recall": "NOT MEASURABLE - single-person scene, no detector comparison run",
+    "false_violation_rate": "NOT MEASURABLE - denominator requires system ABSENT predictions against known truth"
+  },
+  "pipeline_run": {
+    "executed": false,
+    "reason": "0 ground-truth ABSENT and 3 decided PRESENT observations from 1 person. Every requested metric would be undefined or computed over n<=3. Running it would produce numbers that describe the sample, not the system."
+  },
+  "key_finding": "Camera C workers wear CLEAR DISPOSABLE GLOVES, identifiable only at native resolution. At thumbnail scale they read as bare hands. hand_covering is compliant here; there are no hand violations to measure.",
+  "correction": "A preliminary read of this footage at reduced resolution suggested bare hands. Native-resolution inspection at frames 600 and 975 shows the glove cuff and crinkled translucent material clearly. The earlier read was wrong."
+}

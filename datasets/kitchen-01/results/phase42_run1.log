@@ -1,0 +1,28 @@
+understander: nvidia (understander.nvidia_vl)
+
+frames 15  annotated 43  matched 43  unmatched 0  spurious 0
+evidence crops 86  accepted 83  rejected 3  (3.5%)
+vlm calls 83  avoided 3  per person 1.93  per 1000 frames 5533
+not_visible from gate 3  from model 42
+latency mean 13141ms  median 5492ms  p95 60156ms  total 1092s
+
+head_covering: accuracy  69.8% over 43   unsupported claims 5
+    present      support  30  predicted  24  precision 100.0%  recall  80.0%
+    absent       support   0  predicted   9  precision   0.0%  recall   n/a
+    not_visible  support  13  predicted   6  precision 100.0%  recall  46.2%
+    unknown      support   0  predicted   4  precision   0.0%  recall   n/a
+    truth not_visible  -> {'absent': 5, 'not_visible': 6, 'unknown': 2}
+    truth present      -> {'absent': 4, 'present': 24, 'unknown': 2}
+    FALSE ABSENT on a true PRESENT: 4   false PRESENT on a true ABSENT: 0
+
+hand_covering: accuracy  88.4% over 43   unsupported claims 2
+    absent       support   3  predicted   3  precision  33.3%  recall  33.3%
+    not_visible  support  40  predicted  39  precision  94.9%  recall  92.5%
+    unknown      support   0  predicted   1  precision   0.0%  recall   n/a
+    truth absent       -> {'absent': 1, 'not_visible': 2}
+    truth not_visible  -> {'absent': 2, 'not_visible': 37, 'unknown': 1}
+    FALSE ABSENT on a true PRESENT: 0   false PRESENT on a true ABSENT: 0
+
+failures: {'unknown_handling_failure': 7, 'unknown_failure_reason': 5, 'vlm_failure': 4, 'semantic_model_failure': 2}
+
+written: datasets\kitchen-01\results\phase42.json

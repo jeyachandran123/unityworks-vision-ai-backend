@@ -1,0 +1,34 @@
+{
+  "name": "kitchen-01",
+  "frames": 15,
+  "subjects": 43,
+  "videos": [
+    "kitchen-01"
+  ],
+  "cameras": [
+    "kitchen-cam-01"
+  ],
+  "restaurants": [
+    "restaurant-01"
+  ],
+  "attribute_counts": {
+    "head_covering": {
+      "present": 30,
+      "not_visible": 13
+    },
+    "hand_covering": {
+      "absent": 3,
+      "not_visible": 40
+    }
+  },
+  "split_by": "video_id",
+  "notes": "Boxes are detector proposals visually confirmed to be real people. People the detector never proposed were therefore never annotated, so this dataset CANNOT measure detection recall. Labels themselves are human visual judgements and were not read from any model output.",
+  "split": {
+    "split_by": "video_id",
+    "train": [],
+    "validation": [],
+    "test": [
+      "kitchen-01"
+    ]
+  }
+}

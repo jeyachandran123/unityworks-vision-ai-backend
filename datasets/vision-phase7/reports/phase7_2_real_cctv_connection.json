@@ -1,0 +1,72 @@
+{
+  "phase": "7B - real CCTV connection",
+  "status": "BLOCKED - failure isolated to network reachability, before authentication",
+  "device": {
+    "model": "DH-XVR5116HS-I3",
+    "site": "Gayatri Restaurant",
+    "host": "gayatri.freemyip.com",
+    "resolved_ip": "203.118.57.154",
+    "channel_under_test": 1
+  },
+  "host_spelling_note": "Phase 7B brief spells the host 'gayatri.freeymip.com', which does NOT resolve. The working spelling is 'gayatri.freemyip.com' (freemyip.com is the dynamic-DNS provider). Phase 7A used the correct spelling.",
+  "diagnostic_ladder": {
+    "1_dns": {
+      "result": "PASS",
+      "detail": "gayatri.freemyip.com -> 203.118.57.154"
+    },
+    "2_tcp_554": {
+      "result": "FAIL",
+      "detail": "TimeoutError after 6s, via hostname AND via raw IP"
+    },
+    "3_rtsp_handshake": {
+      "result": "NOT REACHED",
+      "detail": "no TCP session to speak RTSP over"
+    },
+    "4_authentication": {
+      "result": "NOT REACHED"
+    },
+    "5_stream_path": {
+      "result": "NOT REACHED"
+    },
+    "6_channel": {
+      "result": "NOT REACHED"
+    },
+    "7_decoder": {
+      "result": "NOT REACHED"
+    },
+    "8_subtype": {
+      "result": "NOT REACHED"
+    }
+  },
+  "port_scan": {
+    "80": "OPEN",
+    "443": "OPEN",
+    "554": "TIMEOUT",
+    "9000": "ConnectionRefused",
+    "9001": "OPEN"
+  },
+  "interpretation": "The host is reachable and answering on 80, 443 and 9001 (the Dahua TCP port). Only 554 times out, from both hostname and IP. A timeout rather than a refusal indicates packets are being dropped - a closed port refuses, a filtered port hangs. Consistent with port 554 not being forwarded on the router, or blocked upstream.",
+  "credentials": {
+    "available_to_this_process": false,
+    "detail": "CCTV_USERNAME and CCTV_PASSWORD are unset in the environment and absent from every .env file. The brief's placeholder <real password from secure environment> was never substituted.",
+    "impact": "None on this result. The failure is two layers below authentication - the password could not have changed the outcome."
+  },
+  "success_criteria": {
+    "dns_resolves": true,
+    "tcp_554_reachable": false,
+    "authentication": null,
+    "dahua_path_confirmed": null,
+    "channel_1_opens": null,
+    "source_running": null,
+    "frames_received": null,
+    "frame_dimensions_valid": null,
+    "timestamps_valid": null,
+    "sequence_increments": null,
+    "no_credentials_exposed": true,
+    "file_mode_unchanged": true,
+    "vision_os_untouched": true
+  },
+  "frames_received": 0,
+  "vision_os_modified": false,
+  "file_mode_status": "unchanged - 160 harness tests passing"
+}

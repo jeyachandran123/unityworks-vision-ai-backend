@@ -1,0 +1,714 @@
+{
+  "schema_version": "2.0.0",
+  "source": "Screen Recording 2026-08-17 122553.mp4",
+  "frames": [
+    {
+      "frame_id": "camC/000000",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 0,
+      "timestamp_ms": 0.0,
+      "image_path": "review/frames/camC_000000.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": []
+    },
+    {
+      "frame_id": "camC/000075",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 75,
+      "timestamp_ms": 2500.0,
+      "image_path": "review/frames/camC_000075.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": []
+    },
+    {
+      "frame_id": "camC/000150",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 150,
+      "timestamp_ms": 5000.0,
+      "image_path": "review/frames/camC_000150.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": []
+    },
+    {
+      "frame_id": "camC/000225",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 225,
+      "timestamp_ms": 7500.0,
+      "image_path": "review/frames/camC_000225.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.3,
+            "y1": 0.05,
+            "x2": 0.62,
+            "y2": 0.85
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "present",
+              "observability": "partially_observable",
+              "note": "clear disposable glove; cuff edge visible at wrist, hand in tray",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000300",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 300,
+      "timestamp_ms": 10000.0,
+      "image_path": "review/frames/camC_000300.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000375",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 375,
+      "timestamp_ms": 12500.0,
+      "image_path": "review/frames/camC_000375.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000450",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 450,
+      "timestamp_ms": 15000.0,
+      "image_path": "review/frames/camC_000450.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000525",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 525,
+      "timestamp_ms": 17500.0,
+      "image_path": "review/frames/camC_000525.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000600",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 600,
+      "timestamp_ms": 20000.0,
+      "image_path": "review/frames/camC_000600.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.28,
+            "y1": 0.03,
+            "x2": 0.6,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "present",
+              "observability": "observable",
+              "note": "both hands together; crinkled translucent glove clearly visible on both",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000675",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 675,
+      "timestamp_ms": 22500.0,
+      "image_path": "review/frames/camC_000675.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000750",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 750,
+      "timestamp_ms": 25000.0,
+      "image_path": "review/frames/camC_000750.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000825",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 825,
+      "timestamp_ms": 27500.0,
+      "image_path": "review/frames/camC_000825.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000900",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 900,
+      "timestamp_ms": 30000.0,
+      "image_path": "review/frames/camC_000900.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/000975",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 975,
+      "timestamp_ms": 32500.0,
+      "image_path": "review/frames/camC_000975.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.02,
+            "x2": 0.58,
+            "y2": 0.86
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "present",
+              "observability": "observable",
+              "note": "left hand at tray; translucent glove and wrist cuff clearly visible",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001050",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1050,
+      "timestamp_ms": 35000.0,
+      "image_path": "review/frames/camC_001050.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001125",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1125,
+      "timestamp_ms": 37500.0,
+      "image_path": "review/frames/camC_001125.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001200",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1200,
+      "timestamp_ms": 40000.0,
+      "image_path": "review/frames/camC_001200.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001275",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1275,
+      "timestamp_ms": 42500.0,
+      "image_path": "review/frames/camC_001275.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.26,
+            "y1": 0.0,
+            "x2": 0.62,
+            "y2": 0.88
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "unknown",
+              "observability": "partially_observable",
+              "note": "worker at bench; reviewed at reduced resolution only - glove state not confidently determined",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001350",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1350,
+      "timestamp_ms": 45000.0,
+      "image_path": "review/frames/camC_001350.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "w1",
+          "box": {
+            "x1": 0.34,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 0.35
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "worker stepped back; hands out of the work zone, not inspectable",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "camC/001425",
+      "video_id": "camC",
+      "camera_id": "kitchen-cam-C",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1425,
+      "timestamp_ms": 47500.0,
+      "image_path": "review/frames/camC_001425.jpg",
+      "conditions": [
+        "close_range",
+        "overhead",
+        "food_contact"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": []
+    }
+  ]
+}

@@ -1,0 +1,1038 @@
+{
+ "yolov8n.onnx": {
+  "weights": "models\\yolov8n.onnx",
+  "frames": 15,
+  "person_detections": 43,
+  "matched": 43,
+  "unmatched_annotations": 0,
+  "spurious": 0,
+  "mean_latency_ms": 51.9,
+  "fps_cpu": 19.26,
+  "geometry": {
+   "median_width": 0.1692,
+   "median_height": 0.5735,
+   "median_area": 0.10005,
+   "median_aspect_h_over_w": 4.12,
+   "median_confidence": 0.819,
+   "min_confidence": 0.391
+  },
+  "matched_boxes": {
+   "kitchen-01/f00060": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.36085,
+      0.16287,
+      0.53226,
+      0.82756
+     ],
+     "score": 0.8519,
+     "iou_to_annotation": 0.9917
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.13459,
+      0.11836,
+      0.58542
+     ],
+     "score": 0.4356,
+     "iou_to_annotation": 0.9856
+    }
+   ],
+   "kitchen-01/f00180": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.40652,
+      0.13953,
+      0.58158,
+      0.90711
+     ],
+     "score": 0.8932,
+     "iou_to_annotation": 0.9938
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.35702,
+      0.18267,
+      0.90473
+     ],
+     "score": 0.4717,
+     "iou_to_annotation": 0.9776
+    }
+   ],
+   "kitchen-01/f00300": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.42587,
+      0.14789,
+      0.59508,
+      0.90097
+     ],
+     "score": 0.9008,
+     "iou_to_annotation": 0.9982
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.12685,
+      0.09779,
+      0.44259
+     ],
+     "score": 0.7034,
+     "iou_to_annotation": 0.9954
+    }
+   ],
+   "kitchen-01/f00420": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.39329,
+      0.14372,
+      0.57548,
+      0.90048
+     ],
+     "score": 0.9123,
+     "iou_to_annotation": 0.9981
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.05752,
+      0.08274,
+      0.18272,
+      0.68433
+     ],
+     "score": 0.8294,
+     "iou_to_annotation": 0.9927
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.0,
+      0.11397,
+      0.11509,
+      0.68745
+     ],
+     "score": 0.7717,
+     "iou_to_annotation": 0.9927
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.18887,
+      0.66138,
+      0.37011,
+      0.99188
+     ],
+     "score": 0.7503,
+     "iou_to_annotation": 0.9954
+    }
+   ],
+   "kitchen-01/f00540": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.43521,
+      0.14072,
+      0.62847,
+      0.88249
+     ],
+     "score": 0.8833,
+     "iou_to_annotation": 0.9974
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.1931,
+      0.7109,
+      0.386,
+      0.99305
+     ],
+     "score": 0.7755,
+     "iou_to_annotation": 0.9922
+    }
+   ],
+   "kitchen-01/f00660": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.4232,
+      0.13034,
+      0.60743,
+      0.90248
+     ],
+     "score": 0.8964,
+     "iou_to_annotation": 0.9965
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.1451,
+      0.11497,
+      0.68068
+     ],
+     "score": 0.8128,
+     "iou_to_annotation": 0.9889
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.1425,
+      0.56478,
+      0.31226,
+      0.99277
+     ],
+     "score": 0.7703,
+     "iou_to_annotation": 0.9948
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      1e-05,
+      0.00627,
+      0.05405,
+      0.25475
+     ],
+     "score": 0.4643,
+     "iou_to_annotation": 0.9945
+    }
+   ],
+   "kitchen-01/f00780": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.20207,
+      0.61788,
+      0.55272,
+      0.98965
+     ],
+     "score": 0.8923,
+     "iou_to_annotation": 0.9972
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.41821,
+      0.12698,
+      0.58493,
+      0.85869
+     ],
+     "score": 0.8932,
+     "iou_to_annotation": 0.996
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.09154,
+      0.16505,
+      0.26151,
+      0.81634
+     ],
+     "score": 0.8189,
+     "iou_to_annotation": 0.9887
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.0,
+      0.12745,
+      0.1189,
+      0.71218
+     ],
+     "score": 0.7691,
+     "iou_to_annotation": 0.9893
+    },
+    {
+     "subject_id": "s4",
+     "box": [
+      0.0,
+      0.00624,
+      0.05956,
+      0.26983
+     ],
+     "score": 0.4579,
+     "iou_to_annotation": 0.9809
+    }
+   ],
+   "kitchen-01/f00900": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.31465,
+      0.66199,
+      0.61056,
+      0.99018
+     ],
+     "score": 0.8766,
+     "iou_to_annotation": 0.999
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.00119,
+      0.08382,
+      0.44459
+     ],
+     "score": 0.8359,
+     "iou_to_annotation": 0.9974
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.42171,
+      0.18265,
+      0.60311,
+      0.82713
+     ],
+     "score": 0.7316,
+     "iou_to_annotation": 0.9893
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.00019,
+      0.22503,
+      0.1205,
+      0.69567
+     ],
+     "score": 0.7115,
+     "iou_to_annotation": 0.9895
+    }
+   ],
+   "kitchen-01/f01020": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.50668,
+      0.13598,
+      0.67171,
+      0.89809
+     ],
+     "score": 0.852,
+     "iou_to_annotation": 0.9958
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.36669,
+      0.26154,
+      0.53197,
+      0.98933
+     ],
+     "score": 0.8524,
+     "iou_to_annotation": 0.9969
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.13511,
+      0.54798,
+      0.38494,
+      0.99138
+     ],
+     "score": 0.8125,
+     "iou_to_annotation": 0.9858
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.0,
+      0.17996,
+      0.11127,
+      0.69791
+     ],
+     "score": 0.6601,
+     "iou_to_annotation": 0.9931
+    }
+   ],
+   "kitchen-01/f01140": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.46039,
+      0.14373,
+      0.62036,
+      0.8832
+     ],
+     "score": 0.9059,
+     "iou_to_annotation": 0.9959
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00135,
+      0.03056,
+      0.12572,
+      0.51104
+     ],
+     "score": 0.8352,
+     "iou_to_annotation": 0.9936
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.0,
+      0.39094,
+      0.11164,
+      0.78182
+     ],
+     "score": 0.6825,
+     "iou_to_annotation": 0.9932
+    }
+   ],
+   "kitchen-01/f01260": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.35394,
+      0.11915,
+      0.53234,
+      0.90343
+     ],
+     "score": 0.8536,
+     "iou_to_annotation": 0.9902
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0002,
+      0.38351,
+      0.10675,
+      0.7761
+     ],
+     "score": 0.3912,
+     "iou_to_annotation": 0.9559
+    }
+   ],
+   "kitchen-01/f01380": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.31218,
+      0.1335,
+      0.49132,
+      0.88297
+     ],
+     "score": 0.9048,
+     "iou_to_annotation": 0.9831
+    }
+   ],
+   "kitchen-01/f01500": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.34716,
+      0.14049,
+      0.54735,
+      0.91355
+     ],
+     "score": 0.9002,
+     "iou_to_annotation": 0.9986
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.01777,
+      0.15432,
+      0.21314,
+      0.81469
+     ],
+     "score": 0.8545,
+     "iou_to_annotation": 0.9977
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.0,
+      0.28013,
+      0.13773,
+      0.78601
+     ],
+     "score": 0.5713,
+     "iou_to_annotation": 0.9527
+    }
+   ],
+   "kitchen-01/f01620": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.43811,
+      0.15101,
+      0.61891,
+      0.91582
+     ],
+     "score": 0.8949,
+     "iou_to_annotation": 0.9971
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      8e-05,
+      0.23659,
+      0.20159,
+      0.9422
+     ],
+     "score": 0.6397,
+     "iou_to_annotation": 0.9827
+    }
+   ],
+   "kitchen-01/f01740": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.43031,
+      0.15974,
+      0.61387,
+      0.91598
+     ],
+     "score": 0.9007,
+     "iou_to_annotation": 0.999
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.0,
+      0.26909,
+      0.09268,
+      0.75207
+     ],
+     "score": 0.6609,
+     "iou_to_annotation": 0.9943
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      3e-05,
+      0.1061,
+      0.05366,
+      0.36138
+     ],
+     "score": 0.5204,
+     "iou_to_annotation": 0.9884
+    }
+   ]
+  }
+ },
+ "yolov8s.onnx": {
+  "weights": "models\\yolov8s.onnx",
+  "frames": 15,
+  "person_detections": 56,
+  "matched": 41,
+  "unmatched_annotations": 2,
+  "spurious": 15,
+  "mean_latency_ms": 88.8,
+  "fps_cpu": 11.26,
+  "geometry": {
+   "median_width": 0.1726,
+   "median_height": 0.5656,
+   "median_area": 0.11282,
+   "median_aspect_h_over_w": 4.04,
+   "median_confidence": 0.89,
+   "min_confidence": 0.548
+  },
+  "matched_boxes": {
+   "kitchen-01/f00060": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.35964,
+      0.16246,
+      0.5306,
+      0.82771
+     ],
+     "score": 0.9169,
+     "iou_to_annotation": 0.9773
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      3e-05,
+      0.13594,
+      0.11558,
+      0.57879
+     ],
+     "score": 0.548,
+     "iou_to_annotation": 0.9731
+    }
+   ],
+   "kitchen-01/f00180": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.40941,
+      0.14069,
+      0.58201,
+      0.90863
+     ],
+     "score": 0.9239,
+     "iou_to_annotation": 0.9805
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      2e-05,
+      0.37654,
+      0.20726,
+      0.94218
+     ],
+     "score": 0.6332,
+     "iou_to_annotation": 0.7809
+    }
+   ],
+   "kitchen-01/f00300": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.42491,
+      0.14866,
+      0.6041,
+      0.90298
+     ],
+     "score": 0.925,
+     "iou_to_annotation": 0.942
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      6e-05,
+      0.12678,
+      0.09618,
+      0.43973
+     ],
+     "score": 0.8718,
+     "iou_to_annotation": 0.9773
+    }
+   ],
+   "kitchen-01/f00420": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.39357,
+      0.14401,
+      0.57436,
+      0.90012
+     ],
+     "score": 0.922,
+     "iou_to_annotation": 0.992
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.05225,
+      0.08365,
+      0.18088,
+      0.68759
+     ],
+     "score": 0.872,
+     "iou_to_annotation": 0.9448
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.00035,
+      0.11731,
+      0.11426,
+      0.67594
+     ],
+     "score": 0.838,
+     "iou_to_annotation": 0.9712
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.19017,
+      0.65975,
+      0.36718,
+      0.99432
+     ],
+     "score": 0.9016,
+     "iou_to_annotation": 0.9634
+    }
+   ],
+   "kitchen-01/f00540": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.43376,
+      0.14186,
+      0.62997,
+      0.88157
+     ],
+     "score": 0.9361,
+     "iou_to_annotation": 0.9813
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.1946,
+      0.71061,
+      0.38471,
+      0.98844
+     ],
+     "score": 0.7305,
+     "iou_to_annotation": 0.966
+    }
+   ],
+   "kitchen-01/f00660": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.42676,
+      0.13029,
+      0.6081,
+      0.90189
+     ],
+     "score": 0.9174,
+     "iou_to_annotation": 0.9741
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00013,
+      0.15354,
+      0.11732,
+      0.69914
+     ],
+     "score": 0.736,
+     "iou_to_annotation": 0.9221
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.14359,
+      0.56186,
+      0.34824,
+      0.99385
+     ],
+     "score": 0.8914,
+     "iou_to_annotation": 0.8104
+    },
+    {
+     "subject_id": "s3",
+     "box": null,
+     "score": null,
+     "iou_to_annotation": 0.3793
+    }
+   ],
+   "kitchen-01/f00780": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.2007,
+      0.61896,
+      0.55204,
+      0.98874
+     ],
+     "score": 0.9191,
+     "iou_to_annotation": 0.9903
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.41684,
+      0.12597,
+      0.58513,
+      0.87635
+     ],
+     "score": 0.9074,
+     "iou_to_annotation": 0.963
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.08854,
+      0.16829,
+      0.26268,
+      0.8162
+     ],
+     "score": 0.8901,
+     "iou_to_annotation": 0.9755
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.00024,
+      0.19944,
+      0.11979,
+      0.70781
+     ],
+     "score": 0.7912,
+     "iou_to_annotation": 0.856
+    },
+    {
+     "subject_id": "s4",
+     "box": null,
+     "score": null,
+     "iou_to_annotation": 0.4125
+    }
+   ],
+   "kitchen-01/f00900": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.31365,
+      0.66574,
+      0.61101,
+      0.98998
+     ],
+     "score": 0.8899,
+     "iou_to_annotation": 0.9825
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00023,
+      0.00778,
+      0.08032,
+      0.44728
+     ],
+     "score": 0.8854,
+     "iou_to_annotation": 0.9335
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.41974,
+      0.18219,
+      0.60675,
+      0.8244
+     ],
+     "score": 0.9143,
+     "iou_to_annotation": 0.9576
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.00023,
+      0.24816,
+      0.11984,
+      0.70937
+     ],
+     "score": 0.8445,
+     "iou_to_annotation": 0.9092
+    }
+   ],
+   "kitchen-01/f01020": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.50647,
+      0.13821,
+      0.67275,
+      0.8953
+     ],
+     "score": 0.8962,
+     "iou_to_annotation": 0.985
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.36514,
+      0.26386,
+      0.53098,
+      0.98743
+     ],
+     "score": 0.9062,
+     "iou_to_annotation": 0.977
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.13572,
+      0.54337,
+      0.37907,
+      0.9908
+     ],
+     "score": 0.9084,
+     "iou_to_annotation": 0.955
+    },
+    {
+     "subject_id": "s3",
+     "box": [
+      0.0001,
+      0.16891,
+      0.11232,
+      0.69612
+     ],
+     "score": 0.5867,
+     "iou_to_annotation": 0.9631
+    }
+   ],
+   "kitchen-01/f01140": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.45928,
+      0.14128,
+      0.6231,
+      0.88357
+     ],
+     "score": 0.9262,
+     "iou_to_annotation": 0.9712
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00275,
+      0.02871,
+      0.12205,
+      0.52273
+     ],
+     "score": 0.8839,
+     "iou_to_annotation": 0.9361
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.00053,
+      0.39427,
+      0.1071,
+      0.78043
+     ],
+     "score": 0.8367,
+     "iou_to_annotation": 0.9488
+    }
+   ],
+   "kitchen-01/f01260": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.35406,
+      0.12216,
+      0.53588,
+      0.90472
+     ],
+     "score": 0.8889,
+     "iou_to_annotation": 0.9679
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00068,
+      0.38676,
+      0.10486,
+      0.77702
+     ],
+     "score": 0.8755,
+     "iou_to_annotation": 0.9629
+    }
+   ],
+   "kitchen-01/f01380": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.31117,
+      0.13363,
+      0.49675,
+      0.88305
+     ],
+     "score": 0.9214,
+     "iou_to_annotation": 0.9768
+    }
+   ],
+   "kitchen-01/f01500": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.3483,
+      0.14254,
+      0.54558,
+      0.91581
+     ],
+     "score": 0.9442,
+     "iou_to_annotation": 0.9794
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.02052,
+      0.15564,
+      0.21401,
+      0.80034
+     ],
+     "score": 0.8826,
+     "iou_to_annotation": 0.9563
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.00506,
+      0.3085,
+      0.1352,
+      0.80557
+     ],
+     "score": 0.6471,
+     "iou_to_annotation": 0.8206
+    }
+   ],
+   "kitchen-01/f01620": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.43644,
+      0.14852,
+      0.62079,
+      0.91475
+     ],
+     "score": 0.9243,
+     "iou_to_annotation": 0.9777
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00035,
+      0.2359,
+      0.20223,
+      0.93642
+     ],
+     "score": 0.6102,
+     "iou_to_annotation": 0.9843
+    }
+   ],
+   "kitchen-01/f01740": [
+    {
+     "subject_id": "s0",
+     "box": [
+      0.42995,
+      0.15388,
+      0.61499,
+      0.91325
+     ],
+     "score": 0.9274,
+     "iou_to_annotation": 0.9811
+    },
+    {
+     "subject_id": "s1",
+     "box": [
+      0.00022,
+      0.28667,
+      0.09643,
+      0.75534
+     ],
+     "score": 0.8858,
+     "iou_to_annotation": 0.9161
+    },
+    {
+     "subject_id": "s2",
+     "box": [
+      0.00019,
+      0.10092,
+      0.05446,
+      0.35493
+     ],
+     "score": 0.7021,
+     "iou_to_annotation": 0.9398
+    }
+   ]
+  }
+ }
+}

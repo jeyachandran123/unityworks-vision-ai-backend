@@ -1,0 +1,7 @@
+{
+  "status": "NOT GENERATED",
+  "reason": "Failure artefacts require system predictions scored against decided ground truth. With 0 ABSENT and 3 PRESENT observations there is no failure population to review.",
+  "false_absent": [],
+  "false_present": [],
+  "unsupported_absent": []
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "frame_id": "5d/N_0096",
+    "subject_id": "w3",
+    "truth": "present",
+    "predicted": "absent",
+    "category": "vlm_failure",
+    "crop_size": "448x448",
+    "quality": "passed"
+  },
+  {
+    "frame_id": "5d/D_0096",
+    "subject_id": "w3",
+    "truth": "present",
+    "predicted": "absent",
+    "category": "vlm_failure",
+    "crop_size": "448x448",
+    "quality": "passed"
+  }
+]

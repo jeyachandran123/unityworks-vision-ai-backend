@@ -1,0 +1,746 @@
+{
+  "schema_version": "2.0.0",
+  "source": "i_want_sec_video_of_this_vi.mp4",
+  "frames": [
+    {
+      "frame_id": "cam5c/0000",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 0,
+      "timestamp_ms": 0.0,
+      "image_path": "review/frames_5c/f5c_0000.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.52,
+            "y1": 0.63,
+            "x2": 0.76,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.12,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0024",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 24,
+      "timestamp_ms": 1000.0,
+      "image_path": "review/frames_5c/f5c_0024.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.52,
+            "y1": 0.64,
+            "x2": 0.76,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.115,
+            "x2": 0.482,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0048",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 48,
+      "timestamp_ms": 2000.0,
+      "image_path": "review/frames_5c/f5c_0048.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.522,
+            "y1": 0.63,
+            "x2": 0.762,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.402,
+            "y1": 0.118,
+            "x2": 0.482,
+            "y2": 0.498
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0072",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 72,
+      "timestamp_ms": 3000.0,
+      "image_path": "review/frames_5c/f5c_0072.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.52,
+            "y1": 0.62,
+            "x2": 0.758,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.118,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0096",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 96,
+      "timestamp_ms": 4000.0,
+      "image_path": "review/frames_5c/f5c_0096.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.518,
+            "y1": 0.625,
+            "x2": 0.758,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.12,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0120",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 120,
+      "timestamp_ms": 5000.0,
+      "image_path": "review/frames_5c/f5c_0120.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.528,
+            "y1": 0.64,
+            "x2": 0.745,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.402,
+            "y1": 0.12,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0144",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 144,
+      "timestamp_ms": 6000.0,
+      "image_path": "review/frames_5c/f5c_0144.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.525,
+            "y1": 0.63,
+            "x2": 0.755,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.118,
+            "x2": 0.48,
+            "y2": 0.498
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0168",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 168,
+      "timestamp_ms": 7000.0,
+      "image_path": "review/frames_5c/f5c_0168.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.522,
+            "y1": 0.628,
+            "x2": 0.756,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.118,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0192",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 192,
+      "timestamp_ms": 8000.0,
+      "image_path": "review/frames_5c/f5c_0192.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.52,
+            "y1": 0.625,
+            "x2": 0.758,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.12,
+            "x2": 0.482,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "frame_id": "cam5c/0216",
+      "video_id": "cam5c-kitchen",
+      "camera_id": "kitchen-cam-B2",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 216,
+      "timestamp_ms": 9000.0,
+      "image_path": "review/frames_5c/f5c_0216.jpg",
+      "conditions": [
+        "kitchen",
+        "working",
+        "overhead_wide"
+      ],
+      "annotated_by": "human_visual_inspection",
+      "annotation_source": "human_visual_inspection",
+      "persons": [
+        {
+          "person_id": "workerA",
+          "box": {
+            "x1": 0.53,
+            "y1": 0.58,
+            "x2": 0.7,
+            "y2": 1.0
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites + apron at the range/wok station; head close to camera, well lit, dark hair with a clear hairline, no net texture, no cap edge - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        },
+        {
+          "person_id": "workerB",
+          "box": {
+            "x1": 0.4,
+            "y1": 0.118,
+            "x2": 0.48,
+            "y2": 0.5
+          },
+          "visibility": "visible",
+          "occluded": false,
+          "truncated": false,
+          "note": "in-scope kitchen worker: chef uniform, commercial kitchen, actively working",
+          "detected_by_reference_model": null,
+          "ppe": {
+            "head_covering": {
+              "state": "absent",
+              "observability": "observable",
+              "note": "chef whites at the prep shelf handling food containers; head visible from behind, dark hair, no covering of any kind - uncovered",
+              "ambiguous": false
+            },
+            "hand_covering": {
+              "state": "not_visible",
+              "observability": "not_observable",
+              "note": "hands not resolvable at this distance/angle",
+              "ambiguous": false
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

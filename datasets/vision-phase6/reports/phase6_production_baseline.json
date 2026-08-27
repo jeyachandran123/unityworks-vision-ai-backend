@@ -1,0 +1,253 @@
+{
+  "video": "give_next_seconds_video_of.mp4",
+  "sampled_frames": 40,
+  "sample_fps": 4.0,
+  "demand": {
+    "class_id": "person",
+    "required_attributes": [
+      "head_covering"
+    ]
+  },
+  "session_state": "paused",
+  "evidence_requests_triggered": 13,
+  "evidence_requests_skipped": 13,
+  "crops_produced": 13,
+  "trigger_distribution": {
+    "first_sight": 6,
+    "attribute_missing": 6,
+    "identity_unverified": 1
+  },
+  "skip_distribution": {
+    "no_demand": 10,
+    "quality_insufficient": 3
+  },
+  "events": [
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007T6A50SHECTW7XQNM0",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007T6A50SHECTW7XQNM0",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007T7V5R7V9Y1EZNT5C2",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007T7V5R7V9Y1EZNT5C2",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007TZ5SP4YP5J7G7CCAV",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "object_id": "000000007TZ5SP4YP5J7G7CCAV",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 0
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T12YM7522E45KTSWK",
+      "attributes": [],
+      "frame": 0,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T31H73FM09H9KN6HV",
+      "attributes": [],
+      "frame": 0,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T406A5Q24HZ97F24D",
+      "attributes": [],
+      "frame": 0,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T79GXEE9EEJFPJ3BA",
+      "attributes": [],
+      "frame": 0,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007TBX6JKP8B1FQMW8AQ",
+      "attributes": [],
+      "frame": 0,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007T6A50SHECTW7XQNM0",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007T6A50SHECTW7XQNM0",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007T7V5R7V9Y1EZNT5C2",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007T7V5R7V9Y1EZNT5C2",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007TZ5SP4YP5J7G7CCAV",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "object_id": "000000007TZ5SP4YP5J7G7CCAV",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "identity_unverified",
+      "object_id": "00000000FMMC049A1F1BM5KEX8",
+      "attributes": [
+        "visible_object_kind"
+      ],
+      "frame": 1
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T12YM7522E45KTSWK",
+      "attributes": [],
+      "frame": 1,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T31H73FM09H9KN6HV",
+      "attributes": [],
+      "frame": 1,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T406A5Q24HZ97F24D",
+      "attributes": [],
+      "frame": 1,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007T79GXEE9EEJFPJ3BA",
+      "attributes": [],
+      "frame": 1,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "object_id": "000000007TBX6JKP8B1FQMW8AQ",
+      "attributes": [],
+      "frame": 1,
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "quality_insufficient",
+      "object_id": "00000000FM1NBK4HETZFWJN1RN",
+      "attributes": [
+        "visible_object_kind"
+      ],
+      "frame": 1,
+      "detail": "too_occluded"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "quality_insufficient",
+      "object_id": "00000000FMM0MPK2XCNE5ZTGDT",
+      "attributes": [
+        "head_covering"
+      ],
+      "frame": 1,
+      "detail": "too_blurry"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "quality_insufficient",
+      "object_id": "00000000FMM0MPK2XCNE5ZTGDT",
+      "attributes": [
+        "hand_covering"
+      ],
+      "frame": 1,
+      "detail": "too_small"
+    }
+  ]
+}

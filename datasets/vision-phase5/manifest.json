@@ -1,0 +1,26 @@
+{
+  "name": "vision-phase5",
+  "schema_version": "2.0.0",
+  "purpose": "Measure whether a reported PPE violation is real (ABSENT precision).",
+  "attributes": [
+    "head_covering",
+    "hand_covering"
+  ],
+  "status": "AWAITING FOOTAGE",
+  "annotation_source": "human_visual_inspection",
+  "annotation_independent_of_models": true,
+  "_note": [
+    "Empty by design. The repository contains no footage with PPE violations,",
+    "so no ABSENT examples exist to annotate. Fabricating them would produce a",
+    "violation-precision number that measures nothing.",
+    "See reports/phase5_data_requirement.md for exactly what footage is needed."
+  ],
+  "split_policy": {
+    "split_by": "restaurant_id",
+    "fallback": [
+      "camera_id",
+      "video_id"
+    ],
+    "_why": "Frames from one continuous video are near-duplicates. Splitting by restaurant means the test set shares no kitchen, lighting or uniform with development."
+  }
+}

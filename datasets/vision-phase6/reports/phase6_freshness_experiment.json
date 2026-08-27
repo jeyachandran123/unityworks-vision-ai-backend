@@ -1,0 +1,17 @@
+{
+  "video": "Screen Recording 2026-08-17 122832.mp4",
+  "sample_fps": 0.45,
+  "target_fps": 0.25,
+  "frames": 52,
+  "virtual_elapsed_ms": 436000,
+  "head_validity_ms": 120000,
+  "hand_validity_ms": 60000,
+  "demand_attributes": [
+    "head_covering",
+    "hand_covering"
+  ],
+  "triggers": {},
+  "skips": {},
+  "tracks": {},
+  "events": []
+}

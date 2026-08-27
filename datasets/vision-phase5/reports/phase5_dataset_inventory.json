@@ -1,0 +1,32 @@
+[
+  {
+    "filename": "Screen Recording 2026-08-13 112749.mp4",
+    "size_mb": 58.2,
+    "width": 1712,
+    "height": 1032,
+    "fps": 30.0,
+    "duration_s": 60.6,
+    "frames": 1817,
+    "prefix_sha256": "b7c1cd4f0b8243e6"
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122553.mp4",
+    "size_mb": 45.0,
+    "width": 1714,
+    "height": 966,
+    "fps": 30.0,
+    "duration_s": 49.8,
+    "frames": 1495,
+    "prefix_sha256": "bc561e54350d2b59"
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122832.mp4",
+    "size_mb": 105.7,
+    "width": 1718,
+    "height": 978,
+    "fps": 30.0,
+    "duration_s": 115.9,
+    "frames": 3476,
+    "prefix_sha256": "d362e981cffc3b8e"
+  }
+]

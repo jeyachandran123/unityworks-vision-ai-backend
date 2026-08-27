@@ -1,0 +1,61 @@
+{
+ "fingerprint": "abb8d79d71401e23",
+ "answers": {
+  "5d/N_0096:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "none"
+  },
+  "5d/N_0096:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "none"
+  },
+  "5d/N_0096:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/N_0096:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/N_0096:det-2:head_covering": {
+   "head_covering": "not_visible",
+   "hand_covering": "none"
+  },
+  "5d/N_0096:det-2:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/N_0096:det-3:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/N_0096:det-3:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-2:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "5d/D_0096:det-2:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  }
+ }
+}

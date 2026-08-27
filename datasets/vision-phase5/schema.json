@@ -1,0 +1,31 @@
+{
+  "schema_version": "2.0.0",
+  "person": {
+    "person_id": "str",
+    "box": "normalized x1,y1,x2,y2",
+    "visibility": [
+      "visible",
+      "partially_visible",
+      "not_visible"
+    ],
+    "occluded": "bool",
+    "truncated": "bool",
+    "detected_by_reference_model": "bool|null - recorded AFTER annotation, for detection recall only"
+  },
+  "ppe_attribute": {
+    "state": [
+      "present",
+      "absent",
+      "not_visible",
+      "unknown"
+    ],
+    "observability": [
+      "observable",
+      "partially_observable",
+      "not_observable"
+    ],
+    "ambiguous": "bool",
+    "note": "str"
+  },
+  "invariant": "state ABSENT or PRESENT requires observability != not_observable. Enforced by validate(); save() refuses to write violations of it."
+}

@@ -1,0 +1,2897 @@
+{
+  "video": "Screen Recording 2026-08-17 122832.mp4",
+  "sample_fps": 4.0,
+  "target_fps": 4.0,
+  "frames": 435,
+  "synthetic_time": false,
+  "virtual_elapsed_ms": 8500,
+  "attribute": "hand_covering",
+  "validity_ms": 60000,
+  "triggers": {
+    "first_sight": 4,
+    "attribute_missing": 127
+  },
+  "skips": {
+    "no_demand": 75,
+    "quality_insufficient": 1
+  },
+  "fresh_enough_ages_ms": [],
+  "attribute_stale_ages_ms": [],
+  "tracks": {
+    "000000007TJ9KWAD20AH21Q1QW": {
+      "first": 500,
+      "last": 8500,
+      "triggers": 66,
+      "skips": 0,
+      "duration_ms": 8000
+    },
+    "000000007TYFQDNQWDESAN7AFN": {
+      "first": 500,
+      "last": 8500,
+      "triggers": 65,
+      "skips": 1,
+      "duration_ms": 8000
+    },
+    "000000007TE21WAYDWVRPCKGN0": {
+      "first": 500,
+      "last": 3250,
+      "triggers": 0,
+      "skips": 12,
+      "duration_ms": 2750
+    },
+    "000000007TKTV2GCHGMB7X3CFF": {
+      "first": 500,
+      "last": 3250,
+      "triggers": 0,
+      "skips": 12,
+      "duration_ms": 2750
+    },
+    "00000000FMYY7B166JNNW5VKSC": {
+      "first": 750,
+      "last": 3500,
+      "triggers": 0,
+      "skips": 12,
+      "duration_ms": 2750
+    },
+    "00000000Z8VVGRHPFHP8CH7Y9P": {
+      "first": 1250,
+      "last": 8500,
+      "triggers": 0,
+      "skips": 30,
+      "duration_ms": 7250
+    },
+    "000000063A98PFEJE9H5YHN56N": {
+      "first": 6500,
+      "last": 8500,
+      "triggers": 0,
+      "skips": 9,
+      "duration_ms": 2000
+    }
+  },
+  "events": [
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": 500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "first_sight",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": 500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 0,
+      "clock_ms": 500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": 500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": 750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": 500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": 750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 1,
+      "clock_ms": 750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": 750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": 1000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": 750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": 1000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 2,
+      "clock_ms": 1000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": 1000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": 1250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": 1000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": 1250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 3,
+      "clock_ms": 1250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": 1250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": 1500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": 1250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": 1500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 4,
+      "clock_ms": 1500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": 1500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": 1750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": 1500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": 1750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 5,
+      "clock_ms": 1750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": 1750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": 2000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": 1750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": 2000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 6,
+      "clock_ms": 2000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": 2000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": 2250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": 2000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": 2250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 7,
+      "clock_ms": 2250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": 2250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": 2500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": 2250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": 2500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 8,
+      "clock_ms": 2500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": 2500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": 2750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": 2500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": 2750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 9,
+      "clock_ms": 2750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": 2750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": 3000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": 2750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": 3000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 10,
+      "clock_ms": 3000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": 3000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": 3250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": 3000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": 3250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TE21WAYDWVRPCKGN0",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000007TKTV2GCHGMB7X3CFF",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 11,
+      "clock_ms": 3250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": 3250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": 3500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": 3250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": 3500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000FMYY7B166JNNW5VKSC",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 12,
+      "clock_ms": 3500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 13,
+      "clock_ms": 3750,
+      "prev_obs_ms": 3500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 13,
+      "clock_ms": 3750,
+      "prev_obs_ms": 3750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 13,
+      "clock_ms": 3750,
+      "prev_obs_ms": 3500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 13,
+      "clock_ms": 3750,
+      "prev_obs_ms": 3750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 13,
+      "clock_ms": 3750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 14,
+      "clock_ms": 4000,
+      "prev_obs_ms": 3750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 14,
+      "clock_ms": 4000,
+      "prev_obs_ms": 4000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 14,
+      "clock_ms": 4000,
+      "prev_obs_ms": 3750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 14,
+      "clock_ms": 4000,
+      "prev_obs_ms": 4000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 14,
+      "clock_ms": 4000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 15,
+      "clock_ms": 4250,
+      "prev_obs_ms": 4000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 15,
+      "clock_ms": 4250,
+      "prev_obs_ms": 4250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 15,
+      "clock_ms": 4250,
+      "prev_obs_ms": 4000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 15,
+      "clock_ms": 4250,
+      "prev_obs_ms": 4250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 15,
+      "clock_ms": 4250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 16,
+      "clock_ms": 4500,
+      "prev_obs_ms": 4250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 16,
+      "clock_ms": 4500,
+      "prev_obs_ms": 4500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 16,
+      "clock_ms": 4500,
+      "prev_obs_ms": 4250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 16,
+      "clock_ms": 4500,
+      "prev_obs_ms": 4500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 16,
+      "clock_ms": 4500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 17,
+      "clock_ms": 4750,
+      "prev_obs_ms": 4500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 17,
+      "clock_ms": 4750,
+      "prev_obs_ms": 4750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 17,
+      "clock_ms": 4750,
+      "prev_obs_ms": 4500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 17,
+      "clock_ms": 4750,
+      "prev_obs_ms": 4750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 17,
+      "clock_ms": 4750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 18,
+      "clock_ms": 5000,
+      "prev_obs_ms": 4750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 18,
+      "clock_ms": 5000,
+      "prev_obs_ms": 5000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 18,
+      "clock_ms": 5000,
+      "prev_obs_ms": 4750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 18,
+      "clock_ms": 5000,
+      "prev_obs_ms": 5000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 18,
+      "clock_ms": 5000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 19,
+      "clock_ms": 5250,
+      "prev_obs_ms": 5000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 19,
+      "clock_ms": 5250,
+      "prev_obs_ms": 5250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 19,
+      "clock_ms": 5250,
+      "prev_obs_ms": 5000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 19,
+      "clock_ms": 5250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "quality_insufficient",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 19,
+      "clock_ms": 5250,
+      "prev_obs_ms": 5250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [
+        "head_covering"
+      ],
+      "detail": "too_blurry"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 20,
+      "clock_ms": 5500,
+      "prev_obs_ms": 5250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 20,
+      "clock_ms": 5500,
+      "prev_obs_ms": 5500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 20,
+      "clock_ms": 5500,
+      "prev_obs_ms": 5250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 20,
+      "clock_ms": 5500,
+      "prev_obs_ms": 5500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 20,
+      "clock_ms": 5500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 21,
+      "clock_ms": 5750,
+      "prev_obs_ms": 5500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 21,
+      "clock_ms": 5750,
+      "prev_obs_ms": 5750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 21,
+      "clock_ms": 5750,
+      "prev_obs_ms": 5500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 21,
+      "clock_ms": 5750,
+      "prev_obs_ms": 5750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 21,
+      "clock_ms": 5750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 22,
+      "clock_ms": 6000,
+      "prev_obs_ms": 5750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 22,
+      "clock_ms": 6000,
+      "prev_obs_ms": 6000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 22,
+      "clock_ms": 6000,
+      "prev_obs_ms": 5750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 22,
+      "clock_ms": 6000,
+      "prev_obs_ms": 6000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 22,
+      "clock_ms": 6000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 23,
+      "clock_ms": 6250,
+      "prev_obs_ms": 6000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 23,
+      "clock_ms": 6250,
+      "prev_obs_ms": 6250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 23,
+      "clock_ms": 6250,
+      "prev_obs_ms": 6000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 23,
+      "clock_ms": 6250,
+      "prev_obs_ms": 6250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 23,
+      "clock_ms": 6250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": 6250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": 6500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": 6250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": 6500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 24,
+      "clock_ms": 6500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": 6500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": 6750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": 6500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": 6750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 25,
+      "clock_ms": 6750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": 6750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": 7000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": 6750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": 7000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 26,
+      "clock_ms": 7000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": 7000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": 7250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": 7000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": 7250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 27,
+      "clock_ms": 7250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": 7250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": 7500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": 7250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": 7500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 28,
+      "clock_ms": 7500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": 7500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": 7750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": 7500,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": 7750,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 29,
+      "clock_ms": 7750,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": 7750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": 8000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": 7750,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": 8000,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 30,
+      "clock_ms": 8000,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": 8000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": 8250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": 8000,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": 8250,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 31,
+      "clock_ms": 8250,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": 8250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TJ9KWAD20AH21Q1QW",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": 8500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": 8250,
+      "observation_age_ms": 250,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "head_covering"
+      ]
+    },
+    {
+      "kind": "TRIGGER",
+      "reason": "attribute_missing",
+      "track": "000000007TYFQDNQWDESAN7AFN",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": 8500,
+      "observation_age_ms": 0,
+      "validity_ms": 60000,
+      "vlm_called": true,
+      "attributes": [
+        "hand_covering"
+      ]
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "00000000Z8VVGRHPFHP8CH7Y9P",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    },
+    {
+      "kind": "SKIP",
+      "reason": "no_demand",
+      "track": "000000063A98PFEJE9H5YHN56N",
+      "frame": 32,
+      "clock_ms": 8500,
+      "prev_obs_ms": null,
+      "observation_age_ms": null,
+      "validity_ms": 60000,
+      "vlm_called": false,
+      "attributes": [],
+      "detail": "no active demand covers this object"
+    }
+  ]
+}

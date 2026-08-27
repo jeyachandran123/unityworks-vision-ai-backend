@@ -1,0 +1,789 @@
+{
+  "schema_version": "1.0.0",
+  "source": "4fa5c3ab-Screen Recording 2026-08-13 112749.mp4",
+  "annotated_by": "human_visual_inspection",
+  "frames": [
+    {
+      "frame_id": "kitchen-01/f00060",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 60,
+      "timestamp_ms": 2000.0,
+      "image_path": "frames/f00060.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3607,
+            "y1": 0.1619,
+            "x2": 0.5332,
+            "y2": 0.8272
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "absent"
+          },
+          "note": "blue hairnet; both hands bare on the mixing bowl"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1347,
+            "x2": 0.1171,
+            "y2": 0.5838
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue cap; forearm raised, hand behind the head"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00180",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 180,
+      "timestamp_ms": 6000.0,
+      "image_path": "frames/f00180.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4073,
+            "y1": 0.1396,
+            "x2": 0.5815,
+            "y2": 0.9062
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; hands in front, out of view"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.3553,
+            "x2": 0.1816,
+            "y2": 0.8973
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "bent over, head region dark and unresolvable"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00300",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 300,
+      "timestamp_ms": 10000.0,
+      "image_path": "frames/f00300.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4259,
+            "y1": 0.1478,
+            "x2": 0.5953,
+            "y2": 0.9011
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet clear; hands below the counter line"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.127,
+            "x2": 0.0976,
+            "y2": 0.4419
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue cap; arm motion-blurred, hand behind the head"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00420",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 420,
+      "timestamp_ms": 14000.0,
+      "image_path": "frames/f00420.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3932,
+            "y1": 0.1439,
+            "x2": 0.5753,
+            "y2": 0.9006
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0571,
+            "y1": 0.0825,
+            "x2": 0.1823,
+            "y2": 0.6842
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue cap; hands at hips, roughly 15px, not resolvable"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1142,
+            "x2": 0.1146,
+            "y2": 0.6859
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue cap; hands together at chest but too small to read"
+        },
+        {
+          "subject_id": "s3",
+          "box": {
+            "x1": 0.1885,
+            "y1": 0.6613,
+            "x2": 0.3699,
+            "y2": 0.9915
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "dark bandana covering the head; hands out of view"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00540",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 540,
+      "timestamp_ms": 18000.0,
+      "image_path": "frames/f00540.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4353,
+            "y1": 0.1412,
+            "x2": 0.6285,
+            "y2": 0.8835
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.1935,
+            "y1": 0.7108,
+            "x2": 0.387,
+            "y2": 0.993
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "bent fully over; head is an unresolvable dark mass"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00660",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 660,
+      "timestamp_ms": 22000.0,
+      "image_path": "frames/f00660.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4227,
+            "y1": 0.1305,
+            "x2": 0.6075,
+            "y2": 0.9023
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; pale object near the hand, not identifiable"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1405,
+            "x2": 0.115,
+            "y2": 0.6794
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "head cropped off at the frame edge"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.142,
+            "y1": 0.5644,
+            "x2": 0.3123,
+            "y2": 0.9923
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "dark cap, clearly worn; hands below the counter"
+        },
+        {
+          "subject_id": "s3",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.0059,
+            "x2": 0.0541,
+            "y2": 0.254
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet visible despite blur"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00780",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 780,
+      "timestamp_ms": 26000.0,
+      "image_path": "frames/f00780.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.2021,
+            "y1": 0.6178,
+            "x2": 0.5519,
+            "y2": 0.9896
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "dark bandana; extended arm bare but the hand is blurred"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.4183,
+            "y1": 0.1271,
+            "x2": 0.585,
+            "y2": 0.8566
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; facing away"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.0921,
+            "y1": 0.1657,
+            "x2": 0.2627,
+            "y2": 0.8163
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "facing away and bent; head region ambiguous"
+        },
+        {
+          "subject_id": "s3",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1223,
+            "x2": 0.1191,
+            "y2": 0.712
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "head cropped off at the top of the box"
+        },
+        {
+          "subject_id": "s4",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.0063,
+            "x2": 0.0603,
+            "y2": 0.2716
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f00900",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 900,
+      "timestamp_ms": 30000.0,
+      "image_path": "frames/f00900.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3147,
+            "y1": 0.662,
+            "x2": 0.6106,
+            "y2": 0.9904
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "dark knitted cap, close to the lens"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.0012,
+            "x2": 0.084,
+            "y2": 0.4444
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "pale cap; distant"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.4221,
+            "y1": 0.1825,
+            "x2": 0.6018,
+            "y2": 0.8264
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; bent over a pot"
+        },
+        {
+          "subject_id": "s3",
+          "box": {
+            "x1": 0.0002,
+            "y1": 0.2241,
+            "x2": 0.1207,
+            "y2": 0.6925
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "head only partly in the box"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01020",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1020,
+      "timestamp_ms": 34000.0,
+      "image_path": "frames/f01020.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.5065,
+            "y1": 0.1359,
+            "x2": 0.6713,
+            "y2": 0.8977
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.3668,
+            "y1": 0.2617,
+            "x2": 0.5323,
+            "y2": 0.9892
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; bare forearm, hand not resolvable"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.1352,
+            "y1": 0.547,
+            "x2": 0.3878,
+            "y2": 0.9912
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "dark cap; hand near the counter but heavily blurred"
+        },
+        {
+          "subject_id": "s3",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1789,
+            "x2": 0.111,
+            "y2": 0.6992
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "head turned away and out of the box"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01140",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1140,
+      "timestamp_ms": 38000.0,
+      "image_path": "frames/f01140.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4602,
+            "y1": 0.1437,
+            "x2": 0.6199,
+            "y2": 0.8832
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0011,
+            "y1": 0.0303,
+            "x2": 0.1255,
+            "y2": 0.512
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; distant"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.3908,
+            "x2": 0.1111,
+            "y2": 0.7812
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "bent over; head outside the box"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01260",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1260,
+      "timestamp_ms": 42000.0,
+      "image_path": "frames/f01260.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3546,
+            "y1": 0.1193,
+            "x2": 0.5314,
+            "y2": 0.9039
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0002,
+            "y1": 0.3844,
+            "x2": 0.1039,
+            "y2": 0.77
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "bent over, head not in view"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01380",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1380,
+      "timestamp_ms": 46000.0,
+      "image_path": "frames/f01380.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3125,
+            "y1": 0.1339,
+            "x2": 0.4939,
+            "y2": 0.8833
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01500",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1500,
+      "timestamp_ms": 50000.0,
+      "image_path": "frames/f01500.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.3471,
+            "y1": 0.1408,
+            "x2": 0.5474,
+            "y2": 0.9132
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet; hand in the bowl"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0176,
+            "y1": 0.1544,
+            "x2": 0.213,
+            "y2": 0.8151
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "absent"
+          },
+          "note": "blue hairnet; both hands bare, holding an item at the waist"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.2707,
+            "x2": 0.1395,
+            "y2": 0.7773
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "absent"
+          },
+          "note": "head turned away; both hands bare and clearly visible"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01620",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1620,
+      "timestamp_ms": 54000.0,
+      "image_path": "frames/f01620.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4379,
+            "y1": 0.1514,
+            "x2": 0.6191,
+            "y2": 0.916
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0002,
+            "y1": 0.2379,
+            "x2": 0.2,
+            "y2": 0.9372
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "bent over, head out of frame"
+        }
+      ]
+    },
+    {
+      "frame_id": "kitchen-01/f01740",
+      "video_id": "kitchen-01",
+      "camera_id": "kitchen-cam-01",
+      "restaurant_id": "restaurant-01",
+      "frame_index": 1740,
+      "timestamp_ms": 58000.0,
+      "image_path": "frames/f01740.jpg",
+      "difficulty": "",
+      "subjects": [
+        {
+          "subject_id": "s0",
+          "box": {
+            "x1": 0.4303,
+            "y1": 0.1595,
+            "x2": 0.6138,
+            "y2": 0.9158
+          },
+          "attributes": {
+            "head_covering": "present",
+            "hand_covering": "not_visible"
+          },
+          "note": "blue hairnet"
+        },
+        {
+          "subject_id": "s1",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.2697,
+            "x2": 0.0923,
+            "y2": 0.7519
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "head not in the box"
+        },
+        {
+          "subject_id": "s2",
+          "box": {
+            "x1": 0.0,
+            "y1": 0.1068,
+            "x2": 0.054,
+            "y2": 0.3619
+          },
+          "attributes": {
+            "head_covering": "not_visible",
+            "hand_covering": "not_visible"
+          },
+          "note": "distant and truncated"
+        }
+      ]
+    }
+  ]
+}

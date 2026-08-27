@@ -1,0 +1,165 @@
+{
+ "fingerprint": "abb8d79d71401e23",
+ "answers": {
+  "cam5c/0000:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0000:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0000:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0000:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0024:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0024:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0024:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0024:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0048:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0048:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0048:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0048:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0072:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0072:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0072:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0072:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0096:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0096:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0096:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0096:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0120:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0120:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0120:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0120:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0144:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0144:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0144:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0144:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0168:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0168:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0168:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0168:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0192:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0192:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0192:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0192:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0216:det-0:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0216:det-0:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "none"
+  },
+  "cam5c/0216:det-1:head_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  },
+  "cam5c/0216:det-1:hand_covering": {
+   "head_covering": "none",
+   "hand_covering": "not_visible"
+  }
+ }
+}

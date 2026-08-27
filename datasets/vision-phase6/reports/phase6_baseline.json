@@ -1,0 +1,79 @@
+{
+  "phase": "6 Part A - architecture audit",
+  "headline": "Temporal reuse and selective VLM triggering ALREADY EXIST in production (P12 TriggerPolicy). The 2.0 calls/person figure reported in Phases 4.2-5D is an artifact of the evaluation harness, which deliberately bypasses tracking, the registry and demand freshness.",
+  "attribute_dependency_table": [
+    {
+      "attribute": "head_covering",
+      "final_state_source": "VLM",
+      "supporting_signals": [
+        "YOLOv8n person box",
+        "evidence_region top 0.0/0.45",
+        "output_size 448",
+        "quality gate (min_scale 130, max_blur 0.5)",
+        "pose observability (evaluated, not wired)"
+      ],
+      "deterministic_signals_available": "NONE validated",
+      "vlm_required": true,
+      "note": "No validated deterministic classifier exists. Per Part C, none may be invented."
+    },
+    {
+      "attribute": "hand_covering",
+      "final_state_source": "VLM",
+      "supporting_signals": [
+        "YOLOv8n person box",
+        "evidence_region top 0.15/0.55",
+        "output_size 224 (deployment default)",
+        "quality gate"
+      ],
+      "deterministic_signals_available": "NONE validated",
+      "vlm_required": true,
+      "note": "93% NOT_VISIBLE on wide cameras; the gate and region decide observability, not the covering state."
+    }
+  ],
+  "value_provenance": {
+    "person_box": "YOLOv8n detector (adapters/detection/yolo.py)",
+    "head_observability": "pose module - EVALUATED in Phase 4.4, NOT wired into runtime",
+    "evidence_region_geometry": "SemanticPolicy.evidence_regions -> PartFocusedCropStrategy",
+    "crop_resolution": "SemanticPolicy.output_sizes -> PartFocusedCropStrategy",
+    "quality_grades": "HeuristicQualityEstimator (scale/truncation/occlusion/blur/crowding)",
+    "gate_verdict": "QualityGate.evaluate(grades, attributes) - per-attribute floors",
+    "trigger_or_skip": "P12 TriggerPolicy (adapters/cropping/triggers.py)",
+    "ppe_state": "VLM via UnderstanderPort -> semantic mapping",
+    "compliance_state": "ComplianceEvaluator (three-valued Kleene)"
+  },
+  "existing_vlm_suppression_mechanisms": {
+    "trigger_reasons_that_SPEND": [
+      "first_sight",
+      "attribute_missing",
+      "attribute_stale",
+      "appearance_changed",
+      "low_confidence",
+      "identity_unverified",
+      "quality_improved",
+      "periodic_refresh",
+      "explicit_request",
+      "lifecycle_transition"
+    ],
+    "skip_reasons_that_SAVE": [
+      "no_demand",
+      "budget_exhausted",
+      "quality_insufficient",
+      "fresh_enough",
+      "evidence_sufficient",
+      "deduplicated",
+      "priority_preempted",
+      "frame_unavailable"
+    ],
+    "assessment": "Parts B, D and E of the Phase 6 brief describe a mechanism that is already implemented. fresh_enough is the temporal reuse; appearance_changed and quality_improved are the staleness invalidation; budget_exhausted is the cost ceiling."
+  },
+  "policy_freshness_configured": {
+    "head_covering_validity_ms": 120000,
+    "hand_covering_validity_ms": 60000,
+    "demand_freshness_ms": 60000
+  },
+  "critical_measurement_gap": {
+    "problem": "tools/vision_eval/predict.py runs frame-by-frame with no registry, no tracking and no demand freshness. It calls the VLM once per evidence group per subject per frame BY CONSTRUCTION.",
+    "consequence": "Every VLM-usage number in Phases 4.2, 5C and 5D describes the harness, not production. Production usage is UNMEASURED and is bounded above by those figures, probably far below them.",
+    "implication": "Phase 6 cannot compute a reduction percentage against a baseline that was never production behaviour. The baseline must be re-measured through the session pipeline first."
+  }
+}

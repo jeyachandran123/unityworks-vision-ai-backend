@@ -1,0 +1,706 @@
+{
+ "weights": "models\\yolov8n-pose.onnx",
+ "keypoint_confidence": 0.5,
+ "association_iou": 0.5,
+ "mean_latency_ms": 64.2,
+ "rows": [
+  {
+   "frame_id": "kitchen-01/f00060",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9302,
+   "keypoints_seen": 3,
+   "association_iou": 0.989,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; both hands bare on the mixing bowl"
+  },
+  {
+   "frame_id": "kitchen-01/f00060",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.16
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7238,
+   "keypoints_seen": 3,
+   "association_iou": 0.799,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue cap; forearm raised, hand behind the head"
+  },
+  {
+   "frame_id": "kitchen-01/f00180",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.13
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7697,
+   "keypoints_seen": 2,
+   "association_iou": 0.986,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; hands in front, out of view"
+  },
+  {
+   "frame_id": "kitchen-01/f00180",
+   "subject_id": "s1",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_low_confidence",
+   "pose_located": false,
+   "confidence": 0.4138,
+   "keypoints_seen": 0,
+   "association_iou": 0.774,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "bent over, head region dark and unresolvable"
+  },
+  {
+   "frame_id": "kitchen-01/f00300",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.13
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8366,
+   "keypoints_seen": 1,
+   "association_iou": 0.974,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet clear; hands below the counter line"
+  },
+  {
+   "frame_id": "kitchen-01/f00300",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.16
+   ],
+   "pose_state": "head_low_confidence",
+   "pose_located": false,
+   "confidence": 0.325,
+   "keypoints_seen": 0,
+   "association_iou": 0.969,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "blue cap; arm motion-blurred, hand behind the head"
+  },
+  {
+   "frame_id": "kitchen-01/f00420",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8088,
+   "keypoints_seen": 2,
+   "association_iou": 0.984,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f00420",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8452,
+   "keypoints_seen": 1,
+   "association_iou": 0.777,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue cap; hands at hips, roughly 15px, not resolvable"
+  },
+  {
+   "frame_id": "kitchen-01/f00420",
+   "subject_id": "s2",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_low_confidence",
+   "pose_located": false,
+   "confidence": 0.4822,
+   "keypoints_seen": 0,
+   "association_iou": 0.9,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "blue cap; hands together at chest but too small to read"
+  },
+  {
+   "frame_id": "kitchen-01/f00420",
+   "subject_id": "s3",
+   "human_head_located": true,
+   "human_band": [
+    0.05,
+    0.45
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7261,
+   "keypoints_seen": 2,
+   "association_iou": 0.878,
+   "head_in_person_box": true,
+   "head_in_evidence_region": false,
+   "note": "dark bandana covering the head; hands out of view"
+  },
+  {
+   "frame_id": "kitchen-01/f00540",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.13
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7799,
+   "keypoints_seen": 1,
+   "association_iou": 0.978,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f00540",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.4,
+    0.75
+   ],
+   "pose_state": "head_low_confidence",
+   "pose_located": false,
+   "confidence": 0.4034,
+   "keypoints_seen": 0,
+   "association_iou": 0.958,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "bent fully over; head is an unresolvable dark mass"
+  },
+  {
+   "frame_id": "kitchen-01/f00660",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8786,
+   "keypoints_seen": 1,
+   "association_iou": 0.937,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; pale object near the hand, not identifiable"
+  },
+  {
+   "frame_id": "kitchen-01/f00660",
+   "subject_id": "s1",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.1509,
+   "keypoints_seen": 0,
+   "association_iou": 0.919,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "head cropped off at the frame edge"
+  },
+  {
+   "frame_id": "kitchen-01/f00660",
+   "subject_id": "s2",
+   "human_head_located": true,
+   "human_band": [
+    0.08,
+    0.42
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9722,
+   "keypoints_seen": 4,
+   "association_iou": 0.817,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "dark cap, clearly worn; hands below the counter"
+  },
+  {
+   "frame_id": "kitchen-01/f00660",
+   "subject_id": "s3",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.2
+   ],
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.0,
+   "keypoints_seen": 0,
+   "association_iou": 0.376,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "blue hairnet visible despite blur"
+  },
+  {
+   "frame_id": "kitchen-01/f00780",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.05,
+    0.45
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9863,
+   "keypoints_seen": 5,
+   "association_iou": 0.983,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "dark bandana; extended arm bare but the hand is blurred"
+  },
+  {
+   "frame_id": "kitchen-01/f00780",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.13
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7085,
+   "keypoints_seen": 2,
+   "association_iou": 0.971,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; facing away"
+  },
+  {
+   "frame_id": "kitchen-01/f00780",
+   "subject_id": "s2",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.572,
+   "keypoints_seen": 1,
+   "association_iou": 0.967,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "facing away and bent; head region ambiguous"
+  },
+  {
+   "frame_id": "kitchen-01/f00780",
+   "subject_id": "s3",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.1909,
+   "keypoints_seen": 0,
+   "association_iou": 0.916,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "head cropped off at the top of the box"
+  },
+  {
+   "frame_id": "kitchen-01/f00780",
+   "subject_id": "s4",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.18
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.6447,
+   "keypoints_seen": 3,
+   "association_iou": 0.938,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f00900",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.25,
+    0.7
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9692,
+   "keypoints_seen": 5,
+   "association_iou": 0.971,
+   "head_in_person_box": true,
+   "head_in_evidence_region": false,
+   "note": "dark knitted cap, close to the lens"
+  },
+  {
+   "frame_id": "kitchen-01/f00900",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.6283,
+   "keypoints_seen": 2,
+   "association_iou": 0.934,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "pale cap; distant"
+  },
+  {
+   "frame_id": "kitchen-01/f00900",
+   "subject_id": "s2",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7119,
+   "keypoints_seen": 1,
+   "association_iou": 0.945,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; bent over a pot"
+  },
+  {
+   "frame_id": "kitchen-01/f00900",
+   "subject_id": "s3",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.0565,
+   "keypoints_seen": 0,
+   "association_iou": 0.919,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "head only partly in the box"
+  },
+  {
+   "frame_id": "kitchen-01/f01020",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.911,
+   "keypoints_seen": 1,
+   "association_iou": 0.991,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01020",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.18
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9401,
+   "keypoints_seen": 1,
+   "association_iou": 0.947,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; bare forearm, hand not resolvable"
+  },
+  {
+   "frame_id": "kitchen-01/f01020",
+   "subject_id": "s2",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.35
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9464,
+   "keypoints_seen": 4,
+   "association_iou": 0.94,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "dark cap; hand near the counter but heavily blurred"
+  },
+  {
+   "frame_id": "kitchen-01/f01020",
+   "subject_id": "s3",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.1982,
+   "keypoints_seen": 0,
+   "association_iou": 0.915,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "head turned away and out of the box"
+  },
+  {
+   "frame_id": "kitchen-01/f01140",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8675,
+   "keypoints_seen": 1,
+   "association_iou": 0.948,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01140",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.5392,
+   "keypoints_seen": 1,
+   "association_iou": 0.946,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; distant"
+  },
+  {
+   "frame_id": "kitchen-01/f01140",
+   "subject_id": "s2",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.0599,
+   "keypoints_seen": 0,
+   "association_iou": 0.719,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "bent over; head outside the box"
+  },
+  {
+   "frame_id": "kitchen-01/f01260",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.14
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8731,
+   "keypoints_seen": 1,
+   "association_iou": 0.967,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01260",
+   "subject_id": "s1",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.0599,
+   "keypoints_seen": 0,
+   "association_iou": 0.68,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "bent over, head not in view"
+  },
+  {
+   "frame_id": "kitchen-01/f01380",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.14
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7156,
+   "keypoints_seen": 2,
+   "association_iou": 0.833,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01500",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.14
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.872,
+   "keypoints_seen": 1,
+   "association_iou": 0.984,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; hand in the bowl"
+  },
+  {
+   "frame_id": "kitchen-01/f01500",
+   "subject_id": "s1",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.16
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.9237,
+   "keypoints_seen": 5,
+   "association_iou": 0.947,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet; both hands bare, holding an item at the waist"
+  },
+  {
+   "frame_id": "kitchen-01/f01500",
+   "subject_id": "s2",
+   "human_head_located": true,
+   "human_band": [
+    0.02,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.5944,
+   "keypoints_seen": 1,
+   "association_iou": 0.705,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "head turned away; both hands bare and clearly visible"
+  },
+  {
+   "frame_id": "kitchen-01/f01620",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.8223,
+   "keypoints_seen": 1,
+   "association_iou": 0.963,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01620",
+   "subject_id": "s1",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.2037,
+   "keypoints_seen": 0,
+   "association_iou": 0.933,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "bent over, head out of frame"
+  },
+  {
+   "frame_id": "kitchen-01/f01740",
+   "subject_id": "s0",
+   "human_head_located": true,
+   "human_band": [
+    0.0,
+    0.15
+   ],
+   "pose_state": "head_located",
+   "pose_located": true,
+   "confidence": 0.7822,
+   "keypoints_seen": 2,
+   "association_iou": 0.967,
+   "head_in_person_box": true,
+   "head_in_evidence_region": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame_id": "kitchen-01/f01740",
+   "subject_id": "s1",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_not_located",
+   "pose_located": false,
+   "confidence": 0.175,
+   "keypoints_seen": 0,
+   "association_iou": 0.89,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "head not in the box"
+  },
+  {
+   "frame_id": "kitchen-01/f01740",
+   "subject_id": "s2",
+   "human_head_located": false,
+   "human_band": null,
+   "pose_state": "head_low_confidence",
+   "pose_located": false,
+   "confidence": 0.3356,
+   "keypoints_seen": 0,
+   "association_iou": 0.899,
+   "head_in_person_box": false,
+   "head_in_evidence_region": false,
+   "note": "distant and truncated"
+  }
+ ]
+}

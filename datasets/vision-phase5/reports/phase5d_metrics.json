@@ -1,0 +1,93 @@
+{
+  "matched": 6,
+  "annotated": 7,
+  "unmatched": 1,
+  "detection_recall": 0.8571428571428571,
+  "confusion": {
+    "absent": {
+      "absent": 3
+    },
+    "present": {
+      "absent": 2
+    },
+    "not_visible": {
+      "not_visible": 1
+    }
+  },
+  "states": [
+    {
+      "state": "present",
+      "support": 2,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 2,
+      "precision": null,
+      "recall": 0.0,
+      "f1": null
+    },
+    {
+      "state": "absent",
+      "support": 3,
+      "predicted": 5,
+      "tp": 3,
+      "fp": 2,
+      "fn": 0,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.7499999999999999
+    },
+    {
+      "state": "not_visible",
+      "support": 1,
+      "predicted": 1,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "state": "unknown",
+      "support": 0,
+      "predicted": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 0,
+      "precision": null,
+      "recall": null,
+      "f1": null
+    }
+  ],
+  "false_violations": 2,
+  "missed_violations": 0,
+  "unsupported_absent": 0,
+  "vlm_calls": 14,
+  "gate_rejections": 0,
+  "latency": {
+    "mean_ms": 2263.6,
+    "median_ms": 1812.7,
+    "p95_ms": 4131.8
+  },
+  "failures": [
+    {
+      "frame_id": "5d/N_0096",
+      "subject_id": "w3",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed"
+    },
+    {
+      "frame_id": "5d/D_0096",
+      "subject_id": "w3",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed"
+    }
+  ]
+}

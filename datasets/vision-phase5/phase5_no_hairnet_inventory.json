@@ -1,0 +1,54 @@
+[
+  {
+    "filename": "Screen Recording 2026-08-13 112749.mp4",
+    "size_mb": 58.2,
+    "width": 1712,
+    "height": 1032,
+    "fps": 30.0,
+    "duration_s": 60.6,
+    "frames": 1817,
+    "codec": "h264",
+    "sha256": "13af529d1bbf673f5e8c71d2eb0c1e6da7bc76a6b122f5dcd529c57aeb6a3014",
+    "prefix_sha256": "b7c1cd4f0b8243e6",
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122553.mp4",
+    "size_mb": 45.0,
+    "width": 1714,
+    "height": 966,
+    "fps": 30.0,
+    "duration_s": 49.8,
+    "frames": 1495,
+    "codec": "h264",
+    "sha256": "281be73dd28a2fec686a950547bb3ea76af7fcf6c47cb33be282307ed0344943",
+    "prefix_sha256": "bc561e54350d2b59",
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122832.mp4",
+    "size_mb": 105.7,
+    "width": 1718,
+    "height": 978,
+    "fps": 30.0,
+    "duration_s": 115.9,
+    "frames": 3476,
+    "codec": "h264",
+    "sha256": "3e57d7f824c7578d1824aeca635ca69fd1e3889e63deb827b5bf23064ab904f1",
+    "prefix_sha256": "d362e981cffc3b8e",
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-18 103417.mp4",
+    "size_mb": 33.4,
+    "width": 1714,
+    "height": 970,
+    "fps": 30.0,
+    "duration_s": 36.6,
+    "frames": 1099,
+    "codec": "h264",
+    "sha256": "1a14bed30ab97a30381a11cc1f087d87b749deff5ecff78031b402e89650aa8d",
+    "prefix_sha256": "5d9d7e05212ac675",
+    "is_new": true
+  }
+]

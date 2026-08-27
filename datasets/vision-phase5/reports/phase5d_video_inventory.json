@@ -1,0 +1,80 @@
+[
+  {
+    "filename": "give_next_seconds_video_of.mp4",
+    "sha256": "401028ea97ea24d8c0809a326026cb057dcbe67e6e6e9a5bcaee517313f07203",
+    "prefix_sha256": "177637fdc118d443",
+    "width": 1280,
+    "height": 720,
+    "fps": 24.0,
+    "duration_s": 10.0,
+    "frames": 240,
+    "codec": "h264",
+    "size_mb": 2.5,
+    "is_new": true
+  },
+  {
+    "filename": "i_want_sec_video_of_this_vi (1).mp4",
+    "sha256": "41369adda4de9fb568b3edb37aac8daf86e3ce3f2e9a743b1a567fdeff15c967",
+    "prefix_sha256": "eceedaec5675e9a2",
+    "width": 1280,
+    "height": 720,
+    "fps": 24.0,
+    "duration_s": 10.0,
+    "frames": 240,
+    "codec": "h264",
+    "size_mb": 2.4,
+    "is_new": true
+  },
+  {
+    "filename": "i_want_sec_video_of_this_vi.mp4",
+    "sha256": "ca82eb59bcffe31389c7e71a63f512360a7fd50766b3277a931b84a78c23ea75",
+    "prefix_sha256": "6f4d918ee514d77e",
+    "width": 1280,
+    "height": 720,
+    "fps": 24.0,
+    "duration_s": 10.0,
+    "frames": 240,
+    "codec": "h264",
+    "size_mb": 2.5,
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-13 112749.mp4",
+    "sha256": "13af529d1bbf673f5e8c71d2eb0c1e6da7bc76a6b122f5dcd529c57aeb6a3014",
+    "prefix_sha256": "b7c1cd4f0b8243e6",
+    "width": 1712,
+    "height": 1032,
+    "fps": 30.0,
+    "duration_s": 60.6,
+    "frames": 1817,
+    "codec": "h264",
+    "size_mb": 58.2,
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122553.mp4",
+    "sha256": "281be73dd28a2fec686a950547bb3ea76af7fcf6c47cb33be282307ed0344943",
+    "prefix_sha256": "bc561e54350d2b59",
+    "width": 1714,
+    "height": 966,
+    "fps": 30.0,
+    "duration_s": 49.8,
+    "frames": 1495,
+    "codec": "h264",
+    "size_mb": 45.0,
+    "is_new": false
+  },
+  {
+    "filename": "Screen Recording 2026-08-17 122832.mp4",
+    "sha256": "3e57d7f824c7578d1824aeca635ca69fd1e3889e63deb827b5bf23064ab904f1",
+    "prefix_sha256": "d362e981cffc3b8e",
+    "width": 1718,
+    "height": 978,
+    "fps": 30.0,
+    "duration_s": 115.9,
+    "frames": 3476,
+    "codec": "h264",
+    "size_mb": 105.7,
+    "is_new": false
+  }
+]

@@ -1,0 +1,116 @@
+{
+  "frames": 10,
+  "annotated": 20,
+  "matched": 19,
+  "unmatched": 1,
+  "spurious": 1,
+  "vlm_calls": 40,
+  "gate_rejections": 0,
+  "evidence_crops": 40,
+  "not_visible_from_gate": 0,
+  "not_visible_from_model": 19,
+  "latency": {
+    "mean_ms": 2051.9,
+    "median_ms": 1637.2,
+    "p95_ms": 3208.9,
+    "total_s": 83.1
+  },
+  "attributes": [
+    {
+      "attribute": "head_covering",
+      "matched": 19,
+      "correct": 19,
+      "accuracy": 1.0,
+      "confusion": {
+        "absent": {
+          "absent": 19
+        }
+      },
+      "states": [
+        {
+          "state": "present",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null
+        },
+        {
+          "state": "absent",
+          "support": 19,
+          "predicted": 19,
+          "precision": 1.0,
+          "recall": 1.0
+        },
+        {
+          "state": "not_visible",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null
+        }
+      ]
+    },
+    {
+      "attribute": "hand_covering",
+      "matched": 19,
+      "correct": 18,
+      "accuracy": 0.9473684210526315,
+      "confusion": {
+        "not_visible": {
+          "not_visible": 18,
+          "absent": 1
+        }
+      },
+      "states": [
+        {
+          "state": "present",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null
+        },
+        {
+          "state": "absent",
+          "support": 0,
+          "predicted": 1,
+          "precision": 0.0,
+          "recall": null
+        },
+        {
+          "state": "not_visible",
+          "support": 19,
+          "predicted": 18,
+          "precision": 1.0,
+          "recall": 0.9473684210526315
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "frame_id": "cam5c/0216",
+      "subject_id": "workerA",
+      "attribute": "hand_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "224x224",
+      "quality": "passed",
+      "vlm_used": true
+    }
+  ]
+}
