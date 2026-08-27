@@ -195,6 +195,33 @@ class Settings(BaseSettings):
         default=SecretStr(""),
         validation_alias=AliasChoices("VISION_UNDERSTANDER_API_KEY", "VISION_NVIDIA_API_KEY"),
     )
+    #: Which hosted model answers, and where it lives.
+    #:
+    #: **A model identifier is deployment configuration, not a constant.** It
+    #: was neither: the name lived only in `nvidia_vl.DEFAULT_MODEL`, and
+    #: `.env` could not override it because the provider factory reads
+    #: `os.environ`, which pydantic-settings never writes to. When NVIDIA
+    #: retired that model on 2026-08-26 the deployment had no way to name a
+    #: replacement without a code change — and the symptom was 18 hours of
+    #: "no alerts" on a safety product.
+    #:
+    #: Empty means "the adapter's default applies", so a deployment that sets
+    #: neither is unaffected.
+    vision_nvidia_model: str = ""
+    vision_nvidia_base_url: str = ""
+    #: Where a locally-served understander listens, and which model answers.
+    #: Same trap, same fix — see `understander_options`.
+    vision_ollama_base_url: str = ""
+    vision_ollama_model: str = ""
+    #: Longest crop edge sent to the model, in pixels.
+    #:
+    #: Vision tokens scale with **area**, so this is the main latency lever on a
+    #: CPU-served model. It is also the resolution policy asks for on the head
+    #: band, so lowering it trades measured head accuracy for speed. Left empty,
+    #: the adapter's own default applies.
+    vision_understander_max_side: str = ""
+    #: Seconds one understanding call may take before it is a reported timeout.
+    vision_understander_timeout_s: str = ""
 
     # ── CCTV / live runtime ──────────────────────────────────────────────────
     #
@@ -351,6 +378,36 @@ class Settings(BaseSettings):
         if key and not overlay.get("VISION_NVIDIA_API_KEY"):
             overlay["VISION_NVIDIA_API_KEY"] = key
         return overlay
+
+    def understander_options(self) -> dict[str, str]:
+        """Non-secret understander configuration, under the platform's own names.
+
+        The **file** layer of `defaults -> file -> environment -> secret`. The
+        provider factory resolves each name against the mapping it is handed,
+        and that mapping is `os.environ` — which `.env` never reaches, because
+        pydantic-settings loads a file into *this object* and not into the
+        process environment. Without this bridge every one of these settings is
+        parsed, stored, and silently ignored.
+
+        Handed over as **defaults**, so a real environment variable still wins:
+        an operator naming a replacement model for one run must not be overruled
+        by a stale file. Secrets do not travel this way — the API key is a
+        `SecretStr` and goes through its own path, so nothing here is printable.
+
+        Only non-empty values are emitted. An empty setting must mean "the
+        adapter's default applies", not "the empty string", or every unset field
+        would override a working default with nothing — which for `base_url`
+        would silently point the adapter at nowhere.
+        """
+        options = {
+            "VISION_NVIDIA_MODEL": self.vision_nvidia_model,
+            "VISION_NVIDIA_BASE_URL": self.vision_nvidia_base_url,
+            "VISION_OLLAMA_BASE_URL": self.vision_ollama_base_url,
+            "VISION_OLLAMA_MODEL": self.vision_ollama_model,
+            "VISION_UNDERSTANDER_MAX_SIDE": self.vision_understander_max_side,
+            "VISION_UNDERSTANDER_TIMEOUT_S": self.vision_understander_timeout_s,
+        }
+        return {name: value.strip() for name, value in options.items() if value.strip()}
 
     def assert_production_safe(self) -> None:
         """Refuse to serve production traffic with development defaults.

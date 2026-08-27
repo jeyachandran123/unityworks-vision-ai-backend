@@ -1,0 +1,577 @@
+{
+ "_comment": [
+  "Recorded answers from meta/llama-3.2-11b-vision-instruct against the",
+  "kitchen-01 human-annotated dataset, through the real policy prompt and",
+  "the real crop geometry, on 2026-08-27.",
+  "",
+  "'truth' is the human annotation shipped with the dataset; 'model' is what",
+  "the replacement VLM actually said. Recorded rather than re-requested so",
+  "the regression is deterministic and needs no network or API key.",
+  "",
+  "This file is EVIDENCE, not a target. It is not edited to make a test pass."
+ ],
+ "dataset": "kitchen-01",
+ "model": "meta/llama-3.2-11b-vision-instruct",
+ "recorded_at": "2026-08-27",
+ "cases": [
+  {
+   "frame": "f00060",
+   "subject": "s0",
+   "note": "blue hairnet; both hands bare on the mixing bowl",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "absent"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00060",
+   "subject": "s1",
+   "note": "blue cap; forearm raised, hand behind the head",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": null,
+    "hand_covering": null
+   }
+  },
+  {
+   "frame": "f00180",
+   "subject": "s0",
+   "note": "blue hairnet; hands in front, out of view",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00180",
+   "subject": "s1",
+   "note": "bent over, head region dark and unresolvable",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00300",
+   "subject": "s0",
+   "note": "blue hairnet clear; hands below the counter line",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f00300",
+   "subject": "s1",
+   "note": "blue cap; arm motion-blurred, hand behind the head",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00420",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f00420",
+   "subject": "s1",
+   "note": "blue cap; hands at hips, roughly 15px, not resolvable",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00420",
+   "subject": "s2",
+   "note": "blue cap; hands together at chest but too small to read",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00420",
+   "subject": "s3",
+   "note": "dark bandana covering the head; hands out of view",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00540",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00540",
+   "subject": "s1",
+   "note": "bent fully over; head is an unresolvable dark mass",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00660",
+   "subject": "s0",
+   "note": "blue hairnet; pale object near the hand, not identifiable",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f00660",
+   "subject": "s1",
+   "note": "head cropped off at the frame edge",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00660",
+   "subject": "s2",
+   "note": "dark cap, clearly worn; hands below the counter",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00660",
+   "subject": "s3",
+   "note": "blue hairnet visible despite blur",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00780",
+   "subject": "s0",
+   "note": "dark bandana; extended arm bare but the hand is blurred",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00780",
+   "subject": "s1",
+   "note": "blue hairnet; facing away",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00780",
+   "subject": "s2",
+   "note": "facing away and bent; head region ambiguous",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00780",
+   "subject": "s3",
+   "note": "head cropped off at the top of the box",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00780",
+   "subject": "s4",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00900",
+   "subject": "s0",
+   "note": "dark knitted cap, close to the lens",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f00900",
+   "subject": "s1",
+   "note": "pale cap; distant",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f00900",
+   "subject": "s2",
+   "note": "blue hairnet; bent over a pot",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": null,
+    "hand_covering": null
+   }
+  },
+  {
+   "frame": "f00900",
+   "subject": "s3",
+   "note": "head only partly in the box",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01020",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01020",
+   "subject": "s1",
+   "note": "blue hairnet; bare forearm, hand not resolvable",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01020",
+   "subject": "s2",
+   "note": "dark cap; hand near the counter but heavily blurred",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01020",
+   "subject": "s3",
+   "note": "head turned away and out of the box",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01140",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01140",
+   "subject": "s1",
+   "note": "blue hairnet; distant",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f01140",
+   "subject": "s2",
+   "note": "bent over; head outside the box",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01260",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "gloves"
+   }
+  },
+  {
+   "frame": "f01260",
+   "subject": "s1",
+   "note": "bent over, head not in view",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01380",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01500",
+   "subject": "s0",
+   "note": "blue hairnet; hand in the bowl",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": null,
+    "hand_covering": null
+   }
+  },
+  {
+   "frame": "f01500",
+   "subject": "s1",
+   "note": "blue hairnet; both hands bare, holding an item at the waist",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "absent"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01500",
+   "subject": "s2",
+   "note": "head turned away; both hands bare and clearly visible",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "absent"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01620",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01620",
+   "subject": "s1",
+   "note": "bent over, head out of frame",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01740",
+   "subject": "s0",
+   "note": "blue hairnet",
+   "truth": {
+    "head_covering": "present",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "cap",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01740",
+   "subject": "s1",
+   "note": "head not in the box",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  },
+  {
+   "frame": "f01740",
+   "subject": "s2",
+   "note": "distant and truncated",
+   "truth": {
+    "head_covering": "not_visible",
+    "hand_covering": "not_visible"
+   },
+   "model": {
+    "head_covering": "none",
+    "hand_covering": "not_visible"
+   }
+  }
+ ]
+}

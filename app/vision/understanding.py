@@ -34,6 +34,7 @@ It performs no inference, holds no prompt text, and knows no domain vocabulary.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -63,6 +64,14 @@ class UnderstandingComposition:
     provider_id: str
     provider_note: str
     producible: tuple[str, ...]
+    #: The bound adapter itself, so the application can ask it for health.
+    #:
+    #: Held because a provider can fail *after* a clean composition — an
+    #: upstream model retirement is invisible at boot and total at runtime — and
+    #: nothing could reach the adapter to ask. The platform stays indifferent to
+    #: which adapter this is: it is asked by `getattr`, and one that offers
+    #: nothing is simply not asked.
+    understander: Any = None
 
     def to_wire(self) -> dict[str, Any]:
         return {
@@ -83,6 +92,7 @@ def build_understanding(
     provider: str | None = None,
     static_value: str | None = None,
     api_key: str = "",
+    options: Mapping[str, str] | None = None,
 ) -> UnderstandingComposition:
     """Assemble cropping and understanding over an existing platform and M7.
 
@@ -91,6 +101,12 @@ def build_understanding(
             with; passing a different one raises at the end of this function.
         provider: Overrides `VISION_UNDERSTANDER_PROVIDER`. For tests that need
             a specific adapter without touching process environment.
+        options: Non-secret provider settings under the platform's own variable
+            names — model, endpoint, crop resolution, timeout. The **file**
+            layer of the configuration stack, supplied because `.env` reaches
+            the settings object and not `os.environ`, so without this the
+            factory reads none of them. Passed as defaults, so a real
+            environment variable still wins.
 
     Raises:
         ConfigurationInvalidError: no attribute is declared, or the provider
@@ -121,7 +137,7 @@ def build_understanding(
     # needs a value inside the attribute's registered domain, and the registry is
     # not visible from the provider module — so the caller supplies it as a
     # default the environment can still override.
-    defaults: dict[str, str] = {}
+    defaults: dict[str, str] = dict(options or {})
     if static_value:
         defaults["VISION_STATIC_VALUE"] = static_value
     if api_key:
@@ -151,6 +167,7 @@ def build_understanding(
         capabilities=_capability_view(CapabilityView, adapter, attributes),
         evidence_regions=_evidence_regions(policies),
         output_sizes=_output_sizes(policies),
+        quality_floors=_quality_floors(policies),
     )
 
     # ── Flow 6: extract meaning, and hold it in M7 ───────────────────────────
@@ -181,16 +198,64 @@ def build_understanding(
         len(producible),
         note,
     )
+    _report_reachability(adapter)
 
     return UnderstandingComposition(
         cropping=cropping,
         understanding=understanding,
         sink=sink,
+        understander=adapter,
         provider_id=str(getattr(adapter, "adapter_id", "?")),
         provider_note=note,
         producible=producible,
     )
 
+
+def _report_reachability(adapter: Any) -> None:
+    """Ask the bound adapter whether it can actually answer, and say so.
+
+    **Reported, never fatal.** A provider that is unreachable at boot may be
+    reachable a minute later, and refusing to assemble would take down
+    presence and spatial observation — which 10_RELIABILITY §4.3 step 5 says
+    must continue when understanding cannot.
+
+    But it is said *loudly*, because the alternative is what happened on
+    2026-08-26: the model behind this adapter was retired upstream, every crop
+    became a refusal, and the only visible symptom was an Alerts page that
+    stayed empty. A kitchen with no violations and a kitchen with no working
+    analysis produced identical screens for eighteen hours.
+
+    By `getattr`, so this names no provider and tests for none.
+    """
+    probe = getattr(adapter, "probe", None)
+    if not callable(probe):
+        return
+    try:
+        result = probe()
+    except Exception as exc:  # noqa: BLE001 - diagnostics never break assembly
+        logger.warning("understander reachability unknown: {}: {}", type(exc).__name__, exc)
+        return
+
+    if not result.get("available"):
+        logger.error(
+            "understander '{}' is NOT reachable — attributes will not be produced "
+            "and no violation can be found: {}",
+            getattr(adapter, "adapter_id", "?"),
+            result.get("error"),
+        )
+        return
+    if result.get("model_listed") is False:
+        logger.error(
+            "understander '{}' is reachable but model '{}' is NOT offered by {} — "
+            "this is a retired or misspelled model, and every crop will refuse. "
+            "Set VISION_NVIDIA_MODEL to a model the endpoint lists.",
+            getattr(adapter, "adapter_id", "?"),
+            result.get("model"),
+            result.get("endpoint"),
+        )
+        return
+    logger.info("understander '{}' reachable, model '{}' offered",
+                getattr(adapter, "adapter_id", "?"), result.get("model"))
 
 def assert_shared_registry(registry_layer: Any, understanding: Any, attributes: Any) -> None:
     """Verify by **identity** that one registry reached both M7 and M9.
@@ -306,6 +371,32 @@ def _capability_view(capability_view: Any, adapter: Any, attributes: Any) -> Any
         producible_classes=frozenset(classes),
     )
 
+
+def _quality_floors(policies: tuple[Any, ...]) -> dict[Any, Any] | None:
+    """Per-attribute quality floors, from the policy documents.
+
+    **Layer A of the safety barrier, and it was already measured.**
+    `kitchen-safety` declares `min_scale_pixels: 130` and `max_blur: 0.5` on the
+    head band, calibrated against the 43 human-annotated subjects in
+    `datasets/kitchen-01` — and nothing carried them to the gate, so every crop
+    was judged against the deployment default of 48px instead.
+
+    The gate has always accepted them (`QualityGate(per_attribute=...)`), and its
+    own docstring describes this exact failure: *"a whole-person crop 60px tall
+    is a fine subject for 'what colour is the garment'; the head band inside it
+    is 27px and cannot answer 'is the head covered'."* One global floor has to be
+    wrong for one of them, and it was wrong silently.
+
+    Attribute-specific by construction — the head, the face and the hands each
+    declare their own — and read from the document rather than restated here, so
+    no crop geometry or threshold is duplicated in application code.
+    """
+    floors: dict[Any, Any] = {}
+    for policy in policies:
+        found = getattr(policy, "quality_floors", None)
+        if isinstance(found, dict):
+            floors.update(found)
+    return floors or None
 
 def _evidence_regions(policies: tuple[Any, ...]) -> dict[Any, Any] | None:
     """Per-attribute crop geometry, from the policy documents.

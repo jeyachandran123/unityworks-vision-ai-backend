@@ -72,9 +72,42 @@ def extract_json(text: str) -> dict[str, Any] | None:
 
     start, end = stripped.find("{"), stripped.rfind("}")
     if start == -1 or end <= start:
-        return None
+        return _braceless_object(stripped)
     try:
         decoded = json.loads(stripped[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+    return decoded if isinstance(decoded, dict) else None
+
+
+def _braceless_object(text: str) -> dict[str, Any] | None:
+    """Recover an object whose wrapper the model omitted. ``None`` otherwise.
+
+    ``meta/llama-3.2-11b-vision-instruct`` answers a "respond with JSON
+    containing exactly these keys" prompt with the object **body** and no
+    braces, one pair per line and no commas::
+
+        "head_covering": "cap"
+        "face_covering": "none"
+        "hand_covering": "not_visible"
+
+    Every value there is correct and in-domain, and the whole answer was being
+    discarded over two missing characters — 6 of 6 crops unparseable, no
+    attributes, no compliance, no alerts. The retired model wrapped its object,
+    so nothing had needed this before.
+
+    **Recovery, not inference.** Every line must be a quoted key followed by the
+    separator, and the reassembled text must parse as JSON on its own; prose,
+    a refusal or a half-finished answer fails that guard and still returns
+    ``None`` so the caller records it as unparseable with the original preserved
+    (U2, U3). Nothing here guesses a value, maps a synonym, or fills a key the
+    model did not answer.
+    """
+    lines = [line.strip().rstrip(",") for line in text.splitlines() if line.strip()]
+    if not lines or not all(line.startswith('"') and ":" in line for line in lines):
+        return None
+    try:
+        decoded = json.loads("{" + ",".join(lines) + "}")
     except json.JSONDecodeError:
         return None
     return decoded if isinstance(decoded, dict) else None

@@ -21,7 +21,7 @@ composition.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +49,15 @@ class VisionStatus:
     reason: str = ""
     attributes: tuple[str, ...] = ()
     policies: tuple[str, ...] = ()
+    #: Whether the bound understander can actually answer, and why not.
+    #:
+    #: **This is the field that distinguishes "no violations" from "the analysis
+    #: is dead".** On a safety monitor both render as an empty Alerts page, and
+    #: for eighteen hours they did: the configured model had been retired
+    #: upstream, every crop became a refusal, and nothing in the product said so.
+    #: `assembled` was `true` throughout, because assembly had genuinely
+    #: succeeded — the failure arrived afterwards.
+    understanding: dict[str, Any] = field(default_factory=dict)
 
     def to_wire(self) -> dict[str, Any]:
         return {
@@ -56,6 +65,10 @@ class VisionStatus:
             "reason": self.reason,
             "attributes": list(self.attributes),
             "policies": list(self.policies),
+            "understanding": dict(self.understanding),
+            # Deliberately not derived from `assembled`. A composition can be
+            # perfect and the analysis still be down.
+            "analysis_available": bool(self.understanding.get("available", True)),
         }
 
 
@@ -92,7 +105,31 @@ class VisionRuntime:
             assembled=True,
             attributes=tuple(described["attributes"]),
             policies=tuple(f"{p['policy_id']}@{p['version']}" for p in described["policies"]),
+            understanding=self._understanding_health(),
         )
+
+    def _understanding_health(self) -> dict[str, Any]:
+        """Ask the bound adapter whether it can answer. Never assume it can.
+
+        By `getattr`, so the platform stays indifferent to which adapter it
+        bound: one that reports no health is treated as available, which is the
+        behaviour that existed before this method and is the honest default for
+        an adapter that makes no claim.
+        """
+        composition = getattr(self._composition, "understanding_composition", None)
+        understander = getattr(composition, "understander", None)
+        if understander is None:
+            return {"available": False, "state": "not_bound", "model": "", "reason":
+                    "no understander is bound; attributes cannot be produced"}
+        health = getattr(understander, "health", None)
+        if not callable(health):
+            return {"available": True, "state": "unreported",
+                    "model": str(getattr(understander, "adapter_id", "")), "reason": ""}
+        try:
+            return dict(health())
+        except Exception as exc:  # noqa: BLE001 - diagnostics never break status
+            return {"available": True, "state": "unreported", "model": "",
+                    "reason": f"health check failed: {type(exc).__name__}: {exc}"}
 
     # ── lifecycle ────────────────────────────────────────────────────────────
 
@@ -289,6 +326,10 @@ class VisionRuntime:
                     provider=provider or (self._settings.vision_understander_provider or None),
                     static_value=static_value,
                     api_key=self._settings.vision_understander_api_key.get_secret_value(),
+                    # Model, endpoint, crop resolution and timeout, for the same
+                    # reason `provider` is passed above: the platform cannot read
+                    # them for itself because `.env` never reaches `os.environ`.
+                    options=self._settings.understander_options(),
                 )
             except ConfigurationInvalidError as exc:
                 logger.warning("understanding not bound: {}", exc)

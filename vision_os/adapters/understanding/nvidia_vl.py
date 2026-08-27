@@ -54,7 +54,48 @@ from ...core.ports.understanding import (
 from .payload import encode_png_base64, extract_json, split_by_schema
 
 DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
-DEFAULT_MODEL = "nvidia/llama-3.1-nemotron-nano-vl-8b-v1"
+
+#: The **default layer only** — the base of `defaults -> file -> environment`.
+#:
+#: A hosted model identifier is deployment configuration, and this constant is
+#: the last resort for a deployment that names none. Set ``VISION_NVIDIA_MODEL``
+#: to choose; the value here is not authoritative and must never be the only
+#: place a model can be named.
+#:
+#: It previously read ``nvidia/llama-3.1-nemotron-nano-vl-8b-v1``, which NVIDIA
+#: retired on **2026-08-26T09:00:00Z**. Every call then returned ``410 Gone``,
+#: every crop became a refusal, no attribute was produced, and the product
+#: reported "no alerts" for eighteen hours — on a safety monitor, where "nothing
+#: to report" and "the analysis is dead" look identical from the outside. That
+#: is why `probe()` exists below and why a 410 is now reported as a retirement
+#: rather than counted as one more failed call.
+DEFAULT_MODEL = "meta/llama-3.2-11b-vision-instruct"
+
+#: Statuses that mean *the model is gone*, not *this call failed*.
+#:
+#: 410 is the documented one. 404 is included because a delisted model on this
+#: endpoint answers "Not found for account" once it stops being served, which is
+#: the same operator problem wearing a different number: no amount of retrying
+#: will fix it, and a deployment must be told to name a different model.
+MODEL_RETIRED_STATUSES = frozenset({404, 410})
+
+
+class ModelRetiredError(RuntimeError):
+    """The configured model no longer exists upstream.
+
+    Separate from every other transport failure because the operator response is
+    different in kind. A timeout, a 429 or a 503 will pass; **this will not.**
+    Retrying it forever is what turned a model retirement into eighteen hours of
+    silent "no alerts", so it is raised under its own name, latched on the
+    adapter, and reported by `health()` as an unavailable analysis rather than
+    counted as one more failed call.
+    """
+
+    def __init__(self, status: int, detail: str, model: str) -> None:
+        super().__init__(f"model '{model}' is no longer available (HTTP {status}): {detail}")
+        self.status = status
+        self.detail = detail
+        self.model = model
 
 #: Self-reported and uncalibrated. Surfaced through ``field_confidence`` so M9
 #: can label it ``SELF_REPORTED`` (U4). This endpoint returns no per-field
@@ -132,7 +173,7 @@ class NvidiaVisionUnderstander:
     """
 
     __slots__ = ("_base", "_id", "_key", "_lock", "_max_side", "_model",
-                 "_producible", "_timeout", "binding_calls", "stats")
+                 "_producible", "_timeout", "binding_calls", "retired", "stats")
 
     def __init__(
         self,
@@ -165,6 +206,12 @@ class NvidiaVisionUnderstander:
         self._lock = threading.Lock()
         self.stats = _Stats()
         self.binding_calls = 0
+        #: Latched detail once the model is known to be gone, else empty.
+        #:
+        #: Latched rather than recomputed because a retirement is permanent and
+        #: the operator question — "is my analysis dead?" — must be answerable
+        #: between calls, not only during one.
+        self.retired = ""
 
     # --- port surface ----------------------------------------------------------- #
 
@@ -241,6 +288,14 @@ class NvidiaVisionUnderstander:
             with self._lock:
                 self.stats.timed_out += 1
             return self._refusal(str(exc), started=started)
+        except ModelRetiredError as exc:
+            # Latched, and phrased so the reason reads as a configuration fault
+            # rather than a flaky call. Downstream this is still a refusal — it
+            # must never become an answer — but `health()` can now tell an
+            # operator that the analysis is unavailable rather than quiet.
+            with self._lock:
+                self.retired = exc.detail or str(exc)
+            return self._refusal(f"model retired: {exc}", started=started)
         except Exception as exc:  # noqa: BLE001 - a refusing service is an outcome
             return self._refusal(f"{type(exc).__name__}: {exc}", started=started)
 
@@ -319,6 +374,27 @@ class NvidiaVisionUnderstander:
 
     # --- health, for the composition root ----------------------------------------- #
 
+    def health(self) -> dict[str, Any]:
+        """Is this adapter able to answer at all? For diagnostics and health.
+
+        Exists so the product can distinguish **"zero violations"** from **"the
+        analysis is not running"**. On a safety monitor those look identical
+        from the outside — an empty Alerts page — and for eighteen hours they
+        were, after the configured model was retired upstream.
+
+        `reason` is safe to display: it carries the upstream explanation and the
+        model name, and never the key.
+        """
+        if self.retired:
+            return {
+                "available": False,
+                "state": "model_retired",
+                "model": self._model,
+                "reason": f"the model '{self._model}' is no longer available upstream: "
+                          f"{self.retired}",
+            }
+        return {"available": True, "state": "ok", "model": self._model, "reason": ""}
+
     def probe(self) -> dict[str, Any]:
         """Reachable and authorised? Reported, never assumed.
 
@@ -340,11 +416,19 @@ class NvidiaVisionUnderstander:
                 "error": f"{type(exc).__name__}: {exc}",
             }
         available = [str(entry.get("id", "")) for entry in (payload.get("data") or [])]
+        listed = self._model in available
+        if not listed:
+            # Found at binding, where someone is watching, rather than on the
+            # first crop of a live shift. The endpoint lists what it serves, so
+            # a model missing from that list is retired or misspelled — both are
+            # configuration faults and neither improves by waiting.
+            with self._lock:
+                self.retired = f"not listed by {self._base}/models"
         return {
             "available": True,
             "endpoint": self._base,
             "model": self._model,
-            "model_listed": self._model in available,
+            "model_listed": listed,
             "error": None,
         }
 
@@ -390,6 +474,10 @@ class NvidiaVisionUnderstander:
                 return json.loads(response.read())
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:300]
+            # A retirement is not a failed call — it is a permanently wrong
+            # configuration, and nothing downstream can recover from it.
+            if exc.code in MODEL_RETIRED_STATUSES:
+                raise ModelRetiredError(exc.code, detail, self._model) from exc
             # The status is named rather than folded into a generic failure: a
             # 429 is retryable and a 401 is not, and an operator reading a log
             # needs to tell those apart without a packet capture.
