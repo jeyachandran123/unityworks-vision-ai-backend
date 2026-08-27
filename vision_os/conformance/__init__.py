@@ -33,6 +33,10 @@ from .model_kits import (
     DEVICE_KIT,
     MODEL_RUNTIME_KIT,
 )
+from .region_observability_kit import (
+    REGION_OBSERVABILITY_KIT,
+    region_observability_kit_checks,
+)
 from .registry_kits import IDENTITY_RESOLVER_KIT, OBJECT_STORE_KIT
 from .synthesis_kits import (
     ALL_SYNTHESIS_KITS,
@@ -69,6 +73,7 @@ __all__ = [
     "OBSERVATION_SINK_KIT",
     "OUTPUT_COERCION_KIT",
     "QUALITY_ESTIMATOR_KIT",
+    "REGION_OBSERVABILITY_KIT",
     "SUPPRESSION_POLICY_KIT",
     "TRACKER_KIT",
     "TRIGGER_POLICY_KIT",
@@ -80,5 +85,6 @@ __all__ = [
     "KitSection",
     "detector_kit_checks",
     "flow1_registry",
+    "region_observability_kit_checks",
     "platform_registry",
 ]

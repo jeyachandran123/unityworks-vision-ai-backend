@@ -28,7 +28,12 @@ from .adapters.cropping import (
     VerificationRules,
 )
 from .bootstrap import VisionPlatform
-from .conformance import CROP_STRATEGY_KIT, QUALITY_ESTIMATOR_KIT, TRIGGER_POLICY_KIT
+from .conformance import (
+    CROP_STRATEGY_KIT,
+    QUALITY_ESTIMATOR_KIT,
+    REGION_OBSERVABILITY_KIT,
+    TRIGGER_POLICY_KIT,
+)
 from .core.errors import CropError
 from .core.model.ids import ConfigRevision, ModuleId, ObjectId
 from .core.model.provenance import Provenance
@@ -205,6 +210,7 @@ def build_cropping_layer(
     output_sizes=None,
     quality_floors=None,
     crop_sink=None,
+    observability=None,
     attach: bool = True,
 ) -> CroppingLayer:
     """Assemble Flow 5 against an already-built platform and registry.
@@ -265,6 +271,13 @@ def build_cropping_layer(
     _gate_adapter(
         platform, PortCatalogue.CROP_STRATEGY, CROP_STRATEGY_KIT, selected_strategy
     )
+    if observability is not None:
+        _gate_adapter(
+            platform,
+            PortCatalogue.REGION_OBSERVABILITY,
+            REGION_OBSERVABILITY_KIT,
+            observability,
+        )
 
     platform_config = platform.config.platform()
     provenance = Provenance(
@@ -298,6 +311,10 @@ def build_cropping_layer(
         # The same map the strategy plans from. M8 uses it only to decide
         # which attributes can share one crop; it never reads the geometry.
         evidence_regions=evidence_regions,
+        # P33. ``None`` by default, and that default is the whole safety
+        # argument: a deployment that binds no producer behaves exactly as it
+        # did before this port existed.
+        observability=observability,
     )
 
     runtime = CropRuntime(

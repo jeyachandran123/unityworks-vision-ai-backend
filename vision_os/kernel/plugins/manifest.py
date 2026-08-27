@@ -72,6 +72,16 @@ class PortCatalogue:
     AUTHORIZATION = PortId("P31.AuthorizationPort")
     API_TRANSPORT = PortId("P32.ApiTransportPort")
 
+    REGION_OBSERVABILITY = PortId("P33.RegionObservabilityPort")
+    """Added after the original 32. *"Is the body region this attribute asks
+    about actually present in the evidence?"* — asked before an expensive model
+    is asked what is on it.
+
+    Not in any ``FLOW*_PORTS`` set, and therefore **not bindable by manifest**:
+    the crop path takes it as an optional collaborator, and absent one behaves
+    exactly as it did before. A port nobody has to bind cannot blind a
+    deployment that has not heard of it."""
+
 
 ALL_PORTS: frozenset[PortId] = frozenset(
     value for key, value in vars(PortCatalogue).items() if not key.startswith("_")

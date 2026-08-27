@@ -1,0 +1,411 @@
+{
+ "_comment": [
+  "The pose producer's verdicts on every kitchen-01 subject, recorded so the",
+  "gate's effect can be replayed with no ONNX runtime, no 13 MB artefact and",
+  "no network.",
+  "",
+  "This is EVIDENCE. It is never edited to make a test pass. If the producer's",
+  "behaviour changes, this file is re-recorded deliberately and the test's",
+  "pinned counts are updated with a written reason.",
+  "",
+  "'human_head_located' is the independent human annotation from",
+  "datasets/kitchen-01/head_locations.py. It is the ground truth here; the",
+  "producer's own verdict is what is being scored against it."
+ ],
+ "dataset": "kitchen-01",
+ "annotations_sha256": "84cb7ec5127ec08c",
+ "producer": "observability.pose.yolov8n",
+ "model_sha256": "4abcdec00c4c9891244ffa57",
+ "keypoint_confidence_floor": 0.5,
+ "recorded_at": "2026-08-27",
+ "median_frame_latency_ms": 70.9,
+ "cases": [
+  {
+   "frame": "f00060",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.9276,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "blue hairnet; both hands bare on the mixing bowl"
+  },
+  {
+   "frame": "f00060",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.7239,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "blue cap; forearm raised, hand behind the head"
+  },
+  {
+   "frame": "f00180",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.7827,
+   "signals_seen": 2,
+   "human_head_located": true,
+   "note": "blue hairnet; hands in front, out of view"
+  },
+  {
+   "frame": "f00180",
+   "subject": "s1",
+   "state": "low_confidence",
+   "confidence": 0.418,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "bent over, head region dark and unresolvable"
+  },
+  {
+   "frame": "f00300",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8354,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet clear; hands below the counter line"
+  },
+  {
+   "frame": "f00300",
+   "subject": "s1",
+   "state": "low_confidence",
+   "confidence": 0.3361,
+   "signals_seen": 0,
+   "human_head_located": true,
+   "note": "blue cap; arm motion-blurred, hand behind the head"
+  },
+  {
+   "frame": "f00420",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8045,
+   "signals_seen": 2,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f00420",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.8327,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue cap; hands at hips, roughly 15px, not resolvable"
+  },
+  {
+   "frame": "f00420",
+   "subject": "s2",
+   "state": "low_confidence",
+   "confidence": 0.4828,
+   "signals_seen": 0,
+   "human_head_located": true,
+   "note": "blue cap; hands together at chest but too small to read"
+  },
+  {
+   "frame": "f00420",
+   "subject": "s3",
+   "state": "located",
+   "confidence": 0.7417,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "dark bandana covering the head; hands out of view"
+  },
+  {
+   "frame": "f00540",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.7785,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f00540",
+   "subject": "s1",
+   "state": "low_confidence",
+   "confidence": 0.4493,
+   "signals_seen": 0,
+   "human_head_located": true,
+   "note": "bent fully over; head is an unresolvable dark mass"
+  },
+  {
+   "frame": "f00660",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8752,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet; pale object near the hand, not identifiable"
+  },
+  {
+   "frame": "f00660",
+   "subject": "s1",
+   "state": "not_located",
+   "confidence": 0.0615,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "head cropped off at the frame edge"
+  },
+  {
+   "frame": "f00660",
+   "subject": "s2",
+   "state": "located",
+   "confidence": 0.972,
+   "signals_seen": 4,
+   "human_head_located": true,
+   "note": "dark cap, clearly worn; hands below the counter"
+  },
+  {
+   "frame": "f00660",
+   "subject": "s3",
+   "state": "located",
+   "confidence": 0.708,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "blue hairnet visible despite blur"
+  },
+  {
+   "frame": "f00780",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.9859,
+   "signals_seen": 5,
+   "human_head_located": true,
+   "note": "dark bandana; extended arm bare but the hand is blurred"
+  },
+  {
+   "frame": "f00780",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.7197,
+   "signals_seen": 2,
+   "human_head_located": true,
+   "note": "blue hairnet; facing away"
+  },
+  {
+   "frame": "f00780",
+   "subject": "s2",
+   "state": "located",
+   "confidence": 0.6365,
+   "signals_seen": 2,
+   "human_head_located": false,
+   "note": "facing away and bent; head region ambiguous"
+  },
+  {
+   "frame": "f00780",
+   "subject": "s3",
+   "state": "not_located",
+   "confidence": 0.207,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "head cropped off at the top of the box"
+  },
+  {
+   "frame": "f00780",
+   "subject": "s4",
+   "state": "located",
+   "confidence": 0.634,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f00900",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.9693,
+   "signals_seen": 5,
+   "human_head_located": true,
+   "note": "dark knitted cap, close to the lens"
+  },
+  {
+   "frame": "f00900",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.6396,
+   "signals_seen": 3,
+   "human_head_located": true,
+   "note": "pale cap; distant"
+  },
+  {
+   "frame": "f00900",
+   "subject": "s2",
+   "state": "located",
+   "confidence": 0.7101,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet; bent over a pot"
+  },
+  {
+   "frame": "f00900",
+   "subject": "s3",
+   "state": "not_located",
+   "confidence": 0.0561,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "head only partly in the box"
+  },
+  {
+   "frame": "f01020",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.9033,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01020",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.9402,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet; bare forearm, hand not resolvable"
+  },
+  {
+   "frame": "f01020",
+   "subject": "s2",
+   "state": "located",
+   "confidence": 0.9343,
+   "signals_seen": 4,
+   "human_head_located": true,
+   "note": "dark cap; hand near the counter but heavily blurred"
+  },
+  {
+   "frame": "f01020",
+   "subject": "s3",
+   "state": "not_located",
+   "confidence": 0.1972,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "head turned away and out of the box"
+  },
+  {
+   "frame": "f01140",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.862,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01140",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.5267,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet; distant"
+  },
+  {
+   "frame": "f01140",
+   "subject": "s2",
+   "state": "not_located",
+   "confidence": 0.0579,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "bent over; head outside the box"
+  },
+  {
+   "frame": "f01260",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8909,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01260",
+   "subject": "s1",
+   "state": "not_located",
+   "confidence": 0.0589,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "bent over, head not in view"
+  },
+  {
+   "frame": "f01380",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8449,
+   "signals_seen": 2,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01500",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8757,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet; hand in the bowl"
+  },
+  {
+   "frame": "f01500",
+   "subject": "s1",
+   "state": "located",
+   "confidence": 0.9272,
+   "signals_seen": 5,
+   "human_head_located": true,
+   "note": "blue hairnet; both hands bare, holding an item at the waist"
+  },
+  {
+   "frame": "f01500",
+   "subject": "s2",
+   "state": "located",
+   "confidence": 0.531,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "head turned away; both hands bare and clearly visible"
+  },
+  {
+   "frame": "f01620",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.8154,
+   "signals_seen": 1,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01620",
+   "subject": "s1",
+   "state": "not_located",
+   "confidence": 0.2275,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "bent over, head out of frame"
+  },
+  {
+   "frame": "f01740",
+   "subject": "s0",
+   "state": "located",
+   "confidence": 0.785,
+   "signals_seen": 2,
+   "human_head_located": true,
+   "note": "blue hairnet"
+  },
+  {
+   "frame": "f01740",
+   "subject": "s1",
+   "state": "not_located",
+   "confidence": 0.179,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "head not in the box"
+  },
+  {
+   "frame": "f01740",
+   "subject": "s2",
+   "state": "low_confidence",
+   "confidence": 0.3834,
+   "signals_seen": 0,
+   "human_head_located": false,
+   "note": "distant and truncated"
+  }
+ ]
+}

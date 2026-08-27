@@ -62,7 +62,14 @@ class TestTriggerVocabulary:
 
 
 class TestSkipVocabulary:
-    """The eight reasons to save one. `FRESH_ENOUGH` is the one that saves money."""
+    """The nine reasons to save one. `FRESH_ENOUGH` is the one that saves money.
+
+    Eight until P33. `REGION_NOT_OBSERVABLE` was added deliberately rather than
+    folded into `QUALITY_INSUFFICIENT`, for the same reason `EVIDENCE_SUFFICIENT`
+    is not folded into `FRESH_ENOUGH`: the two call for opposite operator
+    responses. "Quality insufficient" sends someone to clean a lens; the actual
+    event was a worker bending over a pot, and there is nothing to fix.
+    """
 
     @pytest.mark.parametrize(
         "reason",
@@ -75,6 +82,7 @@ class TestSkipVocabulary:
             "DEDUPLICATED",
             "PRIORITY_PREEMPTED",
             "FRAME_UNAVAILABLE",
+            "REGION_NOT_OBSERVABLE",
         ],
     )
     def test_skip_reason_survived(self, reason: str) -> None:
@@ -82,10 +90,15 @@ class TestSkipVocabulary:
 
         assert hasattr(SkipReason, reason)
 
-    def test_there_are_exactly_eight(self) -> None:
+    def test_there_are_exactly_nine(self) -> None:
+        """The count guard, so a reason cannot be replaced rather than added.
+
+        Pinned rather than removed: this test's job is to make a *deletion*
+        impossible to do quietly, and it still does that.
+        """
         from vision_os.core.model.crop import SkipReason
 
-        assert len(list(SkipReason)) == 8
+        assert len(list(SkipReason)) == 9
 
     def test_fresh_enough_is_the_reuse_mechanism(self) -> None:
         """Phase 6's whole subject.

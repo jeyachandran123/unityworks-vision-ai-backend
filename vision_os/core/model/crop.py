@@ -103,6 +103,18 @@ class GateRejection(enum.Enum):
     DEGENERATE_GEOMETRY = "degenerate_geometry"
     """The requested box has no area after clamping to the frame."""
 
+    REGION_NOT_OBSERVABLE = "region_not_observable"
+    """The body region the question is about is not in the picture.
+
+    **Not a quality judgment**, and it is deliberately its own reason. The crop
+    can be large, sharp and well-exposed and still contain no head — measured on
+    `datasets/kitchen-01`, 11 of the 13 unreadable heads graded blur 0.00, and
+    the policy file records that they are unreadable *"because the head is turned
+    away, bent down or outside the box, which no quality axis can detect."*
+
+    Folding these into `TOO_BLURRY` would make the gate's own statistics lie
+    about why the platform stopped answering."""
+
 
 class TriggerReason(enum.Enum):
     """Why a candidate was selected for analysis (03_MODULES section M8).
@@ -182,6 +194,15 @@ class SkipReason(enum.Enum):
     would make an attribute that was never computed look like one that was, and
     would hide the largest and most valuable skip bucket in a deployment that
     uses verification."""
+    REGION_NOT_OBSERVABLE = "region_not_observable"
+    """The region the attribute asks about could not be located in the frame.
+
+    Distinct from ``QUALITY_INSUFFICIENT`` for the same reason
+    ``EVIDENCE_SUFFICIENT`` is distinct from ``FRESH_ENOUGH``: recording this as
+    a quality problem would tell an operator to fix the camera, when what
+    actually happened is that the worker bent over a pot. One is actionable and
+    the other is Tuesday."""
+
     DEDUPLICATED = "deduplicated"
     PRIORITY_PREEMPTED = "priority_preempted"
     FRAME_UNAVAILABLE = "frame_unavailable"
