@@ -69,7 +69,7 @@ DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
 #: to report" and "the analysis is dead" look identical from the outside. That
 #: is why `probe()` exists below and why a 410 is now reported as a retirement
 #: rather than counted as one more failed call.
-DEFAULT_MODEL = "meta/llama-3.2-11b-vision-instruct"
+DEFAULT_MODEL = "minimaxai/minimax-m3"
 
 #: Statuses that mean *the model is gone*, not *this call failed*.
 #:

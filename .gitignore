@@ -37,3 +37,36 @@ logs/
 # that. Everything else under models/ is an experiment.
 models/*
 !models/yolov8n.onnx
+
+# ── Production datasets ──────────────────────────────────────────────────────
+# P9.7. `datasets/` held 723 MB of CCTV-derived frames of identifiable people
+# with no ignore rule at all: a single `git add .` would have published them to
+# GitHub, where deletion does not delete.
+#
+# The corpus now lives OUTSIDE the repository, under $VISION_OS_DATA_ROOT. What
+# stays here is the small, reviewable record that makes an experiment
+# reproducible — manifests, schemas, reports — and never the pixels.
+#
+# Ignore the pixels wherever they appear...
+datasets/**/*.jpg
+datasets/**/*.jpeg
+datasets/**/*.png
+datasets/**/*.bmp
+datasets/**/*.tif
+datasets/**/*.tiff
+datasets/**/*.webp
+datasets/**/*.mp4
+datasets/**/*.avi
+datasets/**/*.mkv
+datasets/**/*.mov
+datasets/**/*.webm
+
+# Deliberately NOT excluding the collection directories wholesale. Git cannot
+# re-include a file whose parent directory is excluded, so a `datasets/p9-live/`
+# rule would also swallow session.json, quality.json and review_queue.json —
+# precisely the metadata that makes a collection reproducible and citable.
+# Measured during P9.7: it did exactly that.
+#
+# The extension rules above already catch every pixel. What remains — manifests,
+# digests, boxes, counts, provenance, reports — identifies nobody and belongs in
+# version control with the code that used it.

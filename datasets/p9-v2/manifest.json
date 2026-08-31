@@ -1,0 +1,1582 @@
+{
+ "_comment": [
+  "An IMMUTABLE P9 dataset version.",
+  "Any change to a label, a box or a split produces a NEW version.",
+  "`digest` covers every annotation; `verify` recomputes it.",
+  "Labels marked machine_proposed are NOT ground truth and are excluded",
+  "from every evaluation split by the validator, not by convention."
+ ],
+ "dataset_version": "P9-v2",
+ "annotation_schema_version": "2.0.0",
+ "built_at": "2026-08-28T01:47:52+00:00",
+ "digest": "fe16a44bc39e01e4886f4c5f647a3c8f2bd8eae9a2f514198235a48c41ccc1d2",
+ "statistics": {
+  "subjects": 43,
+  "frames": 15,
+  "groups": 1,
+  "subject_ids": 5,
+  "sessions": [
+   "kitchen01-20260813"
+  ],
+  "cameras": [
+   "cam-unknown-kitchen01"
+  ],
+  "source_videos": [
+   "Screen Recording 2026-08-13 112749.mp4"
+  ],
+  "by_split": {
+   "unassigned": 43
+  },
+  "by_label_provenance": {
+   "human_verified": 43
+  },
+  "by_box_provenance": {
+   "detector_derived": 43
+  },
+  "by_quality_status": {
+   "accepted": 43
+  },
+  "by_camera": {
+   "cam-unknown-kitchen01": 43
+  },
+  "by_region": {
+   "head": {
+    "obs:not_visible": 13,
+    "obs:visible": 30,
+    "state:not_evaluated": 13,
+    "state:present": 30
+   },
+   "face": {
+    "not_annotated": 43
+   },
+   "left_hand": {
+    "not_annotated": 43
+   },
+   "right_hand": {
+    "not_annotated": 43
+   }
+  },
+  "hard_case_tags": {},
+  "evaluation_grade": 43,
+  "ground_truth_violations": 0
+ },
+ "validation": {
+  "errors": [],
+  "warnings": [
+   "WARNING insufficient_support: head/present: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: head/absent: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: head/not_visible: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: face/present: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: face/absent: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: face/not_visible: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: left_hand/present: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: left_hand/absent: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: left_hand/not_visible: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: right_hand/present: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: right_hand/absent: 0 example(s) in evaluation splits, below the 30 needed to quote a metric",
+   "WARNING insufficient_support: right_hand/not_visible: 0 example(s) in evaluation splits, below the 30 needed to quote a metric"
+  ]
+ },
+ "excluded": [
+  {
+   "what": "kitchen-01 hand_covering (43 values)",
+   "why": "v1 recorded ONE value for both hands; left/right is not recoverable",
+   "recovery": "re-annotate per hand"
+  },
+  {
+   "what": "304 live person candidates",
+   "why": "collected and queued, NOT annotated - a model may not label them",
+   "recovery": "human annotation pass per P9_ANNOTATION_GUIDE.md"
+  },
+  {
+   "what": "290 live frames",
+   "why": "near-duplicate of a temporally adjacent frame in the same camera and session (Hamming <= 5, gap <= 3)",
+   "recovery": "n/a - redundant by measurement"
+  },
+  {
+   "what": "157 historical candidates (P9 queue)",
+   "why": "supplementary; superseded as PRIMARY source by the live corpus",
+   "recovery": "annotate for rare-violation supplementation"
+  }
+ ],
+ "notes": [
+  "P9-v2 = P9-v1's 43 annotations, UNCHANGED, plus a recorded LIVE_PRODUCTION",
+  "corpus that is collected but NOT YET ANNOTATED.",
+  "",
+  "P9.5 live collection: 4 sessions across 2 calendar days (2026-08-27, 2026-08-28) from cameras 11-14.",
+  "40654 frames decoded, 520 sampled, 230 retained after deduplication (55.8% near-duplicate), 304 person candidates awaiting human annotation.",
+  "0 frame failures, 0 reconnects, 4/4 cameras healthy in every session.",
+  "",
+  "THE ANNOTATION COUNT IS UNCHANGED FROM P9-v1, AND THAT IS THE POINT.",
+  "A model cannot be the annotator of record, so no live frame carries a label.",
+  "This manifest's digest is therefore IDENTICAL to P9-v1's - which is itself the",
+  "proof that P9.5 fabricated nothing.",
+  "",
+  "Provenance is preserved end to end: HISTORICAL (kitchen-01, data/evidence) vs",
+  "LIVE_PRODUCTION (datasets/p9-live). No live sample is in any split."
+ ],
+ "samples": [
+  {
+   "sample_id": "kitchen01.f00060.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00060",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3607,
+    0.1619,
+    0.5332,
+    0.8272
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; both hands bare on the mixing bowl | [v1 migration] hand_covering='absent' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; both hands bare on the mixing bowl"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00060.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00060",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1347,
+    0.1171,
+    0.5838
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue cap; forearm raised, hand behind the head | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue cap; forearm raised, hand behind the head"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00180.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00180",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4073,
+    0.1396,
+    0.5815,
+    0.9062
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; hands in front, out of view | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; hands in front, out of view"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00180.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00180",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.3553,
+    0.1816,
+    0.8973
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "bent over, head region dark and unresolvable | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "bent over, head region dark and unresolvable"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00300.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00300",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4259,
+    0.1478,
+    0.5953,
+    0.9011
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet clear; hands below the counter line | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet clear; hands below the counter line"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00300.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00300",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.127,
+    0.0976,
+    0.4419
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue cap; arm motion-blurred, hand behind the head | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue cap; arm motion-blurred, hand behind the head"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00420.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00420",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3932,
+    0.1439,
+    0.5753,
+    0.9006
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00420.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00420",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0571,
+    0.0825,
+    0.1823,
+    0.6842
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue cap; hands at hips, roughly 15px, not resolvable | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue cap; hands at hips, roughly 15px, not resolvable"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00420.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00420",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1142,
+    0.1146,
+    0.6859
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue cap; hands together at chest but too small to read | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue cap; hands together at chest but too small to read"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00420.s3",
+   "subject_id": "s3",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00420",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.1885,
+    0.6613,
+    0.3699,
+    0.9915
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "dark bandana covering the head; hands out of view | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "dark bandana covering the head; hands out of view"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00540.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00540",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4353,
+    0.1412,
+    0.6285,
+    0.8835
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00540.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00540",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.1935,
+    0.7108,
+    0.387,
+    0.993
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "bent fully over; head is an unresolvable dark mass | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "bent fully over; head is an unresolvable dark mass"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00660.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00660",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4227,
+    0.1305,
+    0.6075,
+    0.9023
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; pale object near the hand, not identifiable | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; pale object near the hand, not identifiable"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00660.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00660",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1405,
+    0.115,
+    0.6794
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head cropped off at the frame edge | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head cropped off at the frame edge"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00660.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00660",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.142,
+    0.5644,
+    0.3123,
+    0.9923
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "dark cap, clearly worn; hands below the counter | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "dark cap, clearly worn; hands below the counter"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00660.s3",
+   "subject_id": "s3",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00660",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.0059,
+    0.0541,
+    0.254
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet visible despite blur | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet visible despite blur"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00780.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00780",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.2021,
+    0.6178,
+    0.5519,
+    0.9896
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "dark bandana; extended arm bare but the hand is blurred | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "dark bandana; extended arm bare but the hand is blurred"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00780.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00780",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4183,
+    0.1271,
+    0.585,
+    0.8566
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; facing away | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; facing away"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00780.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00780",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0921,
+    0.1657,
+    0.2627,
+    0.8163
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "facing away and bent; head region ambiguous | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "facing away and bent; head region ambiguous"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00780.s3",
+   "subject_id": "s3",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00780",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1223,
+    0.1191,
+    0.712
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head cropped off at the top of the box | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head cropped off at the top of the box"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00780.s4",
+   "subject_id": "s4",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00780",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.0063,
+    0.0603,
+    0.2716
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00900.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00900",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3147,
+    0.662,
+    0.6106,
+    0.9904
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "dark knitted cap, close to the lens | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "dark knitted cap, close to the lens"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00900.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00900",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.0012,
+    0.084,
+    0.4444
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "pale cap; distant | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "pale cap; distant"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00900.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00900",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4221,
+    0.1825,
+    0.6018,
+    0.8264
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; bent over a pot | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; bent over a pot"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f00900.s3",
+   "subject_id": "s3",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f00900",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0002,
+    0.2241,
+    0.1207,
+    0.6925
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head only partly in the box | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head only partly in the box"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01020.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01020",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.5065,
+    0.1359,
+    0.6713,
+    0.8977
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01020.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01020",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3668,
+    0.2617,
+    0.5323,
+    0.9892
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; bare forearm, hand not resolvable | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; bare forearm, hand not resolvable"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01020.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01020",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.1352,
+    0.547,
+    0.3878,
+    0.9912
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "dark cap; hand near the counter but heavily blurred | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "dark cap; hand near the counter but heavily blurred"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01020.s3",
+   "subject_id": "s3",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01020",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1789,
+    0.111,
+    0.6992
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head turned away and out of the box | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head turned away and out of the box"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01140.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01140",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4602,
+    0.1437,
+    0.6199,
+    0.8832
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01140.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01140",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0011,
+    0.0303,
+    0.1255,
+    0.512
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; distant | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; distant"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01140.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01140",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.3908,
+    0.1111,
+    0.7812
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "bent over; head outside the box | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "bent over; head outside the box"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01260.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01260",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3546,
+    0.1193,
+    0.5314,
+    0.9039
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01260.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01260",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0002,
+    0.3844,
+    0.1039,
+    0.77
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "bent over, head not in view | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "bent over, head not in view"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01380.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01380",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3125,
+    0.1339,
+    0.4939,
+    0.8833
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01500.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01500",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.3471,
+    0.1408,
+    0.5474,
+    0.9132
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; hand in the bowl | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; hand in the bowl"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01500.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01500",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0176,
+    0.1544,
+    0.213,
+    0.8151
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet; both hands bare, holding an item at the waist | [v1 migration] hand_covering='absent' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet; both hands bare, holding an item at the waist"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01500.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01500",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.2707,
+    0.1395,
+    0.7773
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head turned away; both hands bare and clearly visible | [v1 migration] hand_covering='absent' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head turned away; both hands bare and clearly visible"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01620.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01620",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4379,
+    0.1514,
+    0.6191,
+    0.916
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01620.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01620",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0002,
+    0.2379,
+    0.2,
+    0.9372
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "bent over, head out of frame | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "bent over, head out of frame"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01740.s0",
+   "subject_id": "s0",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01740",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.4303,
+    0.1595,
+    0.6138,
+    0.9158
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "blue hairnet | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "visible",
+     "state": "present",
+     "hard_case_tags": [],
+     "note": "blue hairnet"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01740.s1",
+   "subject_id": "s1",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01740",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.2697,
+    0.0923,
+    0.7519
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "head not in the box | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "head not in the box"
+    }
+   ]
+  },
+  {
+   "sample_id": "kitchen01.f01740.s2",
+   "subject_id": "s2",
+   "session_id": "kitchen01-20260813",
+   "camera_id": "cam-unknown-kitchen01",
+   "frame_id": "kitchen01.f01740",
+   "source_video": "Screen Recording 2026-08-13 112749.mp4",
+   "box": [
+    0.0,
+    0.1068,
+    0.054,
+    0.3619
+   ],
+   "split": "unassigned",
+   "label_provenance": "human_verified",
+   "box_provenance": "detector_derived",
+   "quality_status": "accepted",
+   "ambiguous": false,
+   "identity_verified": false,
+   "annotator": "human_visual_inspection",
+   "annotated_at": "2026-08-13",
+   "annotation_version": "2.0.0",
+   "note": "distant and truncated | [v1 migration] hand_covering='not_visible' applied to BOTH hands jointly; per-hand re-annotation required",
+   "regions": [
+    {
+     "region": "head",
+     "attribute": "head_covering",
+     "observability": "not_visible",
+     "state": "not_evaluated",
+     "hard_case_tags": [],
+     "note": "distant and truncated"
+    }
+   ]
+  }
+ ]
+}

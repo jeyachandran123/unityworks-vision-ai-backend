@@ -1,0 +1,3277 @@
+{
+ "_comment": [
+  "A/B replay over identical perception traces. Deltas between",
+  "policies are valid; absolute rates are not, because a trace",
+  "is sampled at a fixed cadence while the live sampler hashes",
+  "every decoded frame. Event and baseline frames are scored",
+  "apart: a baseline frame is supposed to be empty."
+ ],
+ "traces": [
+  {
+   "trace_id": "trace-20260828-c00",
+   "recorded_at": "2026-08-28T04:16:49+00:00",
+   "period": "observed-0416Z",
+   "observations": 3320
+  },
+  {
+   "trace_id": "trace-20260828-c01",
+   "recorded_at": "2026-08-28T04:31:50+00:00",
+   "period": "observed-0431Z",
+   "observations": 3204
+  },
+  {
+   "trace_id": "trace-20260828-c02",
+   "recorded_at": "2026-08-28T04:46:50+00:00",
+   "period": "observed-0446Z",
+   "observations": 3303
+  },
+  {
+   "trace_id": "trace-20260828-c03",
+   "recorded_at": "2026-08-28T05:01:51+00:00",
+   "period": "observed-0501Z",
+   "observations": 3273
+  },
+  {
+   "trace_id": "trace-20260828-c04",
+   "recorded_at": "2026-08-28T05:16:51+00:00",
+   "period": "observed-0516Z",
+   "observations": 3292
+  },
+  {
+   "trace_id": "trace-20260828-c05",
+   "recorded_at": "2026-08-28T05:31:51+00:00",
+   "period": "observed-0531Z",
+   "observations": 3413
+  },
+  {
+   "trace_id": "trace-20260828-c06",
+   "recorded_at": "2026-08-28T05:46:52+00:00",
+   "period": "observed-0546Z",
+   "observations": 3308
+  },
+  {
+   "trace_id": "trace-20260828-c07",
+   "recorded_at": "2026-08-28T06:01:52+00:00",
+   "period": "observed-0601Z",
+   "observations": 3397
+  }
+ ],
+ "results": {
+  "phase1": {
+   "policy": "phase1",
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 10,
+    "max_samples": 150,
+    "departure_rule": "on_expiry",
+    "departure_confirm_misses": 0
+   },
+   "overall": {
+    "sampled": 1856,
+    "retained": 596,
+    "event_aware_duplicate_rate": 0.1699,
+    "naive_duplicate_rate": 0.479,
+    "exact_duplicates": 6,
+    "near_duplicates": 116,
+    "meaningful_change": 293,
+    "all": {
+     "frames": 1566,
+     "with_person": 1321,
+     "person_free": 245,
+     "person_positive_rate": 0.8436,
+     "person_free_rate": 0.1564,
+     "candidates": 2662,
+     "naive_duplicate_rate": 0.4527
+    },
+    "event": {
+     "frames": 1511,
+     "with_person": 1304,
+     "person_free": 207,
+     "person_positive_rate": 0.863,
+     "person_free_rate": 0.137,
+     "candidates": 2630,
+     "naive_duplicate_rate": 0.4454
+    },
+    "baseline": {
+     "frames": 55,
+     "with_person": 17,
+     "person_free": 38,
+     "person_positive_rate": 0.3091,
+     "person_free_rate": 0.6909,
+     "candidates": 32,
+     "naive_duplicate_rate": 0.3636
+    },
+    "by_reason": {
+     "person_entered": 263,
+     "person_left": 262,
+     "occlusion_changed": 248,
+     "person_count_changed": 206,
+     "bbox_changed": 166,
+     "scene_changed": 165,
+     "region_transition": 114,
+     "person_moved": 87,
+     "periodic_heartbeat": 55
+    },
+    "retrospective_captures": 0,
+    "retrospective_fallbacks": 0,
+    "frames_decoded": 138961,
+    "observations": 26510,
+    "candidates_per_decoded": 0.019156,
+    "candidates_per_retained_event_frame": 1.741,
+    "candidate_subject_tracks": 1002,
+    "baseline_contribution": 0.0923
+   },
+   "per_reason": {
+    "person_entered": {
+     "frames": 290,
+     "with_person": 290,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "person_left": {
+     "frames": 290,
+     "with_person": 141,
+     "person_free": 149,
+     "person_free_rate": 0.5138,
+     "protected": true
+    },
+    "occlusion_changed": {
+     "frames": 272,
+     "with_person": 272,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "bbox_changed": {
+     "frames": 254,
+     "with_person": 254,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "person_count_changed": {
+     "frames": 232,
+     "with_person": 188,
+     "person_free": 44,
+     "person_free_rate": 0.1897,
+     "protected": true
+    },
+    "scene_changed": {
+     "frames": 200,
+     "with_person": 153,
+     "person_free": 47,
+     "person_free_rate": 0.235,
+     "protected": false
+    },
+    "person_moved": {
+     "frames": 139,
+     "with_person": 139,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "region_transition": {
+     "frames": 122,
+     "with_person": 122,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "periodic_heartbeat": {
+     "frames": 57,
+     "with_person": 18,
+     "person_free": 39,
+     "person_free_rate": 0.6842,
+     "protected": true
+    }
+   },
+   "event_audit": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "on_expiry",
+    "reference": "reference",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 267,
+      "no_match": 23,
+      "held": 70,
+      "failed": 197,
+      "rate": 0.2622
+     },
+     "person_left": {
+      "claim": "the person count is lower than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 278,
+      "no_match": 12,
+      "held": 34,
+      "failed": 244,
+      "rate": 0.1223
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 232,
+      "compared": 219,
+      "no_match": 13,
+      "held": 60,
+      "failed": 159,
+      "rate": 0.274
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 272,
+      "compared": 234,
+      "no_match": 38,
+      "held": 155,
+      "failed": 79,
+      "rate": 0.6624
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 122,
+      "compared": 93,
+      "no_match": 29,
+      "held": 72,
+      "failed": 21,
+      "rate": 0.7742
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 254,
+      "compared": 239,
+      "no_match": 15,
+      "held": 121,
+      "failed": 118,
+      "rate": 0.5063
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 139,
+      "compared": 122,
+      "no_match": 17,
+      "held": 45,
+      "failed": 77,
+      "rate": 0.3689
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 200,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 57,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1452,
+     "held": 557,
+     "rate": 0.3836
+    }
+   },
+   "event_audit_earliest": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "on_expiry",
+    "reference": "reference_earliest",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 267,
+      "no_match": 23,
+      "held": 180,
+      "failed": 87,
+      "rate": 0.6742
+     },
+     "person_left": {
+      "claim": "the person count is lower than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 278,
+      "no_match": 12,
+      "held": 154,
+      "failed": 124,
+      "rate": 0.554
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 232,
+      "compared": 219,
+      "no_match": 13,
+      "held": 143,
+      "failed": 76,
+      "rate": 0.653
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 272,
+      "compared": 234,
+      "no_match": 38,
+      "held": 183,
+      "failed": 51,
+      "rate": 0.7821
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 122,
+      "compared": 93,
+      "no_match": 29,
+      "held": 84,
+      "failed": 9,
+      "rate": 0.9032
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 254,
+      "compared": 239,
+      "no_match": 15,
+      "held": 159,
+      "failed": 80,
+      "rate": 0.6653
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 139,
+      "compared": 122,
+      "no_match": 17,
+      "held": 51,
+      "failed": 71,
+      "rate": 0.418
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 200,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 57,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1452,
+     "held": 954,
+     "rate": 0.657
+    }
+   },
+   "by_camera": {
+    "cam-11": {
+     "sampled": 325,
+     "retained": 232,
+     "event_aware_duplicate_rate": 0.1278,
+     "naive_duplicate_rate": 0.4769,
+     "exact_duplicates": 3,
+     "near_duplicates": 31,
+     "meaningful_change": 118,
+     "all": {
+      "frames": 288,
+      "with_person": 176,
+      "person_free": 112,
+      "person_positive_rate": 0.6111,
+      "person_free_rate": 0.3889,
+      "candidates": 193,
+      "naive_duplicate_rate": 0.441
+     },
+     "event": {
+      "frames": 268,
+      "with_person": 174,
+      "person_free": 94,
+      "person_positive_rate": 0.6493,
+      "person_free_rate": 0.3507,
+      "candidates": 191,
+      "naive_duplicate_rate": 0.4216
+     },
+     "baseline": {
+      "frames": 20,
+      "with_person": 2,
+      "person_free": 18,
+      "person_positive_rate": 0.1,
+      "person_free_rate": 0.9,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.55
+     },
+     "by_reason": {
+      "person_entered": 57,
+      "person_left": 56,
+      "occlusion_changed": 48,
+      "person_count_changed": 40,
+      "scene_changed": 37,
+      "periodic_heartbeat": 20,
+      "bbox_changed": 19,
+      "region_transition": 9,
+      "person_moved": 2
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "cam-12": {
+     "sampled": 616,
+     "retained": 341,
+     "event_aware_duplicate_rate": 0.1411,
+     "naive_duplicate_rate": 0.3912,
+     "exact_duplicates": 2,
+     "near_duplicates": 54,
+     "meaningful_change": 115,
+     "all": {
+      "frames": 538,
+      "with_person": 520,
+      "person_free": 18,
+      "person_positive_rate": 0.9665,
+      "person_free_rate": 0.0335,
+      "candidates": 1288,
+      "naive_duplicate_rate": 0.3569
+     },
+     "event": {
+      "frames": 529,
+      "with_person": 512,
+      "person_free": 17,
+      "person_positive_rate": 0.9679,
+      "person_free_rate": 0.0321,
+      "candidates": 1270,
+      "naive_duplicate_rate": 0.3516
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 8,
+      "person_free": 1,
+      "person_positive_rate": 0.8889,
+      "person_free_rate": 0.1111,
+      "candidates": 18,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "person_left": 79,
+      "occlusion_changed": 78,
+      "person_entered": 77,
+      "person_count_changed": 76,
+      "scene_changed": 68,
+      "region_transition": 55,
+      "bbox_changed": 51,
+      "person_moved": 45,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "cam-13": {
+     "sampled": 567,
+     "retained": 333,
+     "event_aware_duplicate_rate": 0.1591,
+     "naive_duplicate_rate": 0.4568,
+     "exact_duplicates": 1,
+     "near_duplicates": 62,
+     "meaningful_change": 153,
+     "all": {
+      "frames": 486,
+      "with_person": 444,
+      "person_free": 42,
+      "person_positive_rate": 0.9136,
+      "person_free_rate": 0.0864,
+      "candidates": 1012,
+      "naive_duplicate_rate": 0.4198
+     },
+     "event": {
+      "frames": 477,
+      "with_person": 438,
+      "person_free": 39,
+      "person_positive_rate": 0.9182,
+      "person_free_rate": 0.0818,
+      "candidates": 1001,
+      "naive_duplicate_rate": 0.4172
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 6,
+      "person_free": 3,
+      "person_positive_rate": 0.6667,
+      "person_free_rate": 0.3333,
+      "candidates": 11,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "person_entered": 78,
+      "occlusion_changed": 78,
+      "person_left": 78,
+      "person_count_changed": 74,
+      "scene_changed": 52,
+      "bbox_changed": 45,
+      "region_transition": 43,
+      "person_moved": 29,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "cam-14": {
+     "sampled": 348,
+     "retained": 229,
+     "event_aware_duplicate_rate": 0.1703,
+     "naive_duplicate_rate": 0.6839,
+     "exact_duplicates": 5,
+     "near_duplicates": 42,
+     "meaningful_change": 196,
+     "all": {
+      "frames": 288,
+      "with_person": 196,
+      "person_free": 92,
+      "person_positive_rate": 0.6806,
+      "person_free_rate": 0.3194,
+      "candidates": 211,
+      "naive_duplicate_rate": 0.6736
+     },
+     "event": {
+      "frames": 269,
+      "with_person": 194,
+      "person_free": 75,
+      "person_positive_rate": 0.7212,
+      "person_free_rate": 0.2788,
+      "candidates": 209,
+      "naive_duplicate_rate": 0.6617
+     },
+     "baseline": {
+      "frames": 19,
+      "with_person": 2,
+      "person_free": 17,
+      "person_positive_rate": 0.1053,
+      "person_free_rate": 0.8947,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.6842
+     },
+     "by_reason": {
+      "person_entered": 70,
+      "person_left": 67,
+      "occlusion_changed": 63,
+      "person_count_changed": 34,
+      "periodic_heartbeat": 19,
+      "bbox_changed": 12,
+      "region_transition": 11,
+      "scene_changed": 10,
+      "person_moved": 2
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    }
+   },
+   "by_trace": {
+    "trace-20260828-c00": {
+     "period": "observed-0416Z",
+     "day": "2026-08-28",
+     "sampled": 255,
+     "retained": 183,
+     "event_aware_duplicate_rate": 0.183,
+     "naive_duplicate_rate": 0.549,
+     "exact_duplicates": 8,
+     "near_duplicates": 33,
+     "meaningful_change": 118,
+     "all": {
+      "frames": 208,
+      "with_person": 172,
+      "person_free": 36,
+      "person_positive_rate": 0.8269,
+      "person_free_rate": 0.1731,
+      "candidates": 293,
+      "naive_duplicate_rate": 0.5096
+     },
+     "event": {
+      "frames": 204,
+      "with_person": 170,
+      "person_free": 34,
+      "person_positive_rate": 0.8333,
+      "person_free_rate": 0.1667,
+      "candidates": 291,
+      "naive_duplicate_rate": 0.5098
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 2,
+      "person_free": 2,
+      "person_positive_rate": 0.5,
+      "person_free_rate": 0.5,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "person_left": 39,
+      "person_entered": 38,
+      "occlusion_changed": 38,
+      "person_count_changed": 34,
+      "scene_changed": 19,
+      "region_transition": 17,
+      "person_moved": 10,
+      "bbox_changed": 9,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c01": {
+     "period": "observed-0431Z",
+     "day": "2026-08-28",
+     "sampled": 233,
+     "retained": 176,
+     "event_aware_duplicate_rate": 0.1498,
+     "naive_duplicate_rate": 0.5021,
+     "exact_duplicates": 2,
+     "near_duplicates": 29,
+     "meaningful_change": 99,
+     "all": {
+      "frames": 201,
+      "with_person": 175,
+      "person_free": 26,
+      "person_positive_rate": 0.8706,
+      "person_free_rate": 0.1294,
+      "candidates": 329,
+      "naive_duplicate_rate": 0.4478
+     },
+     "event": {
+      "frames": 195,
+      "with_person": 173,
+      "person_free": 22,
+      "person_positive_rate": 0.8872,
+      "person_free_rate": 0.1128,
+      "candidates": 327,
+      "naive_duplicate_rate": 0.441
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.1667
+     },
+     "by_reason": {
+      "person_entered": 40,
+      "person_left": 40,
+      "occlusion_changed": 34,
+      "person_count_changed": 29,
+      "scene_changed": 18,
+      "region_transition": 16,
+      "bbox_changed": 13,
+      "periodic_heartbeat": 6,
+      "person_moved": 5
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c02": {
+     "period": "observed-0446Z",
+     "day": "2026-08-28",
+     "sampled": 228,
+     "retained": 175,
+     "event_aware_duplicate_rate": 0.1294,
+     "naive_duplicate_rate": 0.4254,
+     "exact_duplicates": 1,
+     "near_duplicates": 25,
+     "meaningful_change": 88,
+     "all": {
+      "frames": 199,
+      "with_person": 154,
+      "person_free": 45,
+      "person_positive_rate": 0.7739,
+      "person_free_rate": 0.2261,
+      "candidates": 227,
+      "naive_duplicate_rate": 0.3769
+     },
+     "event": {
+      "frames": 193,
+      "with_person": 152,
+      "person_free": 41,
+      "person_positive_rate": 0.7876,
+      "person_free_rate": 0.2124,
+      "candidates": 224,
+      "naive_duplicate_rate": 0.3731
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.3333
+     },
+     "by_reason": {
+      "person_left": 40,
+      "person_entered": 39,
+      "occlusion_changed": 34,
+      "person_count_changed": 31,
+      "scene_changed": 24,
+      "bbox_changed": 11,
+      "region_transition": 8,
+      "periodic_heartbeat": 6,
+      "person_moved": 6
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c03": {
+     "period": "observed-0501Z",
+     "day": "2026-08-28",
+     "sampled": 200,
+     "retained": 148,
+     "event_aware_duplicate_rate": 0.1638,
+     "naive_duplicate_rate": 0.515,
+     "exact_duplicates": 1,
+     "near_duplicates": 28,
+     "meaningful_change": 85,
+     "all": {
+      "frames": 167,
+      "with_person": 134,
+      "person_free": 33,
+      "person_positive_rate": 0.8024,
+      "person_free_rate": 0.1976,
+      "candidates": 222,
+      "naive_duplicate_rate": 0.4671
+     },
+     "event": {
+      "frames": 156,
+      "with_person": 132,
+      "person_free": 24,
+      "person_positive_rate": 0.8462,
+      "person_free_rate": 0.1538,
+      "candidates": 217,
+      "naive_duplicate_rate": 0.4359
+     },
+     "baseline": {
+      "frames": 11,
+      "with_person": 2,
+      "person_free": 9,
+      "person_positive_rate": 0.1818,
+      "person_free_rate": 0.8182,
+      "candidates": 5,
+      "naive_duplicate_rate": 0.5455
+     },
+     "by_reason": {
+      "person_entered": 34,
+      "person_left": 33,
+      "occlusion_changed": 27,
+      "person_count_changed": 19,
+      "scene_changed": 18,
+      "periodic_heartbeat": 11,
+      "region_transition": 10,
+      "bbox_changed": 8,
+      "person_moved": 7
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c04": {
+     "period": "observed-0516Z",
+     "day": "2026-08-28",
+     "sampled": 206,
+     "retained": 163,
+     "event_aware_duplicate_rate": 0.1421,
+     "naive_duplicate_rate": 0.4854,
+     "exact_duplicates": 0,
+     "near_duplicates": 27,
+     "meaningful_change": 85,
+     "all": {
+      "frames": 176,
+      "with_person": 142,
+      "person_free": 34,
+      "person_positive_rate": 0.8068,
+      "person_free_rate": 0.1932,
+      "candidates": 313,
+      "naive_duplicate_rate": 0.4375
+     },
+     "event": {
+      "frames": 168,
+      "with_person": 140,
+      "person_free": 28,
+      "person_positive_rate": 0.8333,
+      "person_free_rate": 0.1667,
+      "candidates": 307,
+      "naive_duplicate_rate": 0.4226
+     },
+     "baseline": {
+      "frames": 8,
+      "with_person": 2,
+      "person_free": 6,
+      "person_positive_rate": 0.25,
+      "person_free_rate": 0.75,
+      "candidates": 6,
+      "naive_duplicate_rate": 0.5
+     },
+     "by_reason": {
+      "person_left": 34,
+      "person_entered": 33,
+      "occlusion_changed": 30,
+      "person_count_changed": 25,
+      "scene_changed": 17,
+      "region_transition": 13,
+      "periodic_heartbeat": 8,
+      "bbox_changed": 8,
+      "person_moved": 8
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c05": {
+     "period": "observed-0531Z",
+     "day": "2026-08-28",
+     "sampled": 233,
+     "retained": 175,
+     "event_aware_duplicate_rate": 0.1463,
+     "naive_duplicate_rate": 0.4592,
+     "exact_duplicates": 0,
+     "near_duplicates": 30,
+     "meaningful_change": 88,
+     "all": {
+      "frames": 201,
+      "with_person": 162,
+      "person_free": 39,
+      "person_positive_rate": 0.806,
+      "person_free_rate": 0.194,
+      "candidates": 318,
+      "naive_duplicate_rate": 0.4129
+     },
+     "event": {
+      "frames": 193,
+      "with_person": 160,
+      "person_free": 33,
+      "person_positive_rate": 0.829,
+      "person_free_rate": 0.171,
+      "candidates": 314,
+      "naive_duplicate_rate": 0.4041
+     },
+     "baseline": {
+      "frames": 8,
+      "with_person": 2,
+      "person_free": 6,
+      "person_positive_rate": 0.25,
+      "person_free_rate": 0.75,
+      "candidates": 4,
+      "naive_duplicate_rate": 0.375
+     },
+     "by_reason": {
+      "occlusion_changed": 36,
+      "person_entered": 33,
+      "person_left": 33,
+      "person_count_changed": 29,
+      "scene_changed": 22,
+      "bbox_changed": 14,
+      "region_transition": 14,
+      "person_moved": 12,
+      "periodic_heartbeat": 8
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c06": {
+     "period": "observed-0546Z",
+     "day": "2026-08-28",
+     "sampled": 274,
+     "retained": 187,
+     "event_aware_duplicate_rate": 0.1834,
+     "naive_duplicate_rate": 0.4854,
+     "exact_duplicates": 1,
+     "near_duplicates": 41,
+     "meaningful_change": 92,
+     "all": {
+      "frames": 224,
+      "with_person": 199,
+      "person_free": 25,
+      "person_positive_rate": 0.8884,
+      "person_free_rate": 0.1116,
+      "candidates": 400,
+      "naive_duplicate_rate": 0.4107
+     },
+     "event": {
+      "frames": 220,
+      "with_person": 196,
+      "person_free": 24,
+      "person_positive_rate": 0.8909,
+      "person_free_rate": 0.1091,
+      "candidates": 397,
+      "naive_duplicate_rate": 0.4
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 3,
+      "person_free": 1,
+      "person_positive_rate": 0.75,
+      "person_free_rate": 0.25,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "occlusion_changed": 40,
+      "person_entered": 38,
+      "person_left": 36,
+      "person_count_changed": 30,
+      "scene_changed": 29,
+      "region_transition": 19,
+      "bbox_changed": 15,
+      "person_moved": 13,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c07": {
+     "period": "observed-0601Z",
+     "day": "2026-08-28",
+     "sampled": 227,
+     "retained": 176,
+     "event_aware_duplicate_rate": 0.12,
+     "naive_duplicate_rate": 0.4053,
+     "exact_duplicates": 1,
+     "near_duplicates": 23,
+     "meaningful_change": 89,
+     "all": {
+      "frames": 199,
+      "with_person": 177,
+      "person_free": 22,
+      "person_positive_rate": 0.8894,
+      "person_free_rate": 0.1106,
+      "candidates": 554,
+      "naive_duplicate_rate": 0.3769
+     },
+     "event": {
+      "frames": 189,
+      "with_person": 174,
+      "person_free": 15,
+      "person_positive_rate": 0.9206,
+      "person_free_rate": 0.0794,
+      "candidates": 546,
+      "naive_duplicate_rate": 0.3704
+     },
+     "baseline": {
+      "frames": 10,
+      "with_person": 3,
+      "person_free": 7,
+      "person_positive_rate": 0.3,
+      "person_free_rate": 0.7,
+      "candidates": 8,
+      "naive_duplicate_rate": 0.4
+     },
+     "by_reason": {
+      "person_entered": 30,
+      "occlusion_changed": 29,
+      "person_left": 29,
+      "person_count_changed": 29,
+      "region_transition": 24,
+      "scene_changed": 19,
+      "person_moved": 15,
+      "bbox_changed": 14,
+      "periodic_heartbeat": 10
+     },
+     "retrospective_captures": 0,
+     "retrospective_fallbacks": 0
+    }
+   }
+  },
+  "phase2-b": {
+   "policy": "phase2-b",
+   "config": {
+    "version": "p9.6-events-2b",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 10,
+    "max_samples": 150,
+    "departure_rule": "last_confirmed",
+    "departure_confirm_misses": 0
+   },
+   "overall": {
+    "sampled": 1856,
+    "retained": 592,
+    "event_aware_duplicate_rate": 0.1638,
+    "naive_duplicate_rate": 0.4919,
+    "exact_duplicates": 7,
+    "near_duplicates": 109,
+    "meaningful_change": 289,
+    "all": {
+     "frames": 1598,
+     "with_person": 1482,
+     "person_free": 116,
+     "person_positive_rate": 0.9274,
+     "person_free_rate": 0.0726,
+     "candidates": 2988,
+     "naive_duplicate_rate": 0.4631
+    },
+    "event": {
+     "frames": 1543,
+     "with_person": 1465,
+     "person_free": 78,
+     "person_positive_rate": 0.9494,
+     "person_free_rate": 0.0506,
+     "candidates": 2956,
+     "naive_duplicate_rate": 0.4563
+    },
+    "baseline": {
+     "frames": 55,
+     "with_person": 17,
+     "person_free": 38,
+     "person_positive_rate": 0.3091,
+     "person_free_rate": 0.6909,
+     "candidates": 32,
+     "naive_duplicate_rate": 0.3636
+    },
+    "by_reason": {
+     "person_entered": 269,
+     "person_left": 268,
+     "occlusion_changed": 254,
+     "person_count_changed": 208,
+     "bbox_changed": 173,
+     "scene_changed": 168,
+     "region_transition": 114,
+     "person_moved": 89,
+     "periodic_heartbeat": 55
+    },
+    "retrospective_captures": 290,
+    "retrospective_fallbacks": 0,
+    "frames_decoded": 138961,
+    "observations": 26510,
+    "candidates_per_decoded": 0.021502,
+    "candidates_per_retained_event_frame": 1.916,
+    "candidate_subject_tracks": 1002,
+    "baseline_contribution": 0.0929
+   },
+   "per_reason": {
+    "person_entered": {
+     "frames": 290,
+     "with_person": 290,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "person_left": {
+     "frames": 290,
+     "with_person": 290,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "occlusion_changed": {
+     "frames": 272,
+     "with_person": 272,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "bbox_changed": {
+     "frames": 254,
+     "with_person": 254,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "person_count_changed": {
+     "frames": 232,
+     "with_person": 188,
+     "person_free": 44,
+     "person_free_rate": 0.1897,
+     "protected": true
+    },
+    "scene_changed": {
+     "frames": 200,
+     "with_person": 153,
+     "person_free": 47,
+     "person_free_rate": 0.235,
+     "protected": false
+    },
+    "person_moved": {
+     "frames": 139,
+     "with_person": 139,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "region_transition": {
+     "frames": 122,
+     "with_person": 122,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "periodic_heartbeat": {
+     "frames": 57,
+     "with_person": 18,
+     "person_free": 39,
+     "person_free_rate": 0.6842,
+     "protected": true
+    }
+   },
+   "event_audit": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "last_confirmed",
+    "reference": "reference",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 267,
+      "no_match": 23,
+      "held": 70,
+      "failed": 197,
+      "rate": 0.2622
+     },
+     "person_left": {
+      "claim": "the retained frame still shows the departing person (people > 0)",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 262,
+      "no_match": 28,
+      "held": 262,
+      "failed": 0,
+      "rate": 1.0
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 232,
+      "compared": 219,
+      "no_match": 13,
+      "held": 60,
+      "failed": 159,
+      "rate": 0.274
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 272,
+      "compared": 234,
+      "no_match": 38,
+      "held": 155,
+      "failed": 79,
+      "rate": 0.6624
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 122,
+      "compared": 93,
+      "no_match": 29,
+      "held": 72,
+      "failed": 21,
+      "rate": 0.7742
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 254,
+      "compared": 239,
+      "no_match": 15,
+      "held": 121,
+      "failed": 118,
+      "rate": 0.5063
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 139,
+      "compared": 122,
+      "no_match": 17,
+      "held": 45,
+      "failed": 77,
+      "rate": 0.3689
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 200,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 57,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1436,
+     "held": 785,
+     "rate": 0.5467
+    }
+   },
+   "event_audit_earliest": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "last_confirmed",
+    "reference": "reference_earliest",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 267,
+      "no_match": 23,
+      "held": 180,
+      "failed": 87,
+      "rate": 0.6742
+     },
+     "person_left": {
+      "claim": "the retained frame still shows the departing person (people > 0)",
+      "testability": "testable",
+      "frames": 290,
+      "compared": 262,
+      "no_match": 28,
+      "held": 262,
+      "failed": 0,
+      "rate": 1.0
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 232,
+      "compared": 219,
+      "no_match": 13,
+      "held": 143,
+      "failed": 76,
+      "rate": 0.653
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 272,
+      "compared": 234,
+      "no_match": 38,
+      "held": 183,
+      "failed": 51,
+      "rate": 0.7821
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 122,
+      "compared": 93,
+      "no_match": 29,
+      "held": 84,
+      "failed": 9,
+      "rate": 0.9032
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 254,
+      "compared": 239,
+      "no_match": 15,
+      "held": 159,
+      "failed": 80,
+      "rate": 0.6653
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 139,
+      "compared": 122,
+      "no_match": 17,
+      "held": 51,
+      "failed": 71,
+      "rate": 0.418
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 200,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 57,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1436,
+     "held": 1062,
+     "rate": 0.7396
+    }
+   },
+   "by_camera": {
+    "cam-11": {
+     "sampled": 325,
+     "retained": 222,
+     "event_aware_duplicate_rate": 0.1328,
+     "naive_duplicate_rate": 0.5077,
+     "exact_duplicates": 3,
+     "near_duplicates": 31,
+     "meaningful_change": 120,
+     "all": {
+      "frames": 288,
+      "with_person": 227,
+      "person_free": 61,
+      "person_positive_rate": 0.7882,
+      "person_free_rate": 0.2118,
+      "candidates": 251,
+      "naive_duplicate_rate": 0.4757
+     },
+     "event": {
+      "frames": 268,
+      "with_person": 225,
+      "person_free": 43,
+      "person_positive_rate": 0.8396,
+      "person_free_rate": 0.1604,
+      "candidates": 249,
+      "naive_duplicate_rate": 0.4627
+     },
+     "baseline": {
+      "frames": 20,
+      "with_person": 2,
+      "person_free": 18,
+      "person_positive_rate": 0.1,
+      "person_free_rate": 0.9,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.55
+     },
+     "by_reason": {
+      "person_entered": 57,
+      "person_left": 57,
+      "occlusion_changed": 48,
+      "person_count_changed": 40,
+      "scene_changed": 37,
+      "periodic_heartbeat": 20,
+      "bbox_changed": 18,
+      "region_transition": 9,
+      "person_moved": 2
+     },
+     "retrospective_captures": 58,
+     "retrospective_fallbacks": 0
+    },
+    "cam-12": {
+     "sampled": 616,
+     "retained": 332,
+     "event_aware_duplicate_rate": 0.1377,
+     "naive_duplicate_rate": 0.4107,
+     "exact_duplicates": 2,
+     "near_duplicates": 51,
+     "meaningful_change": 119,
+     "all": {
+      "frames": 545,
+      "with_person": 538,
+      "person_free": 7,
+      "person_positive_rate": 0.9872,
+      "person_free_rate": 0.0128,
+      "candidates": 1392,
+      "naive_duplicate_rate": 0.3761
+     },
+     "event": {
+      "frames": 536,
+      "with_person": 530,
+      "person_free": 6,
+      "person_positive_rate": 0.9888,
+      "person_free_rate": 0.0112,
+      "candidates": 1374,
+      "naive_duplicate_rate": 0.3731
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 8,
+      "person_free": 1,
+      "person_positive_rate": 0.8889,
+      "person_free_rate": 0.1111,
+      "candidates": 18,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "person_left": 80,
+      "person_entered": 79,
+      "occlusion_changed": 79,
+      "person_count_changed": 75,
+      "scene_changed": 68,
+      "bbox_changed": 55,
+      "region_transition": 55,
+      "person_moved": 45,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 80,
+     "retrospective_fallbacks": 0
+    },
+    "cam-13": {
+     "sampled": 567,
+     "retained": 316,
+     "event_aware_duplicate_rate": 0.164,
+     "naive_duplicate_rate": 0.4638,
+     "exact_duplicates": 0,
+     "near_duplicates": 62,
+     "meaningful_change": 143,
+     "all": {
+      "frames": 487,
+      "with_person": 471,
+      "person_free": 16,
+      "person_positive_rate": 0.9671,
+      "person_free_rate": 0.0329,
+      "candidates": 1095,
+      "naive_duplicate_rate": 0.4251
+     },
+     "event": {
+      "frames": 478,
+      "with_person": 465,
+      "person_free": 13,
+      "person_positive_rate": 0.9728,
+      "person_free_rate": 0.0272,
+      "candidates": 1084,
+      "naive_duplicate_rate": 0.4247
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 6,
+      "person_free": 3,
+      "person_positive_rate": 0.6667,
+      "person_free_rate": 0.3333,
+      "candidates": 11,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "person_entered": 78,
+      "occlusion_changed": 78,
+      "person_left": 77,
+      "person_count_changed": 75,
+      "scene_changed": 53,
+      "bbox_changed": 45,
+      "region_transition": 43,
+      "person_moved": 29,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 80,
+     "retrospective_fallbacks": 0
+    },
+    "cam-14": {
+     "sampled": 348,
+     "retained": 215,
+     "event_aware_duplicate_rate": 0.1794,
+     "naive_duplicate_rate": 0.681,
+     "exact_duplicates": 7,
+     "near_duplicates": 40,
+     "meaningful_change": 184,
+     "all": {
+      "frames": 293,
+      "with_person": 257,
+      "person_free": 36,
+      "person_positive_rate": 0.8771,
+      "person_free_rate": 0.1229,
+      "candidates": 282,
+      "naive_duplicate_rate": 0.6724
+     },
+     "event": {
+      "frames": 274,
+      "with_person": 255,
+      "person_free": 19,
+      "person_positive_rate": 0.9307,
+      "person_free_rate": 0.0693,
+      "candidates": 280,
+      "naive_duplicate_rate": 0.6606
+     },
+     "baseline": {
+      "frames": 19,
+      "with_person": 2,
+      "person_free": 17,
+      "person_positive_rate": 0.1053,
+      "person_free_rate": 0.8947,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.6842
+     },
+     "by_reason": {
+      "person_left": 71,
+      "person_entered": 70,
+      "occlusion_changed": 63,
+      "person_count_changed": 34,
+      "periodic_heartbeat": 19,
+      "bbox_changed": 13,
+      "region_transition": 11,
+      "scene_changed": 9,
+      "person_moved": 3
+     },
+     "retrospective_captures": 72,
+     "retrospective_fallbacks": 0
+    }
+   },
+   "by_trace": {
+    "trace-20260828-c00": {
+     "period": "observed-0416Z",
+     "day": "2026-08-28",
+     "sampled": 255,
+     "retained": 172,
+     "event_aware_duplicate_rate": 0.1887,
+     "naive_duplicate_rate": 0.549,
+     "exact_duplicates": 8,
+     "near_duplicates": 32,
+     "meaningful_change": 109,
+     "all": {
+      "frames": 209,
+      "with_person": 197,
+      "person_free": 12,
+      "person_positive_rate": 0.9426,
+      "person_free_rate": 0.0574,
+      "candidates": 334,
+      "naive_duplicate_rate": 0.5167
+     },
+     "event": {
+      "frames": 205,
+      "with_person": 195,
+      "person_free": 10,
+      "person_positive_rate": 0.9512,
+      "person_free_rate": 0.0488,
+      "candidates": 332,
+      "naive_duplicate_rate": 0.5122
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 2,
+      "person_free": 2,
+      "person_positive_rate": 0.5,
+      "person_free_rate": 0.5,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "person_left": 39,
+      "person_entered": 38,
+      "occlusion_changed": 38,
+      "person_count_changed": 34,
+      "scene_changed": 19,
+      "region_transition": 17,
+      "bbox_changed": 10,
+      "person_moved": 10,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 40,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c01": {
+     "period": "observed-0431Z",
+     "day": "2026-08-28",
+     "sampled": 233,
+     "retained": 164,
+     "event_aware_duplicate_rate": 0.1633,
+     "naive_duplicate_rate": 0.5279,
+     "exact_duplicates": 2,
+     "near_duplicates": 30,
+     "meaningful_change": 96,
+     "all": {
+      "frames": 199,
+      "with_person": 191,
+      "person_free": 8,
+      "person_positive_rate": 0.9598,
+      "person_free_rate": 0.0402,
+      "candidates": 367,
+      "naive_duplicate_rate": 0.4774
+     },
+     "event": {
+      "frames": 193,
+      "with_person": 189,
+      "person_free": 4,
+      "person_positive_rate": 0.9793,
+      "person_free_rate": 0.0207,
+      "candidates": 365,
+      "naive_duplicate_rate": 0.4663
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.1667
+     },
+     "by_reason": {
+      "person_entered": 40,
+      "person_left": 39,
+      "occlusion_changed": 34,
+      "person_count_changed": 29,
+      "scene_changed": 17,
+      "region_transition": 16,
+      "bbox_changed": 13,
+      "periodic_heartbeat": 6,
+      "person_moved": 5
+     },
+     "retrospective_captures": 40,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c02": {
+     "period": "observed-0446Z",
+     "day": "2026-08-28",
+     "sampled": 228,
+     "retained": 162,
+     "event_aware_duplicate_rate": 0.1429,
+     "naive_duplicate_rate": 0.4605,
+     "exact_duplicates": 1,
+     "near_duplicates": 26,
+     "meaningful_change": 81,
+     "all": {
+      "frames": 198,
+      "with_person": 180,
+      "person_free": 18,
+      "person_positive_rate": 0.9091,
+      "person_free_rate": 0.0909,
+      "candidates": 268,
+      "naive_duplicate_rate": 0.4141
+     },
+     "event": {
+      "frames": 192,
+      "with_person": 178,
+      "person_free": 14,
+      "person_positive_rate": 0.9271,
+      "person_free_rate": 0.0729,
+      "candidates": 265,
+      "naive_duplicate_rate": 0.4115
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.3333
+     },
+     "by_reason": {
+      "person_left": 40,
+      "person_entered": 39,
+      "occlusion_changed": 34,
+      "person_count_changed": 31,
+      "scene_changed": 24,
+      "bbox_changed": 10,
+      "region_transition": 8,
+      "periodic_heartbeat": 6,
+      "person_moved": 6
+     },
+     "retrospective_captures": 40,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c03": {
+     "period": "observed-0501Z",
+     "day": "2026-08-28",
+     "sampled": 200,
+     "retained": 142,
+     "event_aware_duplicate_rate": 0.1548,
+     "naive_duplicate_rate": 0.51,
+     "exact_duplicates": 1,
+     "near_duplicates": 25,
+     "meaningful_change": 79,
+     "all": {
+      "frames": 171,
+      "with_person": 160,
+      "person_free": 11,
+      "person_positive_rate": 0.9357,
+      "person_free_rate": 0.0643,
+      "candidates": 263,
+      "naive_duplicate_rate": 0.4737
+     },
+     "event": {
+      "frames": 160,
+      "with_person": 158,
+      "person_free": 2,
+      "person_positive_rate": 0.9875,
+      "person_free_rate": 0.0125,
+      "candidates": 258,
+      "naive_duplicate_rate": 0.4562
+     },
+     "baseline": {
+      "frames": 11,
+      "with_person": 2,
+      "person_free": 9,
+      "person_positive_rate": 0.1818,
+      "person_free_rate": 0.8182,
+      "candidates": 5,
+      "naive_duplicate_rate": 0.5455
+     },
+     "by_reason": {
+      "person_entered": 34,
+      "person_left": 34,
+      "occlusion_changed": 27,
+      "person_count_changed": 19,
+      "scene_changed": 18,
+      "periodic_heartbeat": 11,
+      "bbox_changed": 11,
+      "region_transition": 10,
+      "person_moved": 7
+     },
+     "retrospective_captures": 34,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c04": {
+     "period": "observed-0516Z",
+     "day": "2026-08-28",
+     "sampled": 206,
+     "retained": 147,
+     "event_aware_duplicate_rate": 0.1503,
+     "naive_duplicate_rate": 0.5097,
+     "exact_duplicates": 0,
+     "near_duplicates": 26,
+     "meaningful_change": 78,
+     "all": {
+      "frames": 177,
+      "with_person": 161,
+      "person_free": 16,
+      "person_positive_rate": 0.9096,
+      "person_free_rate": 0.0904,
+      "candidates": 342,
+      "naive_duplicate_rate": 0.4746
+     },
+     "event": {
+      "frames": 169,
+      "with_person": 159,
+      "person_free": 10,
+      "person_positive_rate": 0.9408,
+      "person_free_rate": 0.0592,
+      "candidates": 336,
+      "naive_duplicate_rate": 0.4615
+     },
+     "baseline": {
+      "frames": 8,
+      "with_person": 2,
+      "person_free": 6,
+      "person_positive_rate": 0.25,
+      "person_free_rate": 0.75,
+      "candidates": 6,
+      "naive_duplicate_rate": 0.5
+     },
+     "by_reason": {
+      "person_left": 34,
+      "person_entered": 33,
+      "occlusion_changed": 30,
+      "person_count_changed": 25,
+      "scene_changed": 17,
+      "region_transition": 13,
+      "bbox_changed": 9,
+      "periodic_heartbeat": 8,
+      "person_moved": 8
+     },
+     "retrospective_captures": 34,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c05": {
+     "period": "observed-0531Z",
+     "day": "2026-08-28",
+     "sampled": 233,
+     "retained": 167,
+     "event_aware_duplicate_rate": 0.148,
+     "naive_duplicate_rate": 0.4592,
+     "exact_duplicates": 1,
+     "near_duplicates": 28,
+     "meaningful_change": 81,
+     "all": {
+      "frames": 203,
+      "with_person": 182,
+      "person_free": 21,
+      "person_positive_rate": 0.8966,
+      "person_free_rate": 0.1034,
+      "candidates": 361,
+      "naive_duplicate_rate": 0.4089
+     },
+     "event": {
+      "frames": 195,
+      "with_person": 180,
+      "person_free": 15,
+      "person_positive_rate": 0.9231,
+      "person_free_rate": 0.0769,
+      "candidates": 357,
+      "naive_duplicate_rate": 0.4
+     },
+     "baseline": {
+      "frames": 8,
+      "with_person": 2,
+      "person_free": 6,
+      "person_positive_rate": 0.25,
+      "person_free_rate": 0.75,
+      "candidates": 4,
+      "naive_duplicate_rate": 0.375
+     },
+     "by_reason": {
+      "occlusion_changed": 36,
+      "person_entered": 33,
+      "person_left": 33,
+      "person_count_changed": 30,
+      "scene_changed": 23,
+      "bbox_changed": 14,
+      "region_transition": 14,
+      "person_moved": 12,
+      "periodic_heartbeat": 8
+     },
+     "retrospective_captures": 33,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c06": {
+     "period": "observed-0546Z",
+     "day": "2026-08-28",
+     "sampled": 274,
+     "retained": 182,
+     "event_aware_duplicate_rate": 0.1839,
+     "naive_duplicate_rate": 0.4964,
+     "exact_duplicates": 1,
+     "near_duplicates": 40,
+     "meaningful_change": 93,
+     "all": {
+      "frames": 226,
+      "with_person": 211,
+      "person_free": 15,
+      "person_positive_rate": 0.9336,
+      "person_free_rate": 0.0664,
+      "candidates": 442,
+      "naive_duplicate_rate": 0.4292
+     },
+     "event": {
+      "frames": 222,
+      "with_person": 208,
+      "person_free": 14,
+      "person_positive_rate": 0.9369,
+      "person_free_rate": 0.0631,
+      "candidates": 439,
+      "naive_duplicate_rate": 0.4189
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 3,
+      "person_free": 1,
+      "person_positive_rate": 0.75,
+      "person_free_rate": 0.25,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "occlusion_changed": 40,
+      "person_entered": 38,
+      "person_left": 37,
+      "person_count_changed": 30,
+      "scene_changed": 28,
+      "region_transition": 19,
+      "bbox_changed": 16,
+      "person_moved": 14,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 39,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c07": {
+     "period": "observed-0601Z",
+     "day": "2026-08-28",
+     "sampled": 227,
+     "retained": 175,
+     "event_aware_duplicate_rate": 0.1206,
+     "naive_duplicate_rate": 0.4185,
+     "exact_duplicates": 2,
+     "near_duplicates": 22,
+     "meaningful_change": 83,
+     "all": {
+      "frames": 199,
+      "with_person": 186,
+      "person_free": 13,
+      "person_positive_rate": 0.9347,
+      "person_free_rate": 0.0653,
+      "candidates": 583,
+      "naive_duplicate_rate": 0.392
+     },
+     "event": {
+      "frames": 189,
+      "with_person": 183,
+      "person_free": 6,
+      "person_positive_rate": 0.9683,
+      "person_free_rate": 0.0317,
+      "candidates": 575,
+      "naive_duplicate_rate": 0.381
+     },
+     "baseline": {
+      "frames": 10,
+      "with_person": 3,
+      "person_free": 7,
+      "person_positive_rate": 0.3,
+      "person_free_rate": 0.7,
+      "candidates": 8,
+      "naive_duplicate_rate": 0.4
+     },
+     "by_reason": {
+      "person_entered": 30,
+      "occlusion_changed": 29,
+      "person_left": 29,
+      "person_count_changed": 29,
+      "region_transition": 24,
+      "scene_changed": 19,
+      "person_moved": 15,
+      "bbox_changed": 14,
+      "periodic_heartbeat": 10
+     },
+     "retrospective_captures": 30,
+     "retrospective_fallbacks": 0
+    }
+   }
+  },
+  "phase2-c": {
+   "policy": "phase2-c",
+   "config": {
+    "version": "p9.6-events-2c",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 5,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 10,
+    "max_samples": 150,
+    "departure_rule": "last_confirmed",
+    "departure_confirm_misses": 4
+   },
+   "overall": {
+    "sampled": 1813,
+    "retained": 579,
+    "event_aware_duplicate_rate": 0.1717,
+    "naive_duplicate_rate": 0.4578,
+    "exact_duplicates": 5,
+    "near_duplicates": 115,
+    "meaningful_change": 271,
+    "all": {
+     "frames": 1504,
+     "with_person": 1412,
+     "person_free": 92,
+     "person_positive_rate": 0.9388,
+     "person_free_rate": 0.0612,
+     "candidates": 2866,
+     "naive_duplicate_rate": 0.4348
+    },
+    "event": {
+     "frames": 1453,
+     "with_person": 1395,
+     "person_free": 58,
+     "person_positive_rate": 0.9601,
+     "person_free_rate": 0.0399,
+     "candidates": 2834,
+     "naive_duplicate_rate": 0.4281
+    },
+    "baseline": {
+     "frames": 51,
+     "with_person": 17,
+     "person_free": 34,
+     "person_positive_rate": 0.3333,
+     "person_free_rate": 0.6667,
+     "candidates": 32,
+     "naive_duplicate_rate": 0.3137
+    },
+    "by_reason": {
+     "occlusion_changed": 246,
+     "person_entered": 235,
+     "person_left": 221,
+     "scene_changed": 170,
+     "bbox_changed": 170,
+     "person_count_changed": 165,
+     "region_transition": 150,
+     "person_moved": 96,
+     "periodic_heartbeat": 51
+    },
+    "retrospective_captures": 257,
+    "retrospective_fallbacks": 0,
+    "frames_decoded": 138961,
+    "observations": 26510,
+    "candidates_per_decoded": 0.020624,
+    "candidates_per_retained_event_frame": 1.95,
+    "candidate_subject_tracks": 598,
+    "baseline_contribution": 0.0881
+   },
+   "per_reason": {
+    "occlusion_changed": {
+     "frames": 274,
+     "with_person": 274,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "person_entered": {
+     "frames": 264,
+     "with_person": 264,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "bbox_changed": {
+     "frames": 261,
+     "with_person": 261,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "person_left": {
+     "frames": 257,
+     "with_person": 257,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "scene_changed": {
+     "frames": 208,
+     "with_person": 152,
+     "person_free": 56,
+     "person_free_rate": 0.2692,
+     "protected": false
+    },
+    "person_count_changed": {
+     "frames": 173,
+     "with_person": 158,
+     "person_free": 15,
+     "person_free_rate": 0.0867,
+     "protected": true
+    },
+    "person_moved": {
+     "frames": 163,
+     "with_person": 163,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": false
+    },
+    "region_transition": {
+     "frames": 161,
+     "with_person": 161,
+     "person_free": 0,
+     "person_free_rate": 0.0,
+     "protected": true
+    },
+    "periodic_heartbeat": {
+     "frames": 52,
+     "with_person": 17,
+     "person_free": 35,
+     "person_free_rate": 0.6731,
+     "protected": true
+    }
+   },
+   "event_audit": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "last_confirmed",
+    "reference": "reference",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 264,
+      "compared": 238,
+      "no_match": 26,
+      "held": 78,
+      "failed": 160,
+      "rate": 0.3277
+     },
+     "person_left": {
+      "claim": "the retained frame still shows the departing person (people > 0)",
+      "testability": "testable",
+      "frames": 257,
+      "compared": 226,
+      "no_match": 31,
+      "held": 226,
+      "failed": 0,
+      "rate": 1.0
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 173,
+      "compared": 156,
+      "no_match": 17,
+      "held": 44,
+      "failed": 112,
+      "rate": 0.2821
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 274,
+      "compared": 247,
+      "no_match": 27,
+      "held": 165,
+      "failed": 82,
+      "rate": 0.668
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 161,
+      "compared": 130,
+      "no_match": 31,
+      "held": 103,
+      "failed": 27,
+      "rate": 0.7923
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 261,
+      "compared": 249,
+      "no_match": 12,
+      "held": 111,
+      "failed": 138,
+      "rate": 0.4458
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 163,
+      "compared": 146,
+      "no_match": 17,
+      "held": 44,
+      "failed": 102,
+      "rate": 0.3014
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 208,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 52,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1392,
+     "held": 771,
+     "rate": 0.5539
+    }
+   },
+   "event_audit_earliest": {
+    "_comment": [
+     "Each event is scored ONLY against the consequence it actually claims,",
+     "and only where that consequence is derivable from the evidence.",
+     "TAUTOLOGICAL rows fire by construction and are never credited;",
+     "UNTESTABLE rows carry no rate. A frame with no perceptual match was",
+     "never put to the test and is counted apart rather than passed.",
+     "The reference is an earlier RAW-TRACE frame that resembles this one",
+     "\u2014 never another retained frame, which would make the baseline move",
+     "with the policy under test and stop the rates being comparable.",
+     "person_left's claim depends on the departure rule: ON_EXPIRY keeps",
+     "the frame after the person is gone and predicts a LOWER count;",
+     "LAST_CONFIRMED keeps their final sighting and predicts a NON-EMPTY",
+     "frame. Scoring the second with the first's contract reports a",
+     "collapse that belongs entirely to the auditor."
+    ],
+    "departure_rule": "last_confirmed",
+    "reference": "reference_earliest",
+    "by_reason": {
+     "person_entered": {
+      "claim": "the person count is higher than in the frame it resembles",
+      "testability": "testable",
+      "frames": 264,
+      "compared": 238,
+      "no_match": 26,
+      "held": 167,
+      "failed": 71,
+      "rate": 0.7017
+     },
+     "person_left": {
+      "claim": "the retained frame still shows the departing person (people > 0)",
+      "testability": "testable",
+      "frames": 257,
+      "compared": 226,
+      "no_match": 31,
+      "held": 226,
+      "failed": 0,
+      "rate": 1.0
+     },
+     "person_count_changed": {
+      "claim": "the person count differs from the frame it resembles",
+      "testability": "testable",
+      "frames": 173,
+      "compared": 156,
+      "no_match": 17,
+      "held": 94,
+      "failed": 62,
+      "rate": 0.6026
+     },
+     "occlusion_changed": {
+      "claim": "some person's overlap-or-edge state differs; the count need not",
+      "testability": "testable",
+      "frames": 274,
+      "compared": 247,
+      "no_match": 27,
+      "held": 205,
+      "failed": 42,
+      "rate": 0.83
+     },
+     "region_transition": {
+      "claim": "the multiset of occupied grid cells differs",
+      "testability": "testable",
+      "frames": 161,
+      "compared": 130,
+      "no_match": 31,
+      "held": 120,
+      "failed": 10,
+      "rate": 0.9231
+     },
+     "bbox_changed": {
+      "claim": "a matched box differs in IoU or area beyond threshold",
+      "testability": "testable",
+      "frames": 261,
+      "compared": 249,
+      "no_match": 12,
+      "held": 164,
+      "failed": 85,
+      "rate": 0.6586
+     },
+     "person_moved": {
+      "claim": "a matched box centre has moved at least move_fraction of its diagonal",
+      "testability": "testable",
+      "frames": 163,
+      "compared": 146,
+      "no_match": 17,
+      "held": 53,
+      "failed": 93,
+      "rate": 0.363
+     },
+     "scene_changed": {
+      "claim": "the perceptual hash differs \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 208,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "periodic_heartbeat": {
+      "claim": "time has passed \u2014 true by construction of the trigger",
+      "testability": "tautological",
+      "frames": 52,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     },
+     "manual_review": {
+      "claim": "a person wanted it; no observable consequence exists",
+      "testability": "untestable",
+      "frames": 0,
+      "compared": 0,
+      "no_match": 0,
+      "held": 0,
+      "failed": 0,
+      "rate": null
+     }
+    },
+    "overall_testable": {
+     "compared": 1392,
+     "held": 1029,
+     "rate": 0.7392
+    }
+   },
+   "by_camera": {
+    "cam-11": {
+     "sampled": 301,
+     "retained": 201,
+     "event_aware_duplicate_rate": 0.1447,
+     "naive_duplicate_rate": 0.4518,
+     "exact_duplicates": 3,
+     "near_duplicates": 31,
+     "meaningful_change": 91,
+     "all": {
+      "frames": 262,
+      "with_person": 209,
+      "person_free": 53,
+      "person_positive_rate": 0.7977,
+      "person_free_rate": 0.2023,
+      "candidates": 236,
+      "naive_duplicate_rate": 0.4122
+     },
+     "event": {
+      "frames": 243,
+      "with_person": 207,
+      "person_free": 36,
+      "person_positive_rate": 0.8519,
+      "person_free_rate": 0.1481,
+      "candidates": 234,
+      "naive_duplicate_rate": 0.3951
+     },
+     "baseline": {
+      "frames": 19,
+      "with_person": 2,
+      "person_free": 17,
+      "person_positive_rate": 0.1053,
+      "person_free_rate": 0.8947,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.5263
+     },
+     "by_reason": {
+      "person_entered": 48,
+      "person_left": 47,
+      "occlusion_changed": 47,
+      "scene_changed": 37,
+      "bbox_changed": 20,
+      "person_count_changed": 20,
+      "periodic_heartbeat": 19,
+      "region_transition": 18,
+      "person_moved": 6
+     },
+     "retrospective_captures": 48,
+     "retrospective_fallbacks": 0
+    },
+    "cam-12": {
+     "sampled": 632,
+     "retained": 357,
+     "event_aware_duplicate_rate": 0.1356,
+     "naive_duplicate_rate": 0.3813,
+     "exact_duplicates": 1,
+     "near_duplicates": 55,
+     "meaningful_change": 129,
+     "all": {
+      "frames": 557,
+      "with_person": 549,
+      "person_free": 8,
+      "person_positive_rate": 0.9856,
+      "person_free_rate": 0.0144,
+      "candidates": 1384,
+      "naive_duplicate_rate": 0.3555
+     },
+     "event": {
+      "frames": 548,
+      "with_person": 541,
+      "person_free": 7,
+      "person_positive_rate": 0.9872,
+      "person_free_rate": 0.0128,
+      "candidates": 1366,
+      "naive_duplicate_rate": 0.3504
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 8,
+      "person_free": 1,
+      "person_positive_rate": 0.8889,
+      "person_free_rate": 0.1111,
+      "candidates": 18,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "person_entered": 78,
+      "person_count_changed": 78,
+      "occlusion_changed": 77,
+      "person_left": 77,
+      "region_transition": 70,
+      "scene_changed": 68,
+      "bbox_changed": 54,
+      "person_moved": 46,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 80,
+     "retrospective_fallbacks": 0
+    },
+    "cam-13": {
+     "sampled": 584,
+     "retained": 321,
+     "event_aware_duplicate_rate": 0.1894,
+     "naive_duplicate_rate": 0.4469,
+     "exact_duplicates": 1,
+     "near_duplicates": 74,
+     "meaningful_change": 153,
+     "all": {
+      "frames": 492,
+      "with_person": 478,
+      "person_free": 14,
+      "person_positive_rate": 0.9715,
+      "person_free_rate": 0.0285,
+      "candidates": 1126,
+      "naive_duplicate_rate": 0.4106
+     },
+     "event": {
+      "frames": 483,
+      "with_person": 473,
+      "person_free": 10,
+      "person_positive_rate": 0.9793,
+      "person_free_rate": 0.0207,
+      "candidates": 1116,
+      "naive_duplicate_rate": 0.4058
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 5,
+      "person_free": 4,
+      "person_positive_rate": 0.5556,
+      "person_free_rate": 0.4444,
+      "candidates": 10,
+      "naive_duplicate_rate": 0.1111
+     },
+     "by_reason": {
+      "occlusion_changed": 78,
+      "person_left": 78,
+      "person_entered": 76,
+      "person_count_changed": 72,
+      "scene_changed": 59,
+      "region_transition": 51,
+      "bbox_changed": 46,
+      "person_moved": 23,
+      "periodic_heartbeat": 9
+     },
+     "retrospective_captures": 80,
+     "retrospective_fallbacks": 0
+    },
+    "cam-14": {
+     "sampled": 296,
+     "retained": 170,
+     "event_aware_duplicate_rate": 0.2478,
+     "naive_duplicate_rate": 0.6622,
+     "exact_duplicates": 12,
+     "near_duplicates": 44,
+     "meaningful_change": 137,
+     "all": {
+      "frames": 231,
+      "with_person": 211,
+      "person_free": 20,
+      "person_positive_rate": 0.9134,
+      "person_free_rate": 0.0866,
+      "candidates": 231,
+      "naive_duplicate_rate": 0.645
+     },
+     "event": {
+      "frames": 216,
+      "with_person": 209,
+      "person_free": 7,
+      "person_positive_rate": 0.9676,
+      "person_free_rate": 0.0324,
+      "candidates": 229,
+      "naive_duplicate_rate": 0.6435
+     },
+     "baseline": {
+      "frames": 15,
+      "with_person": 2,
+      "person_free": 13,
+      "person_positive_rate": 0.1333,
+      "person_free_rate": 0.8667,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.6
+     },
+     "by_reason": {
+      "occlusion_changed": 66,
+      "person_entered": 51,
+      "person_left": 47,
+      "region_transition": 20,
+      "periodic_heartbeat": 15,
+      "bbox_changed": 15,
+      "scene_changed": 10,
+      "person_moved": 7
+     },
+     "retrospective_captures": 49,
+     "retrospective_fallbacks": 0
+    }
+   },
+   "by_trace": {
+    "trace-20260828-c00": {
+     "period": "observed-0416Z",
+     "day": "2026-08-28",
+     "sampled": 233,
+     "retained": 149,
+     "event_aware_duplicate_rate": 0.255,
+     "naive_duplicate_rate": 0.5322,
+     "exact_duplicates": 8,
+     "near_duplicates": 43,
+     "meaningful_change": 89,
+     "all": {
+      "frames": 174,
+      "with_person": 171,
+      "person_free": 3,
+      "person_positive_rate": 0.9828,
+      "person_free_rate": 0.0172,
+      "candidates": 298,
+      "naive_duplicate_rate": 0.4828
+     },
+     "event": {
+      "frames": 170,
+      "with_person": 169,
+      "person_free": 1,
+      "person_positive_rate": 0.9941,
+      "person_free_rate": 0.0059,
+      "candidates": 296,
+      "naive_duplicate_rate": 0.4824
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 2,
+      "person_free": 2,
+      "person_positive_rate": 0.5,
+      "person_free_rate": 0.5,
+      "candidates": 2,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "occlusion_changed": 38,
+      "person_entered": 37,
+      "person_left": 32,
+      "region_transition": 21,
+      "scene_changed": 15,
+      "person_count_changed": 12,
+      "person_moved": 8,
+      "bbox_changed": 7,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 34,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c01": {
+     "period": "observed-0431Z",
+     "day": "2026-08-28",
+     "sampled": 214,
+     "retained": 148,
+     "event_aware_duplicate_rate": 0.1823,
+     "naive_duplicate_rate": 0.486,
+     "exact_duplicates": 2,
+     "near_duplicates": 31,
+     "meaningful_change": 73,
+     "all": {
+      "frames": 180,
+      "with_person": 171,
+      "person_free": 9,
+      "person_positive_rate": 0.95,
+      "person_free_rate": 0.05,
+      "candidates": 360,
+      "naive_duplicate_rate": 0.4333
+     },
+     "event": {
+      "frames": 174,
+      "with_person": 170,
+      "person_free": 4,
+      "person_positive_rate": 0.977,
+      "person_free_rate": 0.023,
+      "candidates": 359,
+      "naive_duplicate_rate": 0.4195
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 1,
+      "person_free": 5,
+      "person_positive_rate": 0.1667,
+      "person_free_rate": 0.8333,
+      "candidates": 1,
+      "naive_duplicate_rate": 0.1667
+     },
+     "by_reason": {
+      "occlusion_changed": 34,
+      "person_entered": 30,
+      "person_left": 28,
+      "region_transition": 21,
+      "person_count_changed": 20,
+      "scene_changed": 19,
+      "bbox_changed": 17,
+      "periodic_heartbeat": 6,
+      "person_moved": 5
+     },
+     "retrospective_captures": 28,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c02": {
+     "period": "observed-0446Z",
+     "day": "2026-08-28",
+     "sampled": 224,
+     "retained": 166,
+     "event_aware_duplicate_rate": 0.117,
+     "naive_duplicate_rate": 0.4152,
+     "exact_duplicates": 0,
+     "near_duplicates": 22,
+     "meaningful_change": 72,
+     "all": {
+      "frames": 198,
+      "with_person": 178,
+      "person_free": 20,
+      "person_positive_rate": 0.899,
+      "person_free_rate": 0.101,
+      "candidates": 282,
+      "naive_duplicate_rate": 0.3737
+     },
+     "event": {
+      "frames": 192,
+      "with_person": 176,
+      "person_free": 16,
+      "person_positive_rate": 0.9167,
+      "person_free_rate": 0.0833,
+      "candidates": 279,
+      "naive_duplicate_rate": 0.375
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.3333
+     },
+     "by_reason": {
+      "person_entered": 36,
+      "person_left": 36,
+      "occlusion_changed": 32,
+      "person_count_changed": 29,
+      "scene_changed": 24,
+      "bbox_changed": 13,
+      "region_transition": 12,
+      "person_moved": 10,
+      "periodic_heartbeat": 6
+     },
+     "retrospective_captures": 36,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c03": {
+     "period": "observed-0501Z",
+     "day": "2026-08-28",
+     "sampled": 206,
+     "retained": 148,
+     "event_aware_duplicate_rate": 0.1638,
+     "naive_duplicate_rate": 0.4757,
+     "exact_duplicates": 2,
+     "near_duplicates": 27,
+     "meaningful_change": 84,
+     "all": {
+      "frames": 174,
+      "with_person": 159,
+      "person_free": 15,
+      "person_positive_rate": 0.9138,
+      "person_free_rate": 0.0862,
+      "candidates": 265,
+      "naive_duplicate_rate": 0.4368
+     },
+     "event": {
+      "frames": 165,
+      "with_person": 157,
+      "person_free": 8,
+      "person_positive_rate": 0.9515,
+      "person_free_rate": 0.0485,
+      "candidates": 260,
+      "naive_duplicate_rate": 0.4242
+     },
+     "baseline": {
+      "frames": 9,
+      "with_person": 2,
+      "person_free": 7,
+      "person_positive_rate": 0.2222,
+      "person_free_rate": 0.7778,
+      "candidates": 5,
+      "naive_duplicate_rate": 0.5556
+     },
+     "by_reason": {
+      "person_entered": 30,
+      "person_left": 30,
+      "occlusion_changed": 29,
+      "scene_changed": 23,
+      "person_count_changed": 20,
+      "region_transition": 15,
+      "bbox_changed": 12,
+      "periodic_heartbeat": 9,
+      "person_moved": 6
+     },
+     "retrospective_captures": 30,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c04": {
+     "period": "observed-0516Z",
+     "day": "2026-08-28",
+     "sampled": 206,
+     "retained": 145,
+     "event_aware_duplicate_rate": 0.1667,
+     "naive_duplicate_rate": 0.4903,
+     "exact_duplicates": 1,
+     "near_duplicates": 28,
+     "meaningful_change": 75,
+     "all": {
+      "frames": 176,
+      "with_person": 168,
+      "person_free": 8,
+      "person_positive_rate": 0.9545,
+      "person_free_rate": 0.0455,
+      "candidates": 340,
+      "naive_duplicate_rate": 0.4602
+     },
+     "event": {
+      "frames": 169,
+      "with_person": 166,
+      "person_free": 3,
+      "person_positive_rate": 0.9822,
+      "person_free_rate": 0.0178,
+      "candidates": 334,
+      "naive_duplicate_rate": 0.4497
+     },
+     "baseline": {
+      "frames": 7,
+      "with_person": 2,
+      "person_free": 5,
+      "person_positive_rate": 0.2857,
+      "person_free_rate": 0.7143,
+      "candidates": 6,
+      "naive_duplicate_rate": 0.4286
+     },
+     "by_reason": {
+      "person_entered": 33,
+      "person_left": 32,
+      "occlusion_changed": 31,
+      "person_count_changed": 20,
+      "scene_changed": 18,
+      "region_transition": 18,
+      "bbox_changed": 11,
+      "periodic_heartbeat": 7,
+      "person_moved": 6
+     },
+     "retrospective_captures": 32,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c05": {
+     "period": "observed-0531Z",
+     "day": "2026-08-28",
+     "sampled": 235,
+     "retained": 167,
+     "event_aware_duplicate_rate": 0.1566,
+     "naive_duplicate_rate": 0.4085,
+     "exact_duplicates": 2,
+     "near_duplicates": 29,
+     "meaningful_change": 73,
+     "all": {
+      "frames": 201,
+      "with_person": 187,
+      "person_free": 14,
+      "person_positive_rate": 0.9303,
+      "person_free_rate": 0.0697,
+      "candidates": 388,
+      "naive_duplicate_rate": 0.3582
+     },
+     "event": {
+      "frames": 195,
+      "with_person": 185,
+      "person_free": 10,
+      "person_positive_rate": 0.9487,
+      "person_free_rate": 0.0513,
+      "candidates": 384,
+      "naive_duplicate_rate": 0.359
+     },
+     "baseline": {
+      "frames": 6,
+      "with_person": 2,
+      "person_free": 4,
+      "person_positive_rate": 0.3333,
+      "person_free_rate": 0.6667,
+      "candidates": 4,
+      "naive_duplicate_rate": 0.3333
+     },
+     "by_reason": {
+      "occlusion_changed": 35,
+      "person_entered": 34,
+      "person_left": 34,
+      "scene_changed": 26,
+      "region_transition": 19,
+      "person_count_changed": 19,
+      "bbox_changed": 14,
+      "person_moved": 14,
+      "periodic_heartbeat": 6
+     },
+     "retrospective_captures": 34,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c06": {
+     "period": "observed-0546Z",
+     "day": "2026-08-28",
+     "sampled": 276,
+     "retained": 191,
+     "event_aware_duplicate_rate": 0.1696,
+     "naive_duplicate_rate": 0.4384,
+     "exact_duplicates": 1,
+     "near_duplicates": 38,
+     "meaningful_change": 81,
+     "all": {
+      "frames": 225,
+      "with_person": 211,
+      "person_free": 14,
+      "person_positive_rate": 0.9378,
+      "person_free_rate": 0.0622,
+      "candidates": 454,
+      "naive_duplicate_rate": 0.3867
+     },
+     "event": {
+      "frames": 221,
+      "with_person": 208,
+      "person_free": 13,
+      "person_positive_rate": 0.9412,
+      "person_free_rate": 0.0588,
+      "candidates": 451,
+      "naive_duplicate_rate": 0.3756
+     },
+     "baseline": {
+      "frames": 4,
+      "with_person": 3,
+      "person_free": 1,
+      "person_positive_rate": 0.75,
+      "person_free_rate": 0.25,
+      "candidates": 3,
+      "naive_duplicate_rate": 0.0
+     },
+     "by_reason": {
+      "occlusion_changed": 39,
+      "person_entered": 32,
+      "person_left": 32,
+      "person_count_changed": 30,
+      "scene_changed": 26,
+      "region_transition": 26,
+      "person_moved": 19,
+      "bbox_changed": 17,
+      "periodic_heartbeat": 4
+     },
+     "retrospective_captures": 35,
+     "retrospective_fallbacks": 0
+    },
+    "trace-20260828-c07": {
+     "period": "observed-0601Z",
+     "day": "2026-08-28",
+     "sampled": 219,
+     "retained": 158,
+     "event_aware_duplicate_rate": 0.1551,
+     "naive_duplicate_rate": 0.4247,
+     "exact_duplicates": 2,
+     "near_duplicates": 27,
+     "meaningful_change": 74,
+     "all": {
+      "frames": 183,
+      "with_person": 174,
+      "person_free": 9,
+      "person_positive_rate": 0.9508,
+      "person_free_rate": 0.0492,
+      "candidates": 560,
+      "naive_duplicate_rate": 0.377
+     },
+     "event": {
+      "frames": 173,
+      "with_person": 171,
+      "person_free": 2,
+      "person_positive_rate": 0.9884,
+      "person_free_rate": 0.0116,
+      "candidates": 552,
+      "naive_duplicate_rate": 0.3642
+     },
+     "baseline": {
+      "frames": 10,
+      "with_person": 3,
+      "person_free": 7,
+      "person_positive_rate": 0.3,
+      "person_free_rate": 0.7,
+      "candidates": 8,
+      "naive_duplicate_rate": 0.4
+     },
+     "by_reason": {
+      "person_entered": 29,
+      "occlusion_changed": 28,
+      "person_left": 27,
+      "region_transition": 26,
+      "person_count_changed": 20,
+      "scene_changed": 18,
+      "bbox_changed": 13,
+      "person_moved": 12,
+      "periodic_heartbeat": 10
+     },
+     "retrospective_captures": 28,
+     "retrospective_fallbacks": 0
+    }
+   }
+  }
+ },
+ "comparison": {
+  "phase2-b": {
+   "sampled": {
+    "phase1": 1856,
+    "phase2-b": 1856,
+    "delta": "+0.0000 (+0.0%)"
+   },
+   "retained": {
+    "phase1": 596,
+    "phase2-b": 592,
+    "delta": "-4.0000 (-0.7%)"
+   },
+   "naive_duplicate_rate": {
+    "phase1": 0.479,
+    "phase2-b": 0.4919,
+    "delta": "+0.0129 (+2.7%)"
+   },
+   "event_aware_duplicate_rate": {
+    "phase1": 0.1699,
+    "phase2-b": 0.1638,
+    "delta": "-0.0061 (-3.6%)"
+   },
+   "all.person_free_rate": {
+    "phase1": 0.1564,
+    "phase2-b": 0.0726,
+    "delta": "-0.0838 (-53.6%)"
+   },
+   "all.candidates": {
+    "phase1": 2662,
+    "phase2-b": 2988,
+    "delta": "+326.0000 (+12.2%)"
+   },
+   "event.frames": {
+    "phase1": 1511,
+    "phase2-b": 1543,
+    "delta": "+32.0000 (+2.1%)"
+   },
+   "event.person_free_rate": {
+    "phase1": 0.137,
+    "phase2-b": 0.0506,
+    "delta": "-0.0864 (-63.1%)"
+   },
+   "event.person_positive_rate": {
+    "phase1": 0.863,
+    "phase2-b": 0.9494,
+    "delta": "+0.0864 (+10.0%)"
+   },
+   "event.candidates": {
+    "phase1": 2630,
+    "phase2-b": 2956,
+    "delta": "+326.0000 (+12.4%)"
+   },
+   "event.naive_duplicate_rate": {
+    "phase1": 0.4454,
+    "phase2-b": 0.4563,
+    "delta": "+0.0109 (+2.4%)"
+   },
+   "baseline.frames": {
+    "phase1": 55,
+    "phase2-b": 55,
+    "delta": "+0.0000 (+0.0%)"
+   },
+   "baseline.person_free_rate": {
+    "phase1": 0.6909,
+    "phase2-b": 0.6909,
+    "delta": "+0.0000 (+0.0%)"
+   },
+   "candidates_per_decoded": {
+    "phase1": 0.019156,
+    "phase2-b": 0.021502,
+    "delta": "+0.0023 (+12.2%)"
+   },
+   "candidates_per_retained_event_frame": {
+    "phase1": 1.741,
+    "phase2-b": 1.916,
+    "delta": "+0.1750 (+10.1%)"
+   },
+   "baseline_contribution": {
+    "phase1": 0.0923,
+    "phase2-b": 0.0929,
+    "delta": "+0.0006 (+0.7%)"
+   },
+   "candidate_subject_tracks": {
+    "phase1": 1002,
+    "phase2-b": 1002,
+    "delta": "+0.0000 (+0.0%)"
+   },
+   "retrospective_captures": {
+    "phase1": 0,
+    "phase2-b": 290,
+    "delta": "+290.0000 (n/a)"
+   },
+   "retrospective_fallbacks": {
+    "phase1": 0,
+    "phase2-b": 0,
+    "delta": "+0.0000 (n/a)"
+   }
+  },
+  "phase2-c": {
+   "sampled": {
+    "phase1": 1856,
+    "phase2-c": 1813,
+    "delta": "-43.0000 (-2.3%)"
+   },
+   "retained": {
+    "phase1": 596,
+    "phase2-c": 579,
+    "delta": "-17.0000 (-2.9%)"
+   },
+   "naive_duplicate_rate": {
+    "phase1": 0.479,
+    "phase2-c": 0.4578,
+    "delta": "-0.0212 (-4.4%)"
+   },
+   "event_aware_duplicate_rate": {
+    "phase1": 0.1699,
+    "phase2-c": 0.1717,
+    "delta": "+0.0018 (+1.1%)"
+   },
+   "all.person_free_rate": {
+    "phase1": 0.1564,
+    "phase2-c": 0.0612,
+    "delta": "-0.0952 (-60.9%)"
+   },
+   "all.candidates": {
+    "phase1": 2662,
+    "phase2-c": 2866,
+    "delta": "+204.0000 (+7.7%)"
+   },
+   "event.frames": {
+    "phase1": 1511,
+    "phase2-c": 1453,
+    "delta": "-58.0000 (-3.8%)"
+   },
+   "event.person_free_rate": {
+    "phase1": 0.137,
+    "phase2-c": 0.0399,
+    "delta": "-0.0971 (-70.9%)"
+   },
+   "event.person_positive_rate": {
+    "phase1": 0.863,
+    "phase2-c": 0.9601,
+    "delta": "+0.0971 (+11.3%)"
+   },
+   "event.candidates": {
+    "phase1": 2630,
+    "phase2-c": 2834,
+    "delta": "+204.0000 (+7.8%)"
+   },
+   "event.naive_duplicate_rate": {
+    "phase1": 0.4454,
+    "phase2-c": 0.4281,
+    "delta": "-0.0173 (-3.9%)"
+   },
+   "baseline.frames": {
+    "phase1": 55,
+    "phase2-c": 51,
+    "delta": "-4.0000 (-7.3%)"
+   },
+   "baseline.person_free_rate": {
+    "phase1": 0.6909,
+    "phase2-c": 0.6667,
+    "delta": "-0.0242 (-3.5%)"
+   },
+   "candidates_per_decoded": {
+    "phase1": 0.019156,
+    "phase2-c": 0.020624,
+    "delta": "+0.0015 (+7.7%)"
+   },
+   "candidates_per_retained_event_frame": {
+    "phase1": 1.741,
+    "phase2-c": 1.95,
+    "delta": "+0.2090 (+12.0%)"
+   },
+   "baseline_contribution": {
+    "phase1": 0.0923,
+    "phase2-c": 0.0881,
+    "delta": "-0.0042 (-4.6%)"
+   },
+   "candidate_subject_tracks": {
+    "phase1": 1002,
+    "phase2-c": 598,
+    "delta": "-404.0000 (-40.3%)"
+   },
+   "retrospective_captures": {
+    "phase1": 0,
+    "phase2-c": 257,
+    "delta": "+257.0000 (n/a)"
+   },
+   "retrospective_fallbacks": {
+    "phase1": 0,
+    "phase2-c": 0,
+    "delta": "+0.0000 (n/a)"
+   }
+  }
+ }
+}

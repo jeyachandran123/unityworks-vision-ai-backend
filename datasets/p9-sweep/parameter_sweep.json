@@ -1,0 +1,5334 @@
+{
+ "_comment": [
+  "P9.6 Phase 4. One axis varied at a time from a common base,",
+  "replayed against a fixed perception cache so every row sees",
+  "identical input. No row is 'best' on every metric and none",
+  "was selected on one: the chosen configuration is argued in",
+  "P9_6_EVENT_SAMPLING_REPORT.md against all of them."
+ ],
+ "clips": [
+  {
+   "clip_id": "rec-20260813",
+   "camera_id": "cam-unknown",
+   "source": "Screen Recording 2026-08-13 112749.mp4",
+   "fps": 30.0,
+   "stride": 5
+  },
+  {
+   "clip_id": "rec-20260817-a",
+   "camera_id": "cam-11",
+   "source": "Screen Recording 2026-08-17 122553.mp4",
+   "fps": 30.0,
+   "stride": 5
+  },
+  {
+   "clip_id": "rec-20260817-b",
+   "camera_id": "cam-13",
+   "source": "Screen Recording 2026-08-17 122832.mp4",
+   "fps": 30.0,
+   "stride": 5
+  }
+ ],
+ "observations": 1359,
+ "results": [
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "base"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 0.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 209,
+   "acceptance_rate": 0.1538,
+   "duplicates_among_accepted": 100,
+   "duplicate_rate": 0.4785,
+   "event_aware": {
+    "frames": 209,
+    "unique": 85,
+    "exact_duplicates": 3,
+    "near_duplicates": 56,
+    "meaningful_change": 65,
+    "removed": 59,
+    "retained": 150,
+    "removal_rate": 0.2823,
+    "rescued_by_event": 65,
+    "rescued_rate": 0.311
+   },
+   "event_aware_removal_rate": 0.2823,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 65,
+    "count_testable": 39,
+    "not_count_testable": 26,
+    "corroborated_by_count_change": 32,
+    "count_unchanged": 7,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8205,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 12,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 15,
+      "count_changed": 11,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 24,
+      "count_changed": 21,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 14,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 198,
+   "person_frame_rate": 0.9474,
+   "candidates": 457,
+   "candidates_per_accepted": 2.187,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 34,
+   "baseline_share": 0.0144,
+   "distinct_reasons": 8,
+   "by_reason": {
+    "bbox_changed": 83,
+    "person_left": 31,
+    "person_entered": 27,
+    "occlusion_changed": 24,
+    "region_transition": 23,
+    "scene_changed": 12,
+    "person_moved": 6,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 8,
+    "reason_cap": 6
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 86,
+     "candidates": 269,
+     "duplicate_rate": 0.4767
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 18,
+     "candidates": 13,
+     "duplicate_rate": 0.3889
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 105,
+     "candidates": 175,
+     "duplicate_rate": 0.4952
+    }
+   },
+   "label": "min_gap=0s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 1.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 153,
+   "acceptance_rate": 0.1126,
+   "duplicates_among_accepted": 68,
+   "duplicate_rate": 0.4444,
+   "event_aware": {
+    "frames": 153,
+    "unique": 66,
+    "exact_duplicates": 0,
+    "near_duplicates": 28,
+    "meaningful_change": 59,
+    "removed": 28,
+    "retained": 125,
+    "removal_rate": 0.183,
+    "rescued_by_event": 59,
+    "rescued_rate": 0.3856
+   },
+   "event_aware_removal_rate": 0.183,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 59,
+    "count_testable": 40,
+    "not_count_testable": 19,
+    "corroborated_by_count_change": 32,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 16,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 13,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 23,
+      "count_changed": 19,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 143,
+   "person_frame_rate": 0.9346,
+   "candidates": 321,
+   "candidates_per_accepted": 2.098,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 36,
+   "baseline_share": 0.0196,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "bbox_changed": 38,
+    "person_left": 34,
+    "person_entered": 29,
+    "occlusion_changed": 29,
+    "scene_changed": 11,
+    "region_transition": 9,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 91
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 61,
+     "candidates": 186,
+     "duplicate_rate": 0.4262
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 17,
+     "candidates": 13,
+     "duplicate_rate": 0.3529
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 75,
+     "candidates": 122,
+     "duplicate_rate": 0.48
+    }
+   },
+   "label": "min_gap=1s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "min_gap=2s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 4.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 108,
+   "acceptance_rate": 0.0795,
+   "duplicates_among_accepted": 45,
+   "duplicate_rate": 0.4167,
+   "event_aware": {
+    "frames": 108,
+    "unique": 48,
+    "exact_duplicates": 0,
+    "near_duplicates": 3,
+    "meaningful_change": 57,
+    "removed": 3,
+    "retained": 105,
+    "removal_rate": 0.0278,
+    "rescued_by_event": 57,
+    "rescued_rate": 0.5278
+   },
+   "event_aware_removal_rate": 0.0278,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 57,
+    "count_testable": 42,
+    "not_count_testable": 15,
+    "corroborated_by_count_change": 33,
+    "count_unchanged": 9,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7857,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 18,
+      "count_changed": 15,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 24,
+      "count_changed": 18,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 2,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 97,
+   "person_frame_rate": 0.8981,
+   "candidates": 227,
+   "candidates_per_accepted": 2.102,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 40,
+   "baseline_share": 0.0278,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 38,
+    "person_entered": 33,
+    "occlusion_changed": 25,
+    "bbox_changed": 4,
+    "periodic_heartbeat": 3,
+    "region_transition": 3,
+    "scene_changed": 2
+   },
+   "suppressed": {
+    "cooldown": 196
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 46,
+     "candidates": 143,
+     "duplicate_rate": 0.3478
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 14,
+     "candidates": 11,
+     "duplicate_rate": 0.3571
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 48,
+     "candidates": 73,
+     "duplicate_rate": 0.5
+    }
+   },
+   "label": "min_gap=4s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 8.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 102,
+   "acceptance_rate": 0.0751,
+   "duplicates_among_accepted": 40,
+   "duplicate_rate": 0.3922,
+   "event_aware": {
+    "frames": 102,
+    "unique": 48,
+    "exact_duplicates": 0,
+    "near_duplicates": 2,
+    "meaningful_change": 52,
+    "removed": 2,
+    "retained": 100,
+    "removal_rate": 0.0196,
+    "rescued_by_event": 52,
+    "rescued_rate": 0.5098
+   },
+   "event_aware_removal_rate": 0.0196,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 52,
+    "count_testable": 37,
+    "not_count_testable": 15,
+    "corroborated_by_count_change": 31,
+    "count_unchanged": 6,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8378,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 14,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 16,
+      "count_changed": 12,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 19,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 1,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 93,
+   "person_frame_rate": 0.9118,
+   "candidates": 223,
+   "candidates_per_accepted": 2.186,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 38,
+   "baseline_share": 0.0294,
+   "distinct_reasons": 6,
+   "by_reason": {
+    "person_left": 36,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "periodic_heartbeat": 3,
+    "bbox_changed": 3,
+    "region_transition": 1
+   },
+   "suppressed": {
+    "cooldown": 222
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 46,
+     "candidates": 143,
+     "duplicate_rate": 0.3478
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 12,
+     "candidates": 9,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 44,
+     "candidates": 71,
+     "duplicate_rate": 0.4545
+    }
+   },
+   "label": "min_gap=8s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.0,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 127,
+   "acceptance_rate": 0.0935,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.3937,
+   "event_aware": {
+    "frames": 127,
+    "unique": 60,
+    "exact_duplicates": 0,
+    "near_duplicates": 11,
+    "meaningful_change": 56,
+    "removed": 11,
+    "retained": 116,
+    "removal_rate": 0.0866,
+    "rescued_by_event": 56,
+    "rescued_rate": 0.4409
+   },
+   "event_aware_removal_rate": 0.0866,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 56,
+    "count_testable": 39,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 31,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7949,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 22,
+      "count_changed": 19,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 115,
+   "person_frame_rate": 0.9055,
+   "candidates": 267,
+   "candidates_per_accepted": 2.102,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.0236,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 38,
+    "person_entered": 35,
+    "occlusion_changed": 26,
+    "bbox_changed": 17,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 154
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 164,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 58,
+     "candidates": 92,
+     "duplicate_rate": 0.431
+    }
+   },
+   "label": "hard_floor=0s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "hard_floor=0.5s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 1.0,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 101,
+   "acceptance_rate": 0.0743,
+   "duplicates_among_accepted": 36,
+   "duplicate_rate": 0.3564,
+   "event_aware": {
+    "frames": 101,
+    "unique": 53,
+    "exact_duplicates": 0,
+    "near_duplicates": 10,
+    "meaningful_change": 38,
+    "removed": 10,
+    "retained": 91,
+    "removal_rate": 0.099,
+    "rescued_by_event": 38,
+    "rescued_rate": 0.3762
+   },
+   "event_aware_removal_rate": 0.099,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 38,
+    "count_testable": 28,
+    "not_count_testable": 10,
+    "corroborated_by_count_change": 19,
+    "count_unchanged": 9,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6786,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 7,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 13,
+      "count_changed": 8,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 15,
+      "count_changed": 11,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 90,
+   "person_frame_rate": 0.8911,
+   "candidates": 201,
+   "candidates_per_accepted": 1.99,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.0297,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_entered": 28,
+    "person_left": 28,
+    "bbox_changed": 18,
+    "occlusion_changed": 15,
+    "scene_changed": 6,
+    "periodic_heartbeat": 3,
+    "region_transition": 3
+   },
+   "suppressed": {
+    "cooldown": 217
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 39,
+     "candidates": 119,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 15,
+     "candidates": 9,
+     "duplicate_rate": 0.2667
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 47,
+     "candidates": 73,
+     "duplicate_rate": 0.4043
+    }
+   },
+   "label": "hard_floor=1s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 2.0,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 79,
+   "acceptance_rate": 0.0581,
+   "duplicates_among_accepted": 24,
+   "duplicate_rate": 0.3038,
+   "event_aware": {
+    "frames": 79,
+    "unique": 49,
+    "exact_duplicates": 0,
+    "near_duplicates": 7,
+    "meaningful_change": 23,
+    "removed": 7,
+    "retained": 72,
+    "removal_rate": 0.0886,
+    "rescued_by_event": 23,
+    "rescued_rate": 0.2911
+   },
+   "event_aware_removal_rate": 0.0886,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 23,
+    "count_testable": 15,
+    "not_count_testable": 8,
+    "corroborated_by_count_change": 10,
+    "count_unchanged": 5,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6667,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 5,
+      "count_changed": 3,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 10,
+      "count_changed": 7,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 5,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 70,
+   "person_frame_rate": 0.8861,
+   "candidates": 146,
+   "candidates_per_accepted": 1.848,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 40,
+   "baseline_share": 0.038,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "scene_changed": 22,
+    "bbox_changed": 18,
+    "person_left": 12,
+    "region_transition": 9,
+    "person_entered": 8,
+    "occlusion_changed": 7,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 263
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 27,
+     "candidates": 78,
+     "duplicate_rate": 0.2963
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 14,
+     "candidates": 9,
+     "duplicate_rate": 0.2143
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 38,
+     "candidates": 59,
+     "duplicate_rate": 0.3421
+    }
+   },
+   "label": "hard_floor=2s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 15.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "heartbeat=15s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 30.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "heartbeat=30s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "heartbeat=45s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 90.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "heartbeat=90s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 100000.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "heartbeat=100000s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 4,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 146,
+   "acceptance_rate": 0.1074,
+   "duplicates_among_accepted": 71,
+   "duplicate_rate": 0.4863,
+   "event_aware": {
+    "frames": 146,
+    "unique": 54,
+    "exact_duplicates": 1,
+    "near_duplicates": 17,
+    "meaningful_change": 74,
+    "removed": 18,
+    "retained": 128,
+    "removal_rate": 0.1233,
+    "rescued_by_event": 74,
+    "rescued_rate": 0.5068
+   },
+   "event_aware_removal_rate": 0.1233,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 74,
+    "count_testable": 53,
+    "not_count_testable": 21,
+    "corroborated_by_count_change": 37,
+    "count_unchanged": 16,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6981,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 18,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 27,
+      "count_changed": 18,
+      "count_unchanged": 9,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 26,
+      "count_changed": 19,
+      "count_unchanged": 7,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 131,
+   "person_frame_rate": 0.8973,
+   "candidates": 286,
+   "candidates_per_accepted": 1.959,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 49,
+   "baseline_share": 0.0205,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 41,
+    "person_entered": 39,
+    "occlusion_changed": 32,
+    "scene_changed": 19,
+    "bbox_changed": 9,
+    "region_transition": 3,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 383
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 54,
+     "candidates": 164,
+     "duplicate_rate": 0.4074
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 21,
+     "candidates": 15,
+     "duplicate_rate": 0.4762
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 71,
+     "candidates": 107,
+     "duplicate_rate": 0.5493
+    }
+   },
+   "label": "scene_bits=4"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 6,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 130,
+   "acceptance_rate": 0.0957,
+   "duplicates_among_accepted": 54,
+   "duplicate_rate": 0.4154,
+   "event_aware": {
+    "frames": 130,
+    "unique": 62,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 56,
+    "removed": 12,
+    "retained": 118,
+    "removal_rate": 0.0923,
+    "rescued_by_event": 56,
+    "rescued_rate": 0.4308
+   },
+   "event_aware_removal_rate": 0.0923,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 56,
+    "count_testable": 42,
+    "not_count_testable": 14,
+    "corroborated_by_count_change": 29,
+    "count_unchanged": 13,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6905,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 11,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 21,
+      "count_changed": 14,
+      "count_unchanged": 7,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 15,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 120,
+   "person_frame_rate": 0.9231,
+   "candidates": 273,
+   "candidates_per_accepted": 2.1,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 43,
+   "baseline_share": 0.0231,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 38,
+    "person_entered": 37,
+    "occlusion_changed": 23,
+    "bbox_changed": 13,
+    "scene_changed": 12,
+    "region_transition": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 227
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 165,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 18,
+     "candidates": 13,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 59,
+     "candidates": 95,
+     "duplicate_rate": 0.4746
+    }
+   },
+   "label": "scene_bits=6"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "scene_bits=8"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 12,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 118,
+   "acceptance_rate": 0.0868,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4237,
+   "event_aware": {
+    "frames": 118,
+    "unique": 53,
+    "exact_duplicates": 0,
+    "near_duplicates": 9,
+    "meaningful_change": 56,
+    "removed": 9,
+    "retained": 109,
+    "removal_rate": 0.0763,
+    "rescued_by_event": 56,
+    "rescued_rate": 0.4746
+   },
+   "event_aware_removal_rate": 0.0763,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 56,
+    "count_testable": 41,
+    "not_count_testable": 15,
+    "corroborated_by_count_change": 31,
+    "count_unchanged": 10,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7561,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 12,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 19,
+      "count_changed": 13,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 22,
+      "count_changed": 18,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 109,
+   "person_frame_rate": 0.9237,
+   "candidates": 248,
+   "candidates_per_accepted": 2.102,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 37,
+   "baseline_share": 0.0254,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_entered": 33,
+    "person_left": 33,
+    "occlusion_changed": 27,
+    "bbox_changed": 15,
+    "region_transition": 5,
+    "periodic_heartbeat": 3,
+    "scene_changed": 2
+   },
+   "suppressed": {
+    "cooldown": 85
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 48,
+     "candidates": 144,
+     "duplicate_rate": 0.3542
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 13,
+     "candidates": 10,
+     "duplicate_rate": 0.3846
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 57,
+     "candidates": 94,
+     "duplicate_rate": 0.4912
+    }
+   },
+   "label": "scene_bits=12"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 16,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 120,
+   "acceptance_rate": 0.0883,
+   "duplicates_among_accepted": 54,
+   "duplicate_rate": 0.45,
+   "event_aware": {
+    "frames": 120,
+    "unique": 48,
+    "exact_duplicates": 1,
+    "near_duplicates": 8,
+    "meaningful_change": 63,
+    "removed": 9,
+    "retained": 111,
+    "removal_rate": 0.075,
+    "rescued_by_event": 63,
+    "rescued_rate": 0.525
+   },
+   "event_aware_removal_rate": 0.075,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 63,
+    "count_testable": 45,
+    "not_count_testable": 18,
+    "corroborated_by_count_change": 33,
+    "count_unchanged": 12,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7333,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 14,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 20,
+      "count_changed": 14,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 25,
+      "count_changed": 19,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 110,
+   "person_frame_rate": 0.9167,
+   "candidates": 251,
+   "candidates_per_accepted": 2.092,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 36,
+   "baseline_share": 0.025,
+   "distinct_reasons": 6,
+   "by_reason": {
+    "person_left": 33,
+    "person_entered": 32,
+    "occlusion_changed": 27,
+    "bbox_changed": 19,
+    "region_transition": 6,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 77
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 49,
+     "candidates": 147,
+     "duplicate_rate": 0.3878
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 13,
+     "candidates": 10,
+     "duplicate_rate": 0.3846
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 58,
+     "candidates": 94,
+     "duplicate_rate": 0.5172
+    }
+   },
+   "label": "scene_bits=16"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 5,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 87,
+   "acceptance_rate": 0.064,
+   "duplicates_among_accepted": 28,
+   "duplicate_rate": 0.3218,
+   "event_aware": {
+    "frames": 87,
+    "unique": 50,
+    "exact_duplicates": 0,
+    "near_duplicates": 8,
+    "meaningful_change": 29,
+    "removed": 8,
+    "retained": 79,
+    "removal_rate": 0.092,
+    "rescued_by_event": 29,
+    "rescued_rate": 0.3333
+   },
+   "event_aware_removal_rate": 0.092,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 29,
+    "count_testable": 21,
+    "not_count_testable": 8,
+    "corroborated_by_count_change": 18,
+    "count_unchanged": 3,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8571,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 5,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_count_changed": {
+      "rescued": 5,
+      "count_changed": 4,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "person_entered": {
+      "rescued": 8,
+      "count_changed": 7,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 8,
+      "count_changed": 7,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 79,
+   "person_frame_rate": 0.908,
+   "candidates": 178,
+   "candidates_per_accepted": 2.046,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 37,
+   "baseline_share": 0.0345,
+   "distinct_reasons": 9,
+   "by_reason": {
+    "occlusion_changed": 15,
+    "scene_changed": 13,
+    "person_entered": 12,
+    "person_left": 12,
+    "bbox_changed": 12,
+    "person_count_changed": 10,
+    "region_transition": 5,
+    "person_moved": 5,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 155,
+    "reason_cap": 109
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 33,
+     "candidates": 106,
+     "duplicate_rate": 0.2727
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 38,
+     "candidates": 61,
+     "duplicate_rate": 0.3684
+    }
+   },
+   "label": "max_per_reason=5"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 10,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 119,
+   "acceptance_rate": 0.0876,
+   "duplicates_among_accepted": 47,
+   "duplicate_rate": 0.395,
+   "event_aware": {
+    "frames": 119,
+    "unique": 56,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 51,
+    "removed": 12,
+    "retained": 107,
+    "removal_rate": 0.1008,
+    "rescued_by_event": 51,
+    "rescued_rate": 0.4286
+   },
+   "event_aware_removal_rate": 0.1008,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 51,
+    "count_testable": 34,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 28,
+    "count_unchanged": 6,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8235,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_count_changed": {
+      "rescued": 7,
+      "count_changed": 6,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "person_entered": {
+      "rescued": 14,
+      "count_changed": 11,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 13,
+      "count_changed": 11,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 108,
+   "person_frame_rate": 0.9076,
+   "candidates": 249,
+   "candidates_per_accepted": 2.092,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 38,
+   "baseline_share": 0.0252,
+   "distinct_reasons": 8,
+   "by_reason": {
+    "occlusion_changed": 25,
+    "person_entered": 22,
+    "person_left": 22,
+    "person_count_changed": 19,
+    "bbox_changed": 18,
+    "scene_changed": 6,
+    "region_transition": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 173,
+    "reason_cap": 2
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 50,
+     "candidates": 154,
+     "duplicate_rate": 0.36
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 53,
+     "candidates": 84,
+     "duplicate_rate": 0.4528
+    }
+   },
+   "label": "max_per_reason=10"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 20,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "max_per_reason=20"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "max_per_reason=40"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.2,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 115,
+   "acceptance_rate": 0.0846,
+   "duplicates_among_accepted": 49,
+   "duplicate_rate": 0.4261,
+   "event_aware": {
+    "frames": 115,
+    "unique": 52,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 51,
+    "removed": 12,
+    "retained": 103,
+    "removal_rate": 0.1043,
+    "rescued_by_event": 51,
+    "rescued_rate": 0.4435
+   },
+   "event_aware_removal_rate": 0.1043,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 51,
+    "count_testable": 40,
+    "not_count_testable": 11,
+    "corroborated_by_count_change": 24,
+    "count_unchanged": 16,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 9,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 19,
+      "count_changed": 12,
+      "count_unchanged": 7,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 12,
+      "count_unchanged": 9,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 2,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 105,
+   "person_frame_rate": 0.913,
+   "candidates": 231,
+   "candidates_per_accepted": 2.009,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 44,
+   "baseline_share": 0.0261,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 36,
+    "person_entered": 32,
+    "occlusion_changed": 21,
+    "bbox_changed": 13,
+    "scene_changed": 8,
+    "periodic_heartbeat": 3,
+    "region_transition": 2
+   },
+   "suppressed": {
+    "cooldown": 227
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 45,
+     "candidates": 135,
+     "duplicate_rate": 0.4
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 17,
+     "candidates": 12,
+     "duplicate_rate": 0.2941
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 53,
+     "candidates": 84,
+     "duplicate_rate": 0.4906
+    }
+   },
+   "label": "detect_every=0.2s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "detect_every=0.5s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 1.0,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 103,
+   "acceptance_rate": 0.0758,
+   "duplicates_among_accepted": 36,
+   "duplicate_rate": 0.3495,
+   "event_aware": {
+    "frames": 103,
+    "unique": 61,
+    "exact_duplicates": 0,
+    "near_duplicates": 16,
+    "meaningful_change": 26,
+    "removed": 16,
+    "retained": 87,
+    "removal_rate": 0.1553,
+    "rescued_by_event": 26,
+    "rescued_rate": 0.2524
+   },
+   "event_aware_removal_rate": 0.1553,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 26,
+    "count_testable": 21,
+    "not_count_testable": 5,
+    "corroborated_by_count_change": 16,
+    "count_unchanged": 5,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7619,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 11,
+      "count_changed": 8,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 10,
+      "count_changed": 8,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 1,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 96,
+   "person_frame_rate": 0.932,
+   "candidates": 217,
+   "candidates_per_accepted": 2.107,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 31,
+   "baseline_share": 0.0291,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 26,
+    "person_entered": 24,
+    "occlusion_changed": 24,
+    "bbox_changed": 20,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3,
+    "region_transition": 2
+   },
+   "suppressed": {
+    "cooldown": 113
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 42,
+     "candidates": 127,
+     "duplicate_rate": 0.3095
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 14,
+     "candidates": 10,
+     "duplicate_rate": 0.3571
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 47,
+     "candidates": 80,
+     "duplicate_rate": 0.383
+    }
+   },
+   "label": "detect_every=1s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 2.0,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 97,
+   "acceptance_rate": 0.0714,
+   "duplicates_among_accepted": 26,
+   "duplicate_rate": 0.268,
+   "event_aware": {
+    "frames": 97,
+    "unique": 67,
+    "exact_duplicates": 0,
+    "near_duplicates": 10,
+    "meaningful_change": 20,
+    "removed": 10,
+    "retained": 87,
+    "removal_rate": 0.1031,
+    "rescued_by_event": 20,
+    "rescued_rate": 0.2062
+   },
+   "event_aware_removal_rate": 0.1031,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 20,
+    "count_testable": 9,
+    "not_count_testable": 11,
+    "corroborated_by_count_change": 8,
+    "count_unchanged": 1,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8889,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 2,
+      "count_changed": 1,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 7,
+      "count_changed": 7,
+      "count_unchanged": 0,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 8,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 90,
+   "person_frame_rate": 0.9278,
+   "candidates": 204,
+   "candidates_per_accepted": 2.103,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 27,
+   "baseline_share": 0.0309,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "occlusion_changed": 22,
+    "person_left": 20,
+    "person_entered": 19,
+    "bbox_changed": 18,
+    "region_transition": 8,
+    "scene_changed": 7,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 96
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 36,
+     "candidates": 115,
+     "duplicate_rate": 0.1389
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 17,
+     "candidates": 12,
+     "duplicate_rate": 0.3529
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 44,
+     "candidates": 77,
+     "duplicate_rate": 0.3409
+    }
+   },
+   "label": "detect_every=2s"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 1,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 138,
+   "acceptance_rate": 0.1015,
+   "duplicates_among_accepted": 61,
+   "duplicate_rate": 0.442,
+   "event_aware": {
+    "frames": 138,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 8,
+    "meaningful_change": 72,
+    "removed": 8,
+    "retained": 130,
+    "removal_rate": 0.058,
+    "rescued_by_event": 72,
+    "rescued_rate": 0.5217
+   },
+   "event_aware_removal_rate": 0.058,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 72,
+    "count_testable": 53,
+    "not_count_testable": 19,
+    "corroborated_by_count_change": 40,
+    "count_unchanged": 13,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7547,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 17,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 27,
+      "count_changed": 20,
+      "count_unchanged": 7,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 26,
+      "count_changed": 20,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 2,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 125,
+   "person_frame_rate": 0.9058,
+   "candidates": 303,
+   "candidates_per_accepted": 2.196,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 46,
+   "baseline_share": 0.0217,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 42,
+    "person_entered": 37,
+    "occlusion_changed": 36,
+    "bbox_changed": 12,
+    "scene_changed": 5,
+    "region_transition": 3,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 157
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 61,
+     "candidates": 193,
+     "duplicate_rate": 0.4426
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 18,
+     "candidates": 13,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 59,
+     "candidates": 97,
+     "duplicate_rate": 0.4746
+    }
+   },
+   "label": "min_hits=1"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "min_hits=2"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 3,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 119,
+   "acceptance_rate": 0.0876,
+   "duplicates_among_accepted": 49,
+   "duplicate_rate": 0.4118,
+   "event_aware": {
+    "frames": 119,
+    "unique": 59,
+    "exact_duplicates": 0,
+    "near_duplicates": 8,
+    "meaningful_change": 52,
+    "removed": 8,
+    "retained": 111,
+    "removal_rate": 0.0672,
+    "rescued_by_event": 52,
+    "rescued_rate": 0.437
+   },
+   "event_aware_removal_rate": 0.0672,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 52,
+    "count_testable": 35,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 28,
+    "count_unchanged": 7,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 14,
+      "count_changed": 10,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 107,
+   "person_frame_rate": 0.8992,
+   "candidates": 244,
+   "candidates_per_accepted": 2.05,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 35,
+   "baseline_share": 0.0252,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 32,
+    "occlusion_changed": 32,
+    "person_entered": 28,
+    "bbox_changed": 14,
+    "region_transition": 5,
+    "scene_changed": 5,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 167
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 50,
+     "candidates": 149,
+     "duplicate_rate": 0.42
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 15,
+     "candidates": 10,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 54,
+     "candidates": 85,
+     "duplicate_rate": 0.4259
+    }
+   },
+   "label": "min_hits=3"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 4,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 109,
+   "acceptance_rate": 0.0802,
+   "duplicates_among_accepted": 38,
+   "duplicate_rate": 0.3486,
+   "event_aware": {
+    "frames": 109,
+    "unique": 65,
+    "exact_duplicates": 0,
+    "near_duplicates": 9,
+    "meaningful_change": 35,
+    "removed": 9,
+    "retained": 100,
+    "removal_rate": 0.0826,
+    "rescued_by_event": 35,
+    "rescued_rate": 0.3211
+   },
+   "event_aware_removal_rate": 0.0826,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 35,
+    "count_testable": 23,
+    "not_count_testable": 12,
+    "corroborated_by_count_change": 15,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.6522,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 10,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 10,
+      "count_changed": 6,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 13,
+      "count_changed": 9,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 2,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 98,
+   "person_frame_rate": 0.8991,
+   "candidates": 223,
+   "candidates_per_accepted": 2.046,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 27,
+   "baseline_share": 0.0275,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "occlusion_changed": 31,
+    "person_left": 26,
+    "person_entered": 23,
+    "bbox_changed": 14,
+    "scene_changed": 10,
+    "periodic_heartbeat": 3,
+    "region_transition": 2
+   },
+   "suppressed": {
+    "cooldown": 178
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 47,
+     "candidates": 137,
+     "duplicate_rate": 0.3617
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 15,
+     "candidates": 10,
+     "duplicate_rate": 0.3333
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 47,
+     "candidates": 76,
+     "duplicate_rate": 0.3404
+    }
+   },
+   "label": "min_hits=4"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 0,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 129,
+   "acceptance_rate": 0.0949,
+   "duplicates_among_accepted": 58,
+   "duplicate_rate": 0.4496,
+   "event_aware": {
+    "frames": 129,
+    "unique": 51,
+    "exact_duplicates": 0,
+    "near_duplicates": 6,
+    "meaningful_change": 72,
+    "removed": 6,
+    "retained": 123,
+    "removal_rate": 0.0465,
+    "rescued_by_event": 72,
+    "rescued_rate": 0.5581
+   },
+   "event_aware_removal_rate": 0.0465,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 72,
+    "count_testable": 56,
+    "not_count_testable": 16,
+    "corroborated_by_count_change": 44,
+    "count_unchanged": 12,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7857,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 12,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 25,
+      "count_changed": 19,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 31,
+      "count_changed": 25,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 118,
+   "person_frame_rate": 0.9147,
+   "candidates": 263,
+   "candidates_per_accepted": 2.039,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 54,
+   "baseline_share": 0.0233,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 44,
+    "person_entered": 42,
+    "occlusion_changed": 22,
+    "bbox_changed": 9,
+    "scene_changed": 5,
+    "region_transition": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 144
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 59,
+     "candidates": 167,
+     "duplicate_rate": 0.4407
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 18,
+     "candidates": 11,
+     "duplicate_rate": 0.3889
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 52,
+     "candidates": 85,
+     "duplicate_rate": 0.4808
+    }
+   },
+   "label": "max_age=0"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 1,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 123,
+   "acceptance_rate": 0.0905,
+   "duplicates_among_accepted": 53,
+   "duplicate_rate": 0.4309,
+   "event_aware": {
+    "frames": 123,
+    "unique": 55,
+    "exact_duplicates": 0,
+    "near_duplicates": 6,
+    "meaningful_change": 62,
+    "removed": 6,
+    "retained": 117,
+    "removal_rate": 0.0488,
+    "rescued_by_event": 62,
+    "rescued_rate": 0.5041
+   },
+   "event_aware_removal_rate": 0.0488,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 62,
+    "count_testable": 45,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 34,
+    "count_unchanged": 11,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7556,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 12,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 20,
+      "count_changed": 15,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 25,
+      "count_changed": 19,
+      "count_unchanged": 6,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 5,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 112,
+   "person_frame_rate": 0.9106,
+   "candidates": 253,
+   "candidates_per_accepted": 2.057,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 45,
+   "baseline_share": 0.0244,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 38,
+    "person_entered": 36,
+    "occlusion_changed": 27,
+    "bbox_changed": 9,
+    "region_transition": 5,
+    "scene_changed": 5,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 147
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 52,
+     "candidates": 155,
+     "duplicate_rate": 0.4038
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.4375
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 55,
+     "candidates": 87,
+     "duplicate_rate": 0.4545
+    }
+   },
+   "label": "max_age=1"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "max_age=2"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 4,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 119,
+   "acceptance_rate": 0.0876,
+   "duplicates_among_accepted": 53,
+   "duplicate_rate": 0.4454,
+   "event_aware": {
+    "frames": 119,
+    "unique": 55,
+    "exact_duplicates": 0,
+    "near_duplicates": 14,
+    "meaningful_change": 50,
+    "removed": 14,
+    "retained": 105,
+    "removal_rate": 0.1176,
+    "rescued_by_event": 50,
+    "rescued_rate": 0.4202
+   },
+   "event_aware_removal_rate": 0.1176,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 50,
+    "count_testable": 32,
+    "not_count_testable": 18,
+    "corroborated_by_count_change": 26,
+    "count_unchanged": 6,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8125,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 15,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 15,
+      "count_changed": 11,
+      "count_unchanged": 4,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 17,
+      "count_changed": 15,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 109,
+   "person_frame_rate": 0.916,
+   "candidates": 253,
+   "candidates_per_accepted": 2.126,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 32,
+   "baseline_share": 0.0252,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "occlusion_changed": 33,
+    "person_left": 30,
+    "person_entered": 26,
+    "bbox_changed": 20,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3,
+    "region_transition": 3
+   },
+   "suppressed": {
+    "cooldown": 165
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 48,
+     "candidates": 149,
+     "duplicate_rate": 0.4375
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 18,
+     "candidates": 13,
+     "duplicate_rate": 0.3889
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 53,
+     "candidates": 91,
+     "duplicate_rate": 0.4717
+    }
+   },
+   "label": "max_age=4"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 1,
+    "track_max_age": 0,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 164,
+   "acceptance_rate": 0.1207,
+   "duplicates_among_accepted": 84,
+   "duplicate_rate": 0.5122,
+   "event_aware": {
+    "frames": 164,
+    "unique": 54,
+    "exact_duplicates": 0,
+    "near_duplicates": 4,
+    "meaningful_change": 106,
+    "removed": 4,
+    "retained": 160,
+    "removal_rate": 0.0244,
+    "rescued_by_event": 106,
+    "rescued_rate": 0.6463
+   },
+   "event_aware_removal_rate": 0.0244,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 106,
+    "count_testable": 94,
+    "not_count_testable": 12,
+    "corroborated_by_count_change": 70,
+    "count_unchanged": 24,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7447,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 10,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 49,
+      "count_changed": 36,
+      "count_unchanged": 13,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 45,
+      "count_changed": 34,
+      "count_unchanged": 11,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 2,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 147,
+   "person_frame_rate": 0.8963,
+   "candidates": 325,
+   "candidates_per_accepted": 1.982,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 81,
+   "baseline_share": 0.0183,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_entered": 65,
+    "person_left": 63,
+    "occlusion_changed": 20,
+    "bbox_changed": 7,
+    "periodic_heartbeat": 3,
+    "region_transition": 3,
+    "scene_changed": 3
+   },
+   "suppressed": {
+    "cooldown": 127
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 70,
+     "candidates": 202,
+     "duplicate_rate": 0.5
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 22,
+     "candidates": 15,
+     "duplicate_rate": 0.5
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 72,
+     "candidates": 108,
+     "duplicate_rate": 0.5278
+    }
+   },
+   "label": "no_hysteresis"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 0.5,
+    "max_per_reason": 40,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 125,
+   "acceptance_rate": 0.092,
+   "duplicates_among_accepted": 50,
+   "duplicate_rate": 0.4,
+   "event_aware": {
+    "frames": 125,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 12,
+    "meaningful_change": 55,
+    "removed": 12,
+    "retained": 113,
+    "removal_rate": 0.096,
+    "rescued_by_event": 55,
+    "rescued_rate": 0.44
+   },
+   "event_aware_removal_rate": 0.096,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 55,
+    "count_testable": 38,
+    "not_count_testable": 17,
+    "corroborated_by_count_change": 30,
+    "count_unchanged": 8,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7895,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 13,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 17,
+      "count_changed": 12,
+      "count_unchanged": 5,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 21,
+      "count_changed": 18,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 113,
+   "person_frame_rate": 0.904,
+   "candidates": 257,
+   "candidates_per_accepted": 2.056,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 39,
+   "baseline_share": 0.024,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 37,
+    "person_entered": 33,
+    "occlusion_changed": 26,
+    "bbox_changed": 18,
+    "region_transition": 4,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 160
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 53,
+     "candidates": 159,
+     "duplicate_rate": 0.3774
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 16,
+     "candidates": 11,
+     "duplicate_rate": 0.3125
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 56,
+     "candidates": 87,
+     "duplicate_rate": 0.4464
+    }
+   },
+   "label": "cand-A/base"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 1.0,
+    "max_per_reason": 12,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 103,
+   "acceptance_rate": 0.0758,
+   "duplicates_among_accepted": 36,
+   "duplicate_rate": 0.3495,
+   "event_aware": {
+    "frames": 103,
+    "unique": 61,
+    "exact_duplicates": 0,
+    "near_duplicates": 16,
+    "meaningful_change": 26,
+    "removed": 16,
+    "retained": 87,
+    "removal_rate": 0.1553,
+    "rescued_by_event": 26,
+    "rescued_rate": 0.2524
+   },
+   "event_aware_removal_rate": 0.1553,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 26,
+    "count_testable": 21,
+    "not_count_testable": 5,
+    "corroborated_by_count_change": 16,
+    "count_unchanged": 5,
+    "count_unknown": 0,
+    "corroborated_rate": 0.7619,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 4,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 11,
+      "count_changed": 8,
+      "count_unchanged": 3,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 10,
+      "count_changed": 8,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 1,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 96,
+   "person_frame_rate": 0.932,
+   "candidates": 217,
+   "candidates_per_accepted": 2.107,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 31,
+   "baseline_share": 0.0291,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "person_left": 26,
+    "person_entered": 24,
+    "occlusion_changed": 24,
+    "bbox_changed": 20,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3,
+    "region_transition": 2
+   },
+   "suppressed": {
+    "cooldown": 113
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 42,
+     "candidates": 127,
+     "duplicate_rate": 0.3095
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 14,
+     "candidates": 10,
+     "duplicate_rate": 0.3571
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 47,
+     "candidates": 80,
+     "duplicate_rate": 0.383
+    }
+   },
+   "label": "cand-B/detect1"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 3.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 1.0,
+    "max_per_reason": 12,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 93,
+   "acceptance_rate": 0.0684,
+   "duplicates_among_accepted": 27,
+   "duplicate_rate": 0.2903,
+   "event_aware": {
+    "frames": 93,
+    "unique": 58,
+    "exact_duplicates": 0,
+    "near_duplicates": 10,
+    "meaningful_change": 25,
+    "removed": 10,
+    "retained": 83,
+    "removal_rate": 0.1075,
+    "rescued_by_event": 25,
+    "rescued_rate": 0.2688
+   },
+   "event_aware_removal_rate": 0.1075,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 25,
+    "count_testable": 20,
+    "not_count_testable": 5,
+    "corroborated_by_count_change": 15,
+    "count_unchanged": 5,
+    "count_unknown": 0,
+    "corroborated_rate": 0.75,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 5,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 9,
+      "count_changed": 7,
+      "count_unchanged": 2,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 11,
+      "count_changed": 8,
+      "count_unchanged": 3,
+      "count_testable": true
+     }
+    }
+   },
+   "person_frames": 87,
+   "person_frame_rate": 0.9355,
+   "candidates": 201,
+   "candidates_per_accepted": 2.161,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 30,
+   "baseline_share": 0.0323,
+   "distinct_reasons": 6,
+   "by_reason": {
+    "occlusion_changed": 27,
+    "person_left": 25,
+    "person_entered": 23,
+    "bbox_changed": 11,
+    "scene_changed": 4,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 138
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 36,
+     "candidates": 114,
+     "duplicate_rate": 0.1944
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 14,
+     "candidates": 11,
+     "duplicate_rate": 0.3571
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 43,
+     "candidates": 76,
+     "duplicate_rate": 0.3488
+    }
+   },
+   "label": "cand-C/detect1-gap3"
+  },
+  {
+   "config": {
+    "version": "p9.6-events-1",
+    "scene_change_bits": 8,
+    "move_fraction": 0.15,
+    "bbox_iou": 0.7,
+    "bbox_area_ratio": 1.25,
+    "overlap_iou": 0.1,
+    "overlap_release_iou": 0.05,
+    "edge_epsilon": 0.01,
+    "grid": 3,
+    "match_iou": 0.3,
+    "match_distance_diagonals": 1.2,
+    "match_area_ratio": 2.0,
+    "track_min_hits": 2,
+    "track_max_age": 2,
+    "min_gap_seconds": 2.0,
+    "hard_floor_seconds": 0.5,
+    "heartbeat_seconds": 45.0,
+    "detect_every_seconds": 2.0,
+    "max_per_reason": 12,
+    "max_samples": 150
+   },
+   "cache_stride_seconds": 0.1667,
+   "offered": 1359,
+   "accepted": 97,
+   "acceptance_rate": 0.0714,
+   "duplicates_among_accepted": 26,
+   "duplicate_rate": 0.268,
+   "event_aware": {
+    "frames": 97,
+    "unique": 67,
+    "exact_duplicates": 0,
+    "near_duplicates": 10,
+    "meaningful_change": 20,
+    "removed": 10,
+    "retained": 87,
+    "removal_rate": 0.1031,
+    "rescued_by_event": 20,
+    "rescued_rate": 0.2062
+   },
+   "event_aware_removal_rate": 0.1031,
+   "rescue_audit": {
+    "_comment": [
+     "Does the protection rule earn its keep? A rescued frame is",
+     "corroborated when the confirmed person count differs from the frame",
+     "it resembled. A low corroborated share means the rule is too broad.",
+     "Scored ONLY for reasons that claim the population changed: an",
+     "unchanged count is what occlusion_changed and region_transition",
+     "predict, so scoring them here would manufacture a failure.",
+     "Necessary, not sufficient: two people swapping places is a real",
+     "change no count can see."
+    ],
+    "rescued": 20,
+    "count_testable": 9,
+    "not_count_testable": 11,
+    "corroborated_by_count_change": 8,
+    "count_unchanged": 1,
+    "count_unknown": 0,
+    "corroborated_rate": 0.8889,
+    "by_reason": {
+     "occlusion_changed": {
+      "rescued": 3,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     },
+     "person_entered": {
+      "rescued": 2,
+      "count_changed": 1,
+      "count_unchanged": 1,
+      "count_testable": true
+     },
+     "person_left": {
+      "rescued": 7,
+      "count_changed": 7,
+      "count_unchanged": 0,
+      "count_testable": true
+     },
+     "region_transition": {
+      "rescued": 8,
+      "count_changed": 0,
+      "count_unchanged": 0,
+      "count_testable": false
+     }
+    }
+   },
+   "person_frames": 90,
+   "person_frame_rate": 0.9278,
+   "candidates": 204,
+   "candidates_per_accepted": 2.103,
+   "baseline_triggered": 3,
+   "candidate_subject_tracks": 27,
+   "baseline_share": 0.0309,
+   "distinct_reasons": 7,
+   "by_reason": {
+    "occlusion_changed": 22,
+    "person_left": 20,
+    "person_entered": 19,
+    "bbox_changed": 18,
+    "region_transition": 8,
+    "scene_changed": 7,
+    "periodic_heartbeat": 3
+   },
+   "suppressed": {
+    "cooldown": 96
+   },
+   "by_clip": {
+    "rec-20260813": {
+     "offered": 364,
+     "accepted": 36,
+     "candidates": 115,
+     "duplicate_rate": 0.1389
+    },
+    "rec-20260817-a": {
+     "offered": 299,
+     "accepted": 17,
+     "candidates": 12,
+     "duplicate_rate": 0.3529
+    },
+    "rec-20260817-b": {
+     "offered": 696,
+     "accepted": 44,
+     "candidates": 77,
+     "duplicate_rate": 0.3409
+    }
+   },
+   "label": "cand-D/detect2"
+  }
+ ]
+}

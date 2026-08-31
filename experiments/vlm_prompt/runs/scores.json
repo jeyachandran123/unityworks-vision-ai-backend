@@ -1,0 +1,453 @@
+{
+ "A": {
+  "variant": "A",
+  "title": "Production baseline (control)",
+  "prompt_sha256": "21b9d57e07a1b3cd",
+  "model": "minimaxai/minimax-m3",
+  "corpus_digest": "bbe9e0559523b9b0",
+  "n": 43,
+  "ungated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 28,
+     "precision": 0.9285714285714286,
+     "recall": 0.8666666666666667,
+     "f1": 0.896551724137931
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 13,
+     "precision": 0.0,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 0,
+     "precision": null,
+     "recall": 0.0,
+     "f1": null
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 26,
+     "absent": 3,
+     "unparsed": 1
+    },
+    "not_visible": {
+     "present": 2,
+     "absent": 10,
+     "unparsed": 1
+    }
+   },
+   "unsupported_claims": 12,
+   "unparsed": 2,
+   "accuracy_over_parsed": 0.6341463414634146
+  },
+  "p8_gated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 24,
+     "precision": 1.0,
+     "recall": 0.8,
+     "f1": 0.888888888888889
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 5,
+     "precision": 0.0,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 0,
+     "precision": null,
+     "recall": 0.0,
+     "f1": null
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 24,
+     "unparsed": 3,
+     "absent": 3
+    },
+    "not_visible": {
+     "unparsed": 11,
+     "absent": 2
+    }
+   },
+   "unsupported_claims": 2,
+   "model_calls": 30,
+   "calls_saved_by_p8": 13
+  },
+  "verdicts_gated": {
+   "violation_justified": 1,
+   "violation_unobservable": 1,
+   "violation_semantic": 3,
+   "missed_violation": 2,
+   "compliant": 5,
+   "unknown": 31
+  },
+  "verdicts_ungated": {
+   "violation_justified": 1,
+   "violation_unobservable": 9,
+   "violation_semantic": 3,
+   "missed_violation": 2,
+   "compliant": 5,
+   "unknown": 23
+  },
+  "latency_p50_ms": 1916.5,
+  "latency_p95_ms": 10836.5,
+  "latency_total_s": 156.5,
+  "prompt_chars": 2861,
+  "max_output_tokens": 128
+ },
+ "B": {
+  "variant": "B",
+  "title": "Observability + attribute decomposition",
+  "prompt_sha256": "9cdb4b1e49f7df62",
+  "model": "minimaxai/minimax-m3",
+  "corpus_digest": "bbe9e0559523b9b0",
+  "n": 43,
+  "ungated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 34,
+     "precision": 0.7941176470588235,
+     "recall": 0.9,
+     "f1": 0.84375
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 2,
+     "precision": 0.0,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 7,
+     "precision": 0.7142857142857143,
+     "recall": 0.38461538461538464,
+     "f1": 0.5
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 27,
+     "not_visible": 2,
+     "absent": 1
+    },
+    "not_visible": {
+     "present": 7,
+     "not_visible": 5,
+     "absent": 1
+    }
+   },
+   "unsupported_claims": 8,
+   "unparsed": 0,
+   "accuracy_over_parsed": 0.7441860465116279
+  },
+  "p8_gated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 28,
+     "precision": 0.9285714285714286,
+     "recall": 0.8666666666666667,
+     "f1": 0.896551724137931
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 1,
+     "precision": 0.0,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 1,
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": null
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 26,
+     "unparsed": 2,
+     "not_visible": 1,
+     "absent": 1
+    },
+    "not_visible": {
+     "unparsed": 11,
+     "present": 2
+    }
+   },
+   "unsupported_claims": 2,
+   "model_calls": 30,
+   "calls_saved_by_p8": 13
+  },
+  "verdicts_gated": {
+   "violation_justified": 0,
+   "violation_unobservable": 0,
+   "violation_semantic": 1,
+   "missed_violation": 3,
+   "compliant": 6,
+   "unknown": 33
+  },
+  "verdicts_ungated": {
+   "violation_justified": 0,
+   "violation_unobservable": 1,
+   "violation_semantic": 1,
+   "missed_violation": 3,
+   "compliant": 6,
+   "unknown": 32
+  },
+  "latency_p50_ms": 2306.6,
+  "latency_p95_ms": 13459.0,
+  "latency_total_s": 202.8,
+  "prompt_chars": 1690,
+  "max_output_tokens": 256
+ },
+ "C": {
+  "variant": "C",
+  "title": "Evidence-first structured",
+  "prompt_sha256": "de954e8531b173ca",
+  "model": "minimaxai/minimax-m3",
+  "corpus_digest": "bbe9e0559523b9b0",
+  "n": 43,
+  "ungated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 10,
+     "precision": 1.0,
+     "recall": 0.3333333333333333,
+     "f1": 0.5
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 0,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 33,
+     "precision": 0.3939393939393939,
+     "recall": 1.0,
+     "f1": 0.5652173913043478
+    }
+   },
+   "confusion": {
+    "present": {
+     "not_visible": 20,
+     "present": 10
+    },
+    "not_visible": {
+     "not_visible": 13
+    }
+   },
+   "unsupported_claims": 0,
+   "unparsed": 0,
+   "accuracy_over_parsed": 0.5348837209302325
+  },
+  "p8_gated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 10,
+     "precision": 1.0,
+     "recall": 0.3333333333333333,
+     "f1": 0.5
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 0,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 20,
+     "precision": 0.1,
+     "recall": 0.15384615384615385,
+     "f1": 0.12121212121212123
+    }
+   },
+   "confusion": {
+    "present": {
+     "not_visible": 18,
+     "present": 10,
+     "unparsed": 2
+    },
+    "not_visible": {
+     "unparsed": 11,
+     "not_visible": 2
+    }
+   },
+   "unsupported_claims": 0,
+   "model_calls": 30,
+   "calls_saved_by_p8": 13
+  },
+  "verdicts_gated": {
+   "violation_justified": 0,
+   "violation_unobservable": 0,
+   "violation_semantic": 0,
+   "missed_violation": 3,
+   "compliant": 3,
+   "unknown": 37
+  },
+  "verdicts_ungated": {
+   "violation_justified": 0,
+   "violation_unobservable": 0,
+   "violation_semantic": 0,
+   "missed_violation": 3,
+   "compliant": 3,
+   "unknown": 37
+  },
+  "latency_p50_ms": 2148.1,
+  "latency_p95_ms": 10240.6,
+  "latency_total_s": 153.8,
+  "prompt_chars": 1618,
+  "max_output_tokens": 256
+ },
+ "D": {
+  "variant": "D",
+  "title": "Evidence-first + structured inference-time context",
+  "prompt_sha256": "1e7feded265956cf",
+  "model": "minimaxai/minimax-m3",
+  "corpus_digest": "bbe9e0559523b9b0",
+  "n": 43,
+  "ungated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 3,
+     "precision": 1.0,
+     "recall": 0.1,
+     "f1": 0.18181818181818182
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 0,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 40,
+     "precision": 0.325,
+     "recall": 1.0,
+     "f1": 0.4905660377358491
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 3,
+     "not_visible": 27
+    },
+    "not_visible": {
+     "not_visible": 13
+    }
+   },
+   "unsupported_claims": 0,
+   "unparsed": 0,
+   "accuracy_over_parsed": 0.37209302325581395
+  },
+  "p8_gated": {
+   "states": {
+    "present": {
+     "state": "present",
+     "support": 30,
+     "predicted": 3,
+     "precision": 1.0,
+     "recall": 0.1,
+     "f1": 0.18181818181818182
+    },
+    "absent": {
+     "state": "absent",
+     "support": 0,
+     "predicted": 0,
+     "precision": null,
+     "recall": null,
+     "f1": null
+    },
+    "not_visible": {
+     "state": "not_visible",
+     "support": 13,
+     "predicted": 27,
+     "precision": 0.07407407407407407,
+     "recall": 0.15384615384615385,
+     "f1": 0.1
+    }
+   },
+   "confusion": {
+    "present": {
+     "present": 3,
+     "not_visible": 25,
+     "unparsed": 2
+    },
+    "not_visible": {
+     "unparsed": 11,
+     "not_visible": 2
+    }
+   },
+   "unsupported_claims": 0,
+   "model_calls": 30,
+   "calls_saved_by_p8": 13
+  },
+  "verdicts_gated": {
+   "violation_justified": 0,
+   "violation_unobservable": 0,
+   "violation_semantic": 0,
+   "missed_violation": 3,
+   "compliant": 0,
+   "unknown": 40
+  },
+  "verdicts_ungated": {
+   "violation_justified": 0,
+   "violation_unobservable": 0,
+   "violation_semantic": 0,
+   "missed_violation": 3,
+   "compliant": 0,
+   "unknown": 40
+  },
+  "latency_p50_ms": 2044.8,
+  "latency_p95_ms": 6935.1,
+  "latency_total_s": 125.0,
+  "prompt_chars": 2178,
+  "max_output_tokens": 256
+ }
+}

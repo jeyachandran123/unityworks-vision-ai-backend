@@ -1,0 +1,105 @@
+{
+ "_comment": [
+  "P9.6 collection campaign. Sessions are the unit a split may",
+  "not straddle, so the plan buys sessions rather than frames.",
+  "Sparse-camera sessions exist because cam-11 and cam-14 yield",
+  "roughly a tenth of cam-12's candidates per camera-minute, and",
+  "the only legal correction is observation time."
+ ],
+ "plan": [
+  {
+   "label": "n1",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  },
+  {
+   "label": "n2",
+   "seconds": 210,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    14
+   ]
+  },
+  {
+   "label": "n3",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  },
+  {
+   "label": "n4",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  },
+  {
+   "label": "n5",
+   "seconds": 210,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    14
+   ]
+  },
+  {
+   "label": "n6",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  },
+  {
+   "label": "n7",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  },
+  {
+   "label": "n8",
+   "seconds": 150,
+   "period": "recorded-by-clock",
+   "cameras": [
+    11,
+    12,
+    13,
+    14
+   ]
+  }
+ ],
+ "sessions": [
+  "live-20260828-n1",
+  "live-20260828-n2",
+  "live-20260828-n3",
+  "live-20260828-n4",
+  "live-20260828-n5",
+  "live-20260828-n6",
+  "live-20260828-n7",
+  "live-20260828-n8"
+ ]
+}

@@ -1,0 +1,1863 @@
+{
+ "_comment": [
+  "A LIVE PRODUCTION collection session. Provenance: LIVE_PRODUCTION.",
+  "Sampling is blind to PPE state. The event sampler may know that a",
+  "PERSON is present and where; it is told nothing about coverings, and",
+  "no PPE model, classifier or VLM output can reach the decision. A",
+  "collector that looked for violations would describe the search,",
+  "not the kitchen.",
+  "'period' is an operator's assertion about the operating condition,",
+  "not a measurement \u2014 nothing here verifies it.",
+  "No credential appears here; URIs are redacted by the production",
+  "config object that built them."
+ ],
+ "session_id": "live-20260828-n",
+ "provenance": "LIVE_PRODUCTION",
+ "collected_at": "2026-08-28T03:10:47+00:00",
+ "collection_day": "2026-08-28",
+ "label": "n",
+ "period": "mid-morning",
+ "sampling": {
+  "strategy": "event-aware",
+  "sampling_config_version": "p9.6-events-1",
+  "interval_seconds": 3.0,
+  "window_seconds": 150.0,
+  "max_frames_per_camera": 150,
+  "config": {
+   "version": "p9.6-events-1",
+   "scene_change_bits": 8,
+   "move_fraction": 0.15,
+   "bbox_iou": 0.7,
+   "bbox_area_ratio": 1.25,
+   "overlap_iou": 0.1,
+   "overlap_release_iou": 0.05,
+   "edge_epsilon": 0.01,
+   "grid": 3,
+   "match_iou": 0.3,
+   "match_distance_diagonals": 1.2,
+   "match_area_ratio": 2.0,
+   "track_min_hits": 2,
+   "track_max_age": 2,
+   "min_gap_seconds": 2.0,
+   "hard_floor_seconds": 0.5,
+   "heartbeat_seconds": 45.0,
+   "detect_every_seconds": 0.5,
+   "max_per_reason": 10,
+   "max_samples": 150
+  }
+ },
+ "cameras_observed_concurrently": true,
+ "cameras": [
+  {
+   "camera_id": "cam-11",
+   "channel": 11,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=11&subtype=0",
+   "width": 1920,
+   "height": 1080,
+   "codec": "hevc",
+   "stream_fps": 15.0,
+   "frames_decoded": 2103,
+   "frames_kept": 55,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 150.3,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-11_031050_673.jpg",
+    "cam-11_031058_321.jpg",
+    "cam-11_031100_145.jpg",
+    "cam-11_031102_858.jpg",
+    "cam-11_031108_402.jpg",
+    "cam-11_031108_950.jpg",
+    "cam-11_031110_478.jpg",
+    "cam-11_031112_100.jpg",
+    "cam-11_031116_778.jpg",
+    "cam-11_031117_296.jpg",
+    "cam-11_031119_472.jpg",
+    "cam-11_031122_676.jpg",
+    "cam-11_031124_432.jpg",
+    "cam-11_031126_257.jpg",
+    "cam-11_031128_438.jpg",
+    "cam-11_031129_605.jpg",
+    "cam-11_031130_485.jpg",
+    "cam-11_031132_509.jpg",
+    "cam-11_031135_811.jpg",
+    "cam-11_031137_620.jpg",
+    "cam-11_031139_818.jpg",
+    "cam-11_031140_829.jpg",
+    "cam-11_031142_908.jpg",
+    "cam-11_031144_444.jpg",
+    "cam-11_031147_034.jpg",
+    "cam-11_031148_162.jpg",
+    "cam-11_031149_476.jpg",
+    "cam-11_031150_685.jpg",
+    "cam-11_031155_863.jpg",
+    "cam-11_031157_922.jpg",
+    "cam-11_031159_249.jpg",
+    "cam-11_031201_352.jpg",
+    "cam-11_031202_911.jpg",
+    "cam-11_031204_052.jpg",
+    "cam-11_031204_855.jpg",
+    "cam-11_031205_894.jpg",
+    "cam-11_031207_367.jpg",
+    "cam-11_031208_507.jpg",
+    "cam-11_031211_241.jpg",
+    "cam-11_031212_251.jpg",
+    "cam-11_031214_333.jpg",
+    "cam-11_031217_510.jpg",
+    "cam-11_031220_167.jpg",
+    "cam-11_031222_965.jpg",
+    "cam-11_031227_110.jpg",
+    "cam-11_031229_173.jpg",
+    "cam-11_031231_879.jpg",
+    "cam-11_031235_700.jpg",
+    "cam-11_031239_440.jpg",
+    "cam-11_031245_012.jpg",
+    "cam-11_031247_010.jpg",
+    "cam-11_031252_172.jpg",
+    "cam-11_031253_282.jpg",
+    "cam-11_031258_819.jpg",
+    "cam-11_031310_452.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-11_031050_673.jpg",
+     "sequence": 0,
+     "offset_seconds": 3.231,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031058_321.jpg",
+     "sequence": 1,
+     "offset_seconds": 10.859,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031100_145.jpg",
+     "sequence": 2,
+     "offset_seconds": 12.673,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031102_858.jpg",
+     "sequence": 3,
+     "offset_seconds": 15.31,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031108_402.jpg",
+     "sequence": 4,
+     "offset_seconds": 20.873,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031108_950.jpg",
+     "sequence": 5,
+     "offset_seconds": 21.415,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031110_478.jpg",
+     "sequence": 6,
+     "offset_seconds": 22.99,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031112_100.jpg",
+     "sequence": 7,
+     "offset_seconds": 24.595,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031116_778.jpg",
+     "sequence": 8,
+     "offset_seconds": 29.288,
+     "sampling_reason": "scene_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031117_296.jpg",
+     "sequence": 9,
+     "offset_seconds": 29.8,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031119_472.jpg",
+     "sequence": 10,
+     "offset_seconds": 31.948,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031122_676.jpg",
+     "sequence": 11,
+     "offset_seconds": 35.075,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031124_432.jpg",
+     "sequence": 12,
+     "offset_seconds": 36.693,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031126_257.jpg",
+     "sequence": 13,
+     "offset_seconds": 38.721,
+     "sampling_reason": "scene_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031128_438.jpg",
+     "sequence": 14,
+     "offset_seconds": 40.914,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031129_605.jpg",
+     "sequence": 15,
+     "offset_seconds": 42.067,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031130_485.jpg",
+     "sequence": 16,
+     "offset_seconds": 42.905,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031132_509.jpg",
+     "sequence": 17,
+     "offset_seconds": 44.944,
+     "sampling_reason": "scene_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031135_811.jpg",
+     "sequence": 18,
+     "offset_seconds": 48.296,
+     "sampling_reason": "scene_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031137_620.jpg",
+     "sequence": 19,
+     "offset_seconds": 50.09,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031139_818.jpg",
+     "sequence": 20,
+     "offset_seconds": 52.173,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031140_829.jpg",
+     "sequence": 21,
+     "offset_seconds": 53.295,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-11_031142_908.jpg",
+     "sequence": 22,
+     "offset_seconds": 55.4,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-11_031144_444.jpg",
+     "sequence": 23,
+     "offset_seconds": 56.925,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031147_034.jpg",
+     "sequence": 24,
+     "offset_seconds": 59.542,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031148_162.jpg",
+     "sequence": 25,
+     "offset_seconds": 60.647,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-11_031149_476.jpg",
+     "sequence": 26,
+     "offset_seconds": 61.816,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031150_685.jpg",
+     "sequence": 27,
+     "offset_seconds": 62.834,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031155_863.jpg",
+     "sequence": 28,
+     "offset_seconds": 68.368,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031157_922.jpg",
+     "sequence": 29,
+     "offset_seconds": 70.423,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031159_249.jpg",
+     "sequence": 30,
+     "offset_seconds": 71.76,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031201_352.jpg",
+     "sequence": 31,
+     "offset_seconds": 73.841,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031202_911.jpg",
+     "sequence": 32,
+     "offset_seconds": 75.371,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031204_052.jpg",
+     "sequence": 33,
+     "offset_seconds": 76.53,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031204_855.jpg",
+     "sequence": 34,
+     "offset_seconds": 77.29,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031205_894.jpg",
+     "sequence": 35,
+     "offset_seconds": 78.322,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031207_367.jpg",
+     "sequence": 36,
+     "offset_seconds": 79.886,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031208_507.jpg",
+     "sequence": 37,
+     "offset_seconds": 80.943,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031211_241.jpg",
+     "sequence": 38,
+     "offset_seconds": 83.615,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031212_251.jpg",
+     "sequence": 39,
+     "offset_seconds": 84.672,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031214_333.jpg",
+     "sequence": 40,
+     "offset_seconds": 86.813,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031217_510.jpg",
+     "sequence": 41,
+     "offset_seconds": 90.014,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031220_167.jpg",
+     "sequence": 42,
+     "offset_seconds": 92.674,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031222_965.jpg",
+     "sequence": 43,
+     "offset_seconds": 95.414,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031227_110.jpg",
+     "sequence": 44,
+     "offset_seconds": 99.548,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031229_173.jpg",
+     "sequence": 45,
+     "offset_seconds": 101.673,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031231_879.jpg",
+     "sequence": 46,
+     "offset_seconds": 104.365,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031235_700.jpg",
+     "sequence": 47,
+     "offset_seconds": 108.155,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031239_440.jpg",
+     "sequence": 48,
+     "offset_seconds": 111.888,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031245_012.jpg",
+     "sequence": 49,
+     "offset_seconds": 117.286,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031247_010.jpg",
+     "sequence": 50,
+     "offset_seconds": 119.405,
+     "sampling_reason": "person_moved",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031252_172.jpg",
+     "sequence": 51,
+     "offset_seconds": 124.629,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_031253_282.jpg",
+     "sequence": 52,
+     "offset_seconds": 125.689,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031258_819.jpg",
+     "sequence": 53,
+     "offset_seconds": 131.004,
+     "sampling_reason": "scene_changed",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_031310_452.jpg",
+     "sequence": 54,
+     "offset_seconds": 142.869,
+     "sampling_reason": "person_moved",
+     "people_detected": 1,
+     "tracks_live": 1
+    }
+   ],
+   "by_reason": {
+    "person_entered": 10,
+    "person_left": 10,
+    "person_count_changed": 10,
+    "occlusion_changed": 2,
+    "bbox_changed": 10,
+    "person_moved": 2,
+    "scene_changed": 10,
+    "periodic_heartbeat": 1
+   },
+   "event_triggered": 54,
+   "baseline_triggered": 1,
+   "suppressed": {
+    "cooldown": 86,
+    "reason_cap": 31
+   },
+   "candidate_subject_tracks": 19
+  },
+  {
+   "camera_id": "cam-12",
+   "channel": 12,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=12&subtype=0",
+   "width": 960,
+   "height": 576,
+   "codec": "hevc",
+   "stream_fps": 25.0,
+   "frames_decoded": 2884,
+   "frames_kept": 54,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 150.1,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-12_031049_704.jpg",
+    "cam-12_031104_186.jpg",
+    "cam-12_031106_328.jpg",
+    "cam-12_031108_572.jpg",
+    "cam-12_031111_112.jpg",
+    "cam-12_031117_398.jpg",
+    "cam-12_031118_994.jpg",
+    "cam-12_031126_919.jpg",
+    "cam-12_031130_058.jpg",
+    "cam-12_031130_594.jpg",
+    "cam-12_031132_678.jpg",
+    "cam-12_031134_188.jpg",
+    "cam-12_031135_770.jpg",
+    "cam-12_031137_989.jpg",
+    "cam-12_031138_565.jpg",
+    "cam-12_031139_070.jpg",
+    "cam-12_031140_042.jpg",
+    "cam-12_031141_521.jpg",
+    "cam-12_031142_044.jpg",
+    "cam-12_031142_746.jpg",
+    "cam-12_031143_264.jpg",
+    "cam-12_031143_780.jpg",
+    "cam-12_031146_031.jpg",
+    "cam-12_031147_923.jpg",
+    "cam-12_031148_342.jpg",
+    "cam-12_031148_862.jpg",
+    "cam-12_031149_472.jpg",
+    "cam-12_031151_631.jpg",
+    "cam-12_031153_731.jpg",
+    "cam-12_031154_746.jpg",
+    "cam-12_031155_699.jpg",
+    "cam-12_031157_165.jpg",
+    "cam-12_031200_282.jpg",
+    "cam-12_031201_831.jpg",
+    "cam-12_031203_939.jpg",
+    "cam-12_031207_069.jpg",
+    "cam-12_031210_274.jpg",
+    "cam-12_031212_257.jpg",
+    "cam-12_031212_966.jpg",
+    "cam-12_031216_004.jpg",
+    "cam-12_031221_699.jpg",
+    "cam-12_031222_562.jpg",
+    "cam-12_031224_137.jpg",
+    "cam-12_031229_550.jpg",
+    "cam-12_031231_702.jpg",
+    "cam-12_031232_334.jpg",
+    "cam-12_031233_840.jpg",
+    "cam-12_031235_947.jpg",
+    "cam-12_031238_040.jpg",
+    "cam-12_031244_058.jpg",
+    "cam-12_031245_508.jpg",
+    "cam-12_031249_737.jpg",
+    "cam-12_031253_560.jpg",
+    "cam-12_031311_597.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-12_031049_704.jpg",
+     "sequence": 0,
+     "offset_seconds": 2.266,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031104_186.jpg",
+     "sequence": 1,
+     "offset_seconds": 16.742,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031106_328.jpg",
+     "sequence": 2,
+     "offset_seconds": 18.87,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031108_572.jpg",
+     "sequence": 3,
+     "offset_seconds": 21.057,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031111_112.jpg",
+     "sequence": 4,
+     "offset_seconds": 23.617,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031117_398.jpg",
+     "sequence": 5,
+     "offset_seconds": 29.928,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031118_994.jpg",
+     "sequence": 6,
+     "offset_seconds": 31.496,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031126_919.jpg",
+     "sequence": 7,
+     "offset_seconds": 39.359,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031130_058.jpg",
+     "sequence": 8,
+     "offset_seconds": 42.518,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031130_594.jpg",
+     "sequence": 9,
+     "offset_seconds": 43.023,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031132_678.jpg",
+     "sequence": 10,
+     "offset_seconds": 45.175,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031134_188.jpg",
+     "sequence": 11,
+     "offset_seconds": 46.702,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031135_770.jpg",
+     "sequence": 12,
+     "offset_seconds": 48.286,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031137_989.jpg",
+     "sequence": 13,
+     "offset_seconds": 50.479,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031138_565.jpg",
+     "sequence": 14,
+     "offset_seconds": 51.018,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031139_070.jpg",
+     "sequence": 15,
+     "offset_seconds": 51.549,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031140_042.jpg",
+     "sequence": 16,
+     "offset_seconds": 52.526,
+     "sampling_reason": "person_entered",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-12_031141_521.jpg",
+     "sequence": 17,
+     "offset_seconds": 53.982,
+     "sampling_reason": "person_left",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031142_044.jpg",
+     "sequence": 18,
+     "offset_seconds": 54.491,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031142_746.jpg",
+     "sequence": 19,
+     "offset_seconds": 55.237,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031143_264.jpg",
+     "sequence": 20,
+     "offset_seconds": 55.769,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031143_780.jpg",
+     "sequence": 21,
+     "offset_seconds": 56.321,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031146_031.jpg",
+     "sequence": 22,
+     "offset_seconds": 58.515,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031147_923.jpg",
+     "sequence": 23,
+     "offset_seconds": 60.336,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031148_342.jpg",
+     "sequence": 24,
+     "offset_seconds": 60.841,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031148_862.jpg",
+     "sequence": 25,
+     "offset_seconds": 61.344,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031149_472.jpg",
+     "sequence": 26,
+     "offset_seconds": 61.856,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031151_631.jpg",
+     "sequence": 27,
+     "offset_seconds": 63.912,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031153_731.jpg",
+     "sequence": 28,
+     "offset_seconds": 66.072,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031154_746.jpg",
+     "sequence": 29,
+     "offset_seconds": 67.056,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031155_699.jpg",
+     "sequence": 30,
+     "offset_seconds": 68.07,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031157_165.jpg",
+     "sequence": 31,
+     "offset_seconds": 69.585,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031200_282.jpg",
+     "sequence": 32,
+     "offset_seconds": 72.759,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031201_831.jpg",
+     "sequence": 33,
+     "offset_seconds": 74.35,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031203_939.jpg",
+     "sequence": 34,
+     "offset_seconds": 76.451,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031207_069.jpg",
+     "sequence": 35,
+     "offset_seconds": 79.607,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031210_274.jpg",
+     "sequence": 36,
+     "offset_seconds": 82.808,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031212_257.jpg",
+     "sequence": 37,
+     "offset_seconds": 84.721,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031212_966.jpg",
+     "sequence": 38,
+     "offset_seconds": 85.504,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031216_004.jpg",
+     "sequence": 39,
+     "offset_seconds": 88.458,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-12_031221_699.jpg",
+     "sequence": 40,
+     "offset_seconds": 94.208,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031222_562.jpg",
+     "sequence": 41,
+     "offset_seconds": 95.078,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031224_137.jpg",
+     "sequence": 42,
+     "offset_seconds": 96.661,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031229_550.jpg",
+     "sequence": 43,
+     "offset_seconds": 102.103,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031231_702.jpg",
+     "sequence": 44,
+     "offset_seconds": 104.201,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031232_334.jpg",
+     "sequence": 45,
+     "offset_seconds": 104.84,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-12_031233_840.jpg",
+     "sequence": 46,
+     "offset_seconds": 106.348,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031235_947.jpg",
+     "sequence": 47,
+     "offset_seconds": 108.45,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031238_040.jpg",
+     "sequence": 48,
+     "offset_seconds": 110.538,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031244_058.jpg",
+     "sequence": 49,
+     "offset_seconds": 116.532,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031245_508.jpg",
+     "sequence": 50,
+     "offset_seconds": 118.004,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031249_737.jpg",
+     "sequence": 51,
+     "offset_seconds": 122.235,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-12_031253_560.jpg",
+     "sequence": 52,
+     "offset_seconds": 126.088,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-12_031311_597.jpg",
+     "sequence": 53,
+     "offset_seconds": 144.093,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    }
+   ],
+   "by_reason": {
+    "person_entered": 10,
+    "person_left": 10,
+    "person_count_changed": 10,
+    "occlusion_changed": 10,
+    "bbox_changed": 3,
+    "scene_changed": 10,
+    "periodic_heartbeat": 1
+   },
+   "event_triggered": 53,
+   "baseline_triggered": 1,
+   "suppressed": {
+    "cooldown": 125,
+    "reason_cap": 132
+   },
+   "candidate_subject_tracks": 21
+  },
+  {
+   "camera_id": "cam-13",
+   "channel": 13,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=13&subtype=0",
+   "width": 1920,
+   "height": 1080,
+   "codec": "hevc",
+   "stream_fps": 15.0,
+   "frames_decoded": 2003,
+   "frames_kept": 66,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 150.3,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-13_031050_954.jpg",
+    "cam-13_031054_746.jpg",
+    "cam-13_031057_916.jpg",
+    "cam-13_031102_434.jpg",
+    "cam-13_031103_861.jpg",
+    "cam-13_031106_904.jpg",
+    "cam-13_031107_503.jpg",
+    "cam-13_031109_531.jpg",
+    "cam-13_031110_113.jpg",
+    "cam-13_031112_164.jpg",
+    "cam-13_031114_295.jpg",
+    "cam-13_031116_474.jpg",
+    "cam-13_031118_684.jpg",
+    "cam-13_031123_863.jpg",
+    "cam-13_031125_601.jpg",
+    "cam-13_031128_691.jpg",
+    "cam-13_031129_803.jpg",
+    "cam-13_031130_606.jpg",
+    "cam-13_031131_411.jpg",
+    "cam-13_031132_182.jpg",
+    "cam-13_031133_636.jpg",
+    "cam-13_031134_745.jpg",
+    "cam-13_031135_516.jpg",
+    "cam-13_031137_854.jpg",
+    "cam-13_031140_022.jpg",
+    "cam-13_031141_228.jpg",
+    "cam-13_031142_177.jpg",
+    "cam-13_031142_689.jpg",
+    "cam-13_031143_129.jpg",
+    "cam-13_031144_139.jpg",
+    "cam-13_031145_794.jpg",
+    "cam-13_031148_271.jpg",
+    "cam-13_031154_259.jpg",
+    "cam-13_031154_744.jpg",
+    "cam-13_031155_285.jpg",
+    "cam-13_031155_673.jpg",
+    "cam-13_031157_719.jpg",
+    "cam-13_031159_414.jpg",
+    "cam-13_031201_034.jpg",
+    "cam-13_031201_531.jpg",
+    "cam-13_031202_149.jpg",
+    "cam-13_031204_248.jpg",
+    "cam-13_031206_821.jpg",
+    "cam-13_031207_918.jpg",
+    "cam-13_031208_405.jpg",
+    "cam-13_031210_199.jpg",
+    "cam-13_031210_710.jpg",
+    "cam-13_031211_840.jpg",
+    "cam-13_031216_198.jpg",
+    "cam-13_031218_265.jpg",
+    "cam-13_031219_385.jpg",
+    "cam-13_031221_466.jpg",
+    "cam-13_031223_795.jpg",
+    "cam-13_031235_726.jpg",
+    "cam-13_031236_424.jpg",
+    "cam-13_031238_590.jpg",
+    "cam-13_031240_096.jpg",
+    "cam-13_031242_163.jpg",
+    "cam-13_031244_530.jpg",
+    "cam-13_031246_488.jpg",
+    "cam-13_031253_662.jpg",
+    "cam-13_031257_813.jpg",
+    "cam-13_031300_872.jpg",
+    "cam-13_031309_623.jpg",
+    "cam-13_031312_339.jpg",
+    "cam-13_031316_104.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-13_031050_954.jpg",
+     "sequence": 0,
+     "offset_seconds": 3.485,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-13_031054_746.jpg",
+     "sequence": 1,
+     "offset_seconds": 7.235,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031057_916.jpg",
+     "sequence": 2,
+     "offset_seconds": 10.465,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031102_434.jpg",
+     "sequence": 3,
+     "offset_seconds": 14.786,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031103_861.jpg",
+     "sequence": 4,
+     "offset_seconds": 16.365,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-13_031106_904.jpg",
+     "sequence": 5,
+     "offset_seconds": 19.095,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031107_503.jpg",
+     "sequence": 6,
+     "offset_seconds": 20.039,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031109_531.jpg",
+     "sequence": 7,
+     "offset_seconds": 22.009,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031110_113.jpg",
+     "sequence": 8,
+     "offset_seconds": 22.642,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031112_164.jpg",
+     "sequence": 9,
+     "offset_seconds": 24.677,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031114_295.jpg",
+     "sequence": 10,
+     "offset_seconds": 26.768,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031116_474.jpg",
+     "sequence": 11,
+     "offset_seconds": 28.917,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031118_684.jpg",
+     "sequence": 12,
+     "offset_seconds": 31.072,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031123_863.jpg",
+     "sequence": 13,
+     "offset_seconds": 36.371,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031125_601.jpg",
+     "sequence": 14,
+     "offset_seconds": 38.016,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031128_691.jpg",
+     "sequence": 15,
+     "offset_seconds": 41.184,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031129_803.jpg",
+     "sequence": 16,
+     "offset_seconds": 42.317,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031130_606.jpg",
+     "sequence": 17,
+     "offset_seconds": 43.004,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031131_411.jpg",
+     "sequence": 18,
+     "offset_seconds": 43.802,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031132_182.jpg",
+     "sequence": 19,
+     "offset_seconds": 44.571,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031133_636.jpg",
+     "sequence": 20,
+     "offset_seconds": 46.098,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031134_745.jpg",
+     "sequence": 21,
+     "offset_seconds": 47.178,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031135_516.jpg",
+     "sequence": 22,
+     "offset_seconds": 48.031,
+     "sampling_reason": "person_entered",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031137_854.jpg",
+     "sequence": 23,
+     "offset_seconds": 50.24,
+     "sampling_reason": "scene_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031140_022.jpg",
+     "sequence": 24,
+     "offset_seconds": 52.483,
+     "sampling_reason": "scene_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031141_228.jpg",
+     "sequence": 25,
+     "offset_seconds": 53.701,
+     "sampling_reason": "person_left",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031142_177.jpg",
+     "sequence": 26,
+     "offset_seconds": 54.586,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031142_689.jpg",
+     "sequence": 27,
+     "offset_seconds": 55.09,
+     "sampling_reason": "person_entered",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031143_129.jpg",
+     "sequence": 28,
+     "offset_seconds": 55.597,
+     "sampling_reason": "person_left",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031144_139.jpg",
+     "sequence": 29,
+     "offset_seconds": 56.629,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031145_794.jpg",
+     "sequence": 30,
+     "offset_seconds": 58.237,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031148_271.jpg",
+     "sequence": 31,
+     "offset_seconds": 60.724,
+     "sampling_reason": "person_left",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031154_259.jpg",
+     "sequence": 32,
+     "offset_seconds": 66.458,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031154_744.jpg",
+     "sequence": 33,
+     "offset_seconds": 66.965,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031155_285.jpg",
+     "sequence": 34,
+     "offset_seconds": 67.479,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031155_673.jpg",
+     "sequence": 35,
+     "offset_seconds": 67.998,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031157_719.jpg",
+     "sequence": 36,
+     "offset_seconds": 70.05,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031159_414.jpg",
+     "sequence": 37,
+     "offset_seconds": 71.941,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031201_034.jpg",
+     "sequence": 38,
+     "offset_seconds": 73.521,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031201_531.jpg",
+     "sequence": 39,
+     "offset_seconds": 74.038,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031202_149.jpg",
+     "sequence": 40,
+     "offset_seconds": 74.622,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031204_248.jpg",
+     "sequence": 41,
+     "offset_seconds": 76.707,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031206_821.jpg",
+     "sequence": 42,
+     "offset_seconds": 79.329,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031207_918.jpg",
+     "sequence": 43,
+     "offset_seconds": 80.386,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031208_405.jpg",
+     "sequence": 44,
+     "offset_seconds": 80.891,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031210_199.jpg",
+     "sequence": 45,
+     "offset_seconds": 82.699,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031210_710.jpg",
+     "sequence": 46,
+     "offset_seconds": 83.233,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031211_840.jpg",
+     "sequence": 47,
+     "offset_seconds": 84.298,
+     "sampling_reason": "person_count_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031216_198.jpg",
+     "sequence": 48,
+     "offset_seconds": 88.699,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031218_265.jpg",
+     "sequence": 49,
+     "offset_seconds": 90.779,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031219_385.jpg",
+     "sequence": 50,
+     "offset_seconds": 91.836,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031221_466.jpg",
+     "sequence": 51,
+     "offset_seconds": 93.946,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031223_795.jpg",
+     "sequence": 52,
+     "offset_seconds": 96.301,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031235_726.jpg",
+     "sequence": 53,
+     "offset_seconds": 108.179,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031236_424.jpg",
+     "sequence": 54,
+     "offset_seconds": 108.895,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031238_590.jpg",
+     "sequence": 55,
+     "offset_seconds": 110.968,
+     "sampling_reason": "scene_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031240_096.jpg",
+     "sequence": 56,
+     "offset_seconds": 112.497,
+     "sampling_reason": "occlusion_changed",
+     "people_detected": 3,
+     "tracks_live": 3
+    },
+    {
+     "file": "cam-13_031242_163.jpg",
+     "sequence": 57,
+     "offset_seconds": 114.634,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031244_530.jpg",
+     "sequence": 58,
+     "offset_seconds": 116.786,
+     "sampling_reason": "bbox_changed",
+     "people_detected": 4,
+     "tracks_live": 4
+    },
+    {
+     "file": "cam-13_031246_488.jpg",
+     "sequence": 59,
+     "offset_seconds": 118.865,
+     "sampling_reason": "scene_changed",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-13_031253_662.jpg",
+     "sequence": 60,
+     "offset_seconds": 126.133,
+     "sampling_reason": "scene_changed",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031257_813.jpg",
+     "sequence": 61,
+     "offset_seconds": 129.991,
+     "sampling_reason": "person_moved",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031300_872.jpg",
+     "sequence": 62,
+     "offset_seconds": 133.063,
+     "sampling_reason": "person_moved",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031309_623.jpg",
+     "sequence": 63,
+     "offset_seconds": 141.821,
+     "sampling_reason": "region_transition",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031312_339.jpg",
+     "sequence": 64,
+     "offset_seconds": 144.81,
+     "sampling_reason": "person_moved",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-13_031316_104.jpg",
+     "sequence": 65,
+     "offset_seconds": 148.43,
+     "sampling_reason": "person_moved",
+     "people_detected": 3,
+     "tracks_live": 3
+    }
+   ],
+   "by_reason": {
+    "person_entered": 10,
+    "person_left": 10,
+    "person_count_changed": 10,
+    "occlusion_changed": 10,
+    "region_transition": 1,
+    "bbox_changed": 10,
+    "person_moved": 4,
+    "scene_changed": 10,
+    "periodic_heartbeat": 1
+   },
+   "event_triggered": 65,
+   "baseline_triggered": 1,
+   "suppressed": {
+    "cooldown": 126,
+    "reason_cap": 55
+   },
+   "candidate_subject_tracks": 34
+  },
+  {
+   "camera_id": "cam-14",
+   "channel": 14,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=14&subtype=0",
+   "width": 960,
+   "height": 576,
+   "codec": "hevc",
+   "stream_fps": 25.0,
+   "frames_decoded": 3676,
+   "frames_kept": 8,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 150.3,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-14_031049_827.jpg",
+    "cam-14_031053_044.jpg",
+    "cam-14_031055_658.jpg",
+    "cam-14_031056_668.jpg",
+    "cam-14_031059_247.jpg",
+    "cam-14_031144_116.jpg",
+    "cam-14_031229_313.jpg",
+    "cam-14_031314_148.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-14_031049_827.jpg",
+     "sequence": 0,
+     "offset_seconds": 2.333,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_031053_044.jpg",
+     "sequence": 1,
+     "offset_seconds": 5.504,
+     "sampling_reason": "person_entered",
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-14_031055_658.jpg",
+     "sequence": 2,
+     "offset_seconds": 8.136,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_031056_668.jpg",
+     "sequence": 3,
+     "offset_seconds": 9.147,
+     "sampling_reason": "person_entered",
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-14_031059_247.jpg",
+     "sequence": 4,
+     "offset_seconds": 11.727,
+     "sampling_reason": "person_left",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_031144_116.jpg",
+     "sequence": 5,
+     "offset_seconds": 56.728,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_031229_313.jpg",
+     "sequence": 6,
+     "offset_seconds": 101.748,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_031314_148.jpg",
+     "sequence": 7,
+     "offset_seconds": 146.759,
+     "sampling_reason": "periodic_heartbeat",
+     "people_detected": 0,
+     "tracks_live": 0
+    }
+   ],
+   "by_reason": {
+    "person_entered": 2,
+    "person_left": 2,
+    "periodic_heartbeat": 4
+   },
+   "event_triggered": 4,
+   "baseline_triggered": 4,
+   "suppressed": {
+    "cooldown": 3
+   },
+   "candidate_subject_tracks": 3
+  }
+ ],
+ "totals": {
+  "frames_decoded": 10666,
+  "frames_kept": 183,
+  "frames_failed": 0,
+  "reconnects": 0,
+  "cameras_ok": 4,
+  "cameras_failed": 0,
+  "event_triggered": 176,
+  "baseline_triggered": 7,
+  "candidate_subject_tracks": 77,
+  "by_reason": {
+   "person_entered": 32,
+   "person_left": 32,
+   "person_count_changed": 30,
+   "scene_changed": 30,
+   "bbox_changed": 23,
+   "occlusion_changed": 22,
+   "periodic_heartbeat": 7,
+   "person_moved": 6,
+   "region_transition": 1
+  }
+ }
+}

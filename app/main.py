@@ -21,6 +21,7 @@ crash-loop.
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
 from collections.abc import AsyncIterator
 from typing import Any
@@ -202,14 +203,29 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     # The camera set now comes from the database, so restarting the process
     # restores exactly the cameras that were running before it stopped — which
     # is what "recovery" means here. A row that is not `enabled` opens no socket.
-    # The camera wall. Started from the same durable camera rows, and started
+    # The camera wall is started from the same durable camera rows, and started
     # whether or not Vision OS assembled — viewing must not depend on analysis.
-    await _start_camera_wall(app)
-
+    #
+    # Both halves run through one bootstrap so that a database which is not yet
+    # accepting connections is a *delay* rather than a permanent failure. If the
+    # roster cannot be read, a supervisor retries in the background until it can;
+    # see `_camera_bootstrap_supervisor` for why the previous one-shot bind left
+    # cameras dark behind a healthy-looking dashboard.
     live: LiveRuntime = app.state.live
-    started = await _start_cameras_from_database(app)
-    if started:
-        logger.warning("live CCTV runtime started {} camera session(s)", started)
+    app.state.camera_bootstrap = None
+    wall_done, live_done = await _bootstrap_cameras_once(app)
+    if not (wall_done and live_done):
+        logger.warning(
+            "camera roster unreadable at start-up (wall_read={}, live_read={}) "
+            "— retrying in the background; the process stays up and every route "
+            "that does not need the database keeps serving",
+            wall_done,
+            live_done,
+        )
+        app.state.camera_bootstrap = asyncio.create_task(
+            _camera_bootstrap_supervisor(app, wall_done=wall_done, live_done=live_done),
+            name="camera-bootstrap",
+        )
 
     if cfg.serve_frames or cfg.allow_evidence:
         # Loud on purpose. These are the two settings that decide whether CCTV
@@ -223,6 +239,13 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     logger.info("Shutting down")
+    # Before the runtimes it drives, so a retry cannot start a camera session
+    # while the process is tearing them down.
+    bootstrap = getattr(app.state, "camera_bootstrap", None)
+    if bootstrap is not None and not bootstrap.done():
+        bootstrap.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await bootstrap
     await app.state.wall.stop_all()
     if vision.composition is not None:
         app.state.taps.detach(getattr(vision.composition.platform, "bus", None))
@@ -267,11 +290,18 @@ async def _sweep_retention(app: FastAPI) -> None:
         )
 
 
-async def _start_cameras_from_database(app: FastAPI) -> int:
+async def _start_cameras_from_database(app: FastAPI) -> int | None:
     """Read the enabled cameras and start them. **This is the recovery path.**
 
-    Returns 0 rather than raising if the database is unreachable: no camera is
-    better than no application, and `/health/ready` reports the database anyway.
+    Returns the number of sessions started, or **`None` when the roster could
+    not be read at all**. That distinction is the whole point: "the database
+    said zero cameras" and "the database did not answer" are different facts,
+    and collapsing both to `0` is what let a deployment boot ahead of Postgres,
+    bind nothing, and then sit there looking healthy forever. `None` is the
+    signal the bootstrap supervisor retries on.
+
+    Never raises: no camera is better than no application, and `/health/ready`
+    reports the database anyway.
     """
     from app.domain.cameras import CameraService, to_rtsp_config
 
@@ -288,11 +318,11 @@ async def _start_cameras_from_database(app: FastAPI) -> int:
     except Exception as exc:  # noqa: BLE001 - reported, never fatal
         logger.error(
             "could not read camera configuration: {}: {}. No camera session "
-            "started; fix the database and restart.",
+            "started yet; the bootstrap supervisor will retry.",
             type(exc).__name__,
             exc,
         )
-        return 0
+        return None
 
     if not configs:
         # Not an error. A deployment with no enabled camera is a valid
@@ -378,12 +408,15 @@ def _build_compliance_driver(app: FastAPI, cfg, vision):
     return driver
 
 
-async def _start_camera_wall(app: FastAPI) -> int:
+async def _start_camera_wall(app: FastAPI) -> int | None:
     """Open a viewing stream for every enabled camera row.
 
     Separate from `_start_cameras_from_database`, which starts *analysis*
     sessions. A deployment may reasonably watch sixteen cameras and analyse
     none, and this is the line that keeps those two decisions apart.
+
+    Returns `None` when the camera list could not be read, for the same reason
+    `_start_cameras_from_database` does — see its docstring.
     """
     from app.domain.cameras import CameraService
 
@@ -407,11 +440,12 @@ async def _start_camera_wall(app: FastAPI) -> int:
                 )
     except Exception as exc:  # noqa: BLE001 - reported, never fatal
         logger.error(
-            "camera wall could not read its camera list: {}: {}",
+            "camera wall could not read its camera list: {}: {}. "
+            "The bootstrap supervisor will retry.",
             type(exc).__name__,
             exc,
         )
-        return 0
+        return None
 
     if not cameras:
         if elsewhere:
@@ -431,6 +465,132 @@ async def _start_camera_wall(app: FastAPI) -> int:
             logger.info("camera wall: no camera rows configured")
         return 0
     return await wall.start_cameras(cameras)
+
+
+#: Backoff for the camera bootstrap supervisor, in seconds.
+#:
+#: Starts fast because the common case is a stack coming up together and the
+#: database being seconds behind, and settles at 30 s because a database that
+#: has been down for a minute is an outage, not a race, and polling it harder
+#: helps nobody.
+_BOOTSTRAP_BACKOFF = (1.0, 2.0, 5.0, 10.0, 15.0, 30.0)
+
+
+async def _bootstrap_cameras_once(
+    app: FastAPI, *, need_wall: bool = True, need_live: bool = True
+) -> tuple[bool, bool]:
+    """One attempt at binding the camera roster. Returns `(wall_read, live_read)`.
+
+    Both halves are attempted, because the wall and the analysis sessions are
+    independent decisions — a deployment may legitimately view sixteen cameras
+    and analyse none.
+
+    They are also reported **separately**, and that is not fussiness. The two
+    reads happen seconds apart, so a database finishing its start-up between
+    them leaves one succeeding and one failing. Treating that as "bootstrapped"
+    strands whichever half lost the race: observed on 2026-08-31, where the wall
+    read failed at 08:21:54, the live read succeeded at 08:21:57, and the wall —
+    the half `/api/v1/wall/cameras` reports and the UI renders — stayed empty
+    behind a log line announcing success.
+
+    `need_wall` / `need_live` let the supervisor retry only what is outstanding,
+    so a half that already bound is not asked to bind twice. That matters for
+    the analysis sessions, which refuse a duplicate camera outright.
+    """
+    wall_read = not need_wall
+    live_read = not need_live
+
+    if need_wall:
+        wall_read = await _start_camera_wall(app) is not None
+
+    if need_live:
+        live_result = await _start_cameras_from_database(app)
+        live_read = live_result is not None
+        if live_result:
+            logger.warning(
+                "live CCTV runtime started {} camera session(s)", live_result
+            )
+
+    # `0` is a real answer ("no enabled cameras"); only `None` means nobody
+    # answered, and only a read that happened counts as done.
+    return wall_read, live_read
+
+
+async def _camera_bootstrap_supervisor(
+    app: FastAPI, *, wall_done: bool = False, live_done: bool = False
+) -> None:
+    """Keep trying to bind cameras until the database answers. Then stop.
+
+    ### Why the one-shot bind was unsafe
+
+    Camera binding used to happen exactly once, inline in the lifespan. If the
+    process started before Postgres accepted connections — which is ordinary
+    when a stack comes up together, and was reproduced on 2026-08-31 with the
+    backend booting ten minutes ahead of its database — the roster read failed,
+    the handler logged an error, and **nothing ever tried again**.
+
+    What made that failure mode expensive is that everything else recovered on
+    its own. SQLAlchemy reconnects lazily, so the API started serving the moment
+    the database appeared, and `/health/ready` went green. Only the cameras
+    stayed dark, with `frames_decoded=0`, `reconnects=0` and an empty
+    `last_error` — the signature of something that never started, sitting behind
+    a dashboard that otherwise looked healthy. The remedy was a manual restart
+    that nothing in the system asked for.
+
+    ### Why a supervisor rather than a readiness gate
+
+    Blocking start-up until the database answers would trade a silent failure
+    for a crash loop, and would take down every route that does not need the
+    database — including `/health`, which is what an operator reads to find out
+    what is wrong. Retrying in the background keeps the process serving while
+    the dependency arrives.
+
+    ### Why it stops
+
+    It retries the **bootstrap**, not the cameras. Once the roster is read the
+    task exits and ordinary mechanisms own the rest: RTSP reconnection is the
+    session's own `ReconnectPolicy`, and enabling a camera later goes through
+    `PATCH /api/v1/cameras/{key}`. A supervisor that kept polling would be a
+    second, competing source of truth for which cameras should be running.
+    """
+    need_wall = not wall_done
+    need_live = not live_done
+    attempt = 0
+
+    while need_wall or need_live:
+        attempt += 1
+        # Walk the backoff, then hold at its last value. A database that returns
+        # after ten minutes should still get its cameras, and this task costs
+        # one query per interval.
+        delay = _BOOTSTRAP_BACKOFF[min(attempt - 1, len(_BOOTSTRAP_BACKOFF) - 1)]
+        await asyncio.sleep(delay)
+        try:
+            wall_ok, live_ok = await _bootstrap_cameras_once(
+                app, need_wall=need_wall, need_live=need_live
+            )
+            # Only retry what is still outstanding. Re-running a half that
+            # already bound would ask the analysis runtime to start a camera it
+            # is already running, which it refuses — a real error logged for a
+            # non-problem.
+            if wall_ok:
+                need_wall = False
+            if live_ok:
+                need_live = False
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a retry must not kill the task
+            logger.error(
+                "camera bootstrap retry {} failed: {}: {}",
+                attempt,
+                type(exc).__name__,
+                exc,
+            )
+
+    logger.warning(
+        "camera bootstrap completed on retry {} — the database became "
+        "available after start-up",
+        attempt,
+    )
 
 
 async def _cameras_in_other_tenants(session, tenant_id: str) -> dict[str, int]:

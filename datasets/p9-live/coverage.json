@@ -1,0 +1,269 @@
+{
+ "_comment": [
+  "P9.8 coverage ledger. The unit is a CELL: one camera, one calendar",
+  "day, one block of the working day. Volume has never been the",
+  "constraint \u2014 13.90 candidates per camera-minute \u2014 so the criteria",
+  "below are about spread, not count.",
+  "Cells count OBSERVATIONS, never people. Identity is unverified, so a",
+  "cell with 400 candidates may hold four workers or one worker",
+  "photographed four hundred times."
+ ],
+ "sessions": 34,
+ "candidates": 4332,
+ "days": [
+  "2026-08-27",
+  "2026-08-28"
+ ],
+ "blocks_observed": [
+  "00-03Z",
+  "03-06Z",
+  "06-09Z",
+  "09-12Z"
+ ],
+ "by_day": {
+  "2026-08-28": 4167,
+  "2026-08-27": 165
+ },
+ "by_block": {
+  "06-09Z": 1990,
+  "09-12Z": 1247,
+  "00-03Z": 600,
+  "03-06Z": 495
+ },
+ "camera_days": {
+  "cam-11": [
+   "2026-08-27",
+   "2026-08-28"
+  ],
+  "cam-12": [
+   "2026-08-27",
+   "2026-08-28"
+  ],
+  "cam-13": [
+   "2026-08-27",
+   "2026-08-28"
+  ],
+  "cam-14": [
+   "2026-08-27",
+   "2026-08-28"
+  ]
+ },
+ "cells_observed": 20,
+ "cells_possible": 56,
+ "gaps": [
+  {
+   "day": "2026-08-27",
+   "block": "00-03Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "00-03Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "00-03Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "00-03Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "03-06Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "03-06Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "03-06Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "03-06Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "06-09Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "06-09Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "06-09Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "06-09Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "12-15Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "12-15Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "12-15Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "12-15Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "15-18Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "15-18Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "15-18Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "15-18Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "18-24Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "18-24Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "18-24Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-27",
+   "block": "18-24Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "12-15Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "12-15Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "12-15Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "12-15Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "15-18Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "15-18Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "15-18Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "15-18Z",
+   "camera": "cam-14"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "18-24Z",
+   "camera": "cam-11"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "18-24Z",
+   "camera": "cam-12"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "18-24Z",
+   "camera": "cam-13"
+  },
+  {
+   "day": "2026-08-28",
+   "block": "18-24Z",
+   "camera": "cam-14"
+  }
+ ],
+ "gap_count": 36,
+ "criteria": [
+  {
+   "name": "calendar_days",
+   "met": false,
+   "observed": "2 (2026-08-27, 2026-08-28)",
+   "required": ">= 5"
+  },
+  {
+   "name": "no_day_dominates",
+   "met": false,
+   "observed": "96.2% on 2026-08-28",
+   "required": "<= 40%"
+  },
+  {
+   "name": "time_blocks",
+   "met": true,
+   "observed": "4 (00-03Z, 03-06Z, 06-09Z, 09-12Z)",
+   "required": ">= 4"
+  },
+  {
+   "name": "cameras_across_days",
+   "met": false,
+   "observed": "cam-11:2d, cam-12:2d, cam-13:2d, cam-14:2d",
+   "required": "every camera on >= 3 days"
+  },
+  {
+   "name": "split_groups",
+   "met": true,
+   "observed": "34 sessions",
+   "required": ">= 12"
+  }
+ ],
+ "all_criteria_met": false
+}

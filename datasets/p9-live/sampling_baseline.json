@@ -1,0 +1,227 @@
+{
+ "_comment": [
+  "P9.6 Phase 1. A measurement of the P9.5 wall-clock corpus, not a",
+  "recommendation. The consecutive-distance histogram is the argument:",
+  "a fixed interval cannot serve a scene that is static for long",
+  "stretches and then briefly busy, because one number has to be both",
+  "too slow for the activity and far too fast for the stillness."
+ ],
+ "corpus": "datasets/p9-live (P9.5, wall-clock sampling)",
+ "threshold": 5,
+ "max_adjacent_gap": 3,
+ "frames_decoded": 40654,
+ "frames_sampled": 520,
+ "bit_identical": 146,
+ "bit_identical_rate": 0.2808,
+ "near_duplicates": 290,
+ "near_duplicate_rate": 0.5577,
+ "retained": 230,
+ "retained_with_person": 151,
+ "retained_person_free": 79,
+ "person_free_rate": 0.3435,
+ "candidates": 304,
+ "information_yield": {
+  "_comment": "candidates per DECODED frame is the pipeline's true rate",
+  "sampled_per_decoded": 0.01279,
+  "retained_per_decoded": 0.00566,
+  "candidates_per_decoded": 0.00748,
+  "candidates_per_sampled": 0.5846,
+  "wasted_sampled_frames": 369,
+  "wasted_fraction_of_sampled": 0.7096
+ },
+ "consecutive_distance": {
+  "overall": {
+   "n": 504,
+   "zero": 142,
+   "zero_rate": 0.2817,
+   "at_or_below_threshold": 355,
+   "median": 2.0,
+   "p25": 0,
+   "p75": 6,
+   "p90": 11,
+   "max": 22
+  },
+  "by_camera": {
+   "cam-11": {
+    "n": 126,
+    "zero": 41,
+    "zero_rate": 0.3254,
+    "at_or_below_threshold": 92,
+    "median": 1.0,
+    "p25": 0,
+    "p75": 7,
+    "p90": 11,
+    "max": 22
+   },
+   "cam-12": {
+    "n": 126,
+    "zero": 17,
+    "zero_rate": 0.1349,
+    "at_or_below_threshold": 50,
+    "median": 7.0,
+    "p25": 2,
+    "p75": 11,
+    "p90": 14,
+    "max": 22
+   },
+   "cam-13": {
+    "n": 126,
+    "zero": 17,
+    "zero_rate": 0.1349,
+    "at_or_below_threshold": 88,
+    "median": 3.0,
+    "p25": 1,
+    "p75": 6,
+    "p90": 8,
+    "max": 14
+   },
+   "cam-14": {
+    "n": 126,
+    "zero": 67,
+    "zero_rate": 0.5317,
+    "at_or_below_threshold": 125,
+    "median": 0.0,
+    "p25": 0,
+    "p75": 2,
+    "p90": 3,
+    "max": 9
+   }
+  },
+  "histogram": {
+   "0": 142,
+   "1": 100,
+   "2": 31,
+   "3": 27,
+   "4": 30,
+   "5": 25,
+   "6": 28,
+   "7": 18,
+   "8": 19,
+   "9": 16,
+   "10": 12,
+   "11": 14,
+   "12": 8,
+   "13": 9,
+   "14": 5,
+   "15": 6,
+   "16": 3,
+   "17": 3,
+   "18": 2,
+   "19": 1,
+   "20": 2,
+   "21": 1,
+   "22": 2
+  }
+ },
+ "by_camera": {
+  "cam-11": {
+   "sampled": 130,
+   "bit_identical": 50,
+   "near_duplicate": 75,
+   "retained": 55,
+   "decoded": 7648,
+   "seconds": 523.6,
+   "candidates": 17,
+   "candidates_per_camera_minute": 1.95,
+   "retained_per_decoded": 0.00719
+  },
+  "cam-12": {
+   "sampled": 130,
+   "bit_identical": 15,
+   "near_duplicate": 47,
+   "retained": 83,
+   "decoded": 12672,
+   "seconds": 514.0,
+   "candidates": 165,
+   "candidates_per_camera_minute": 19.26,
+   "retained_per_decoded": 0.00655
+  },
+  "cam-13": {
+   "sampled": 130,
+   "bit_identical": 19,
+   "near_duplicate": 73,
+   "retained": 57,
+   "decoded": 7647,
+   "seconds": 521.4,
+   "candidates": 108,
+   "candidates_per_camera_minute": 12.43,
+   "retained_per_decoded": 0.00745
+  },
+  "cam-14": {
+   "sampled": 130,
+   "bit_identical": 62,
+   "near_duplicate": 95,
+   "retained": 35,
+   "decoded": 12687,
+   "seconds": 516.3,
+   "candidates": 14,
+   "candidates_per_camera_minute": 1.63,
+   "retained_per_decoded": 0.00276
+  }
+ },
+ "by_session": {
+  "live-20260827-a": {
+   "collected_at": "2026-08-27T09:25:51+00:00",
+   "interval_seconds": 3.0,
+   "window_seconds": 100.0,
+   "decoded": 7027,
+   "sampled": 120,
+   "retained": 54,
+   "candidates": 96,
+   "candidates_per_retained": 1.778
+  },
+  "live-20260827-b": {
+   "collected_at": "2026-08-27T09:32:05+00:00",
+   "interval_seconds": 4.0,
+   "window_seconds": 150.0,
+   "decoded": 10967,
+   "sampled": 140,
+   "retained": 47,
+   "candidates": 22,
+   "candidates_per_retained": 0.468
+  },
+  "live-20260827-c": {
+   "collected_at": "2026-08-27T09:42:10+00:00",
+   "interval_seconds": 5.0,
+   "window_seconds": 160.0,
+   "decoded": 11681,
+   "sampled": 120,
+   "retained": 47,
+   "candidates": 47,
+   "candidates_per_retained": 1.0
+  },
+  "live-20260828-d": {
+   "collected_at": "2026-08-28T01:36:12+00:00",
+   "interval_seconds": 4.0,
+   "window_seconds": 150.0,
+   "decoded": 10979,
+   "sampled": 140,
+   "retained": 82,
+   "candidates": 139,
+   "candidates_per_retained": 1.695
+  }
+ },
+ "by_interval": {
+  "3s": {
+   "sessions": 1,
+   "sampled": 120,
+   "retained": 54,
+   "candidates": 96,
+   "duplicate_rate": 0.55
+  },
+  "4s": {
+   "sessions": 2,
+   "sampled": 280,
+   "retained": 129,
+   "candidates": 161,
+   "duplicate_rate": 0.5393
+  },
+  "5s": {
+   "sessions": 1,
+   "sampled": 120,
+   "retained": 47,
+   "candidates": 47,
+   "duplicate_rate": 0.6083
+  }
+ }
+}

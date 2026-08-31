@@ -1,0 +1,582 @@
+{
+ "_comment": [
+  "A LIVE PRODUCTION collection session. Provenance: LIVE_PRODUCTION.",
+  "Sampling is blind to PPE state. The event sampler may know that a",
+  "PERSON is present and where; it is told nothing about coverings, and",
+  "no PPE model, classifier or VLM output can reach the decision. A",
+  "collector that looked for violations would describe the search,",
+  "not the kitchen.",
+  "'period' is an operator's assertion about the operating condition,",
+  "not a measurement \u2014 nothing here verifies it.",
+  "No credential appears here; URIs are redacted by the production",
+  "config object that built them."
+ ],
+ "session_id": "live-20260828-u",
+ "provenance": "LIVE_PRODUCTION",
+ "collected_at": "2026-08-28T06:59:50+00:00",
+ "collection_day": "2026-08-28",
+ "label": "u",
+ "period": "observed-0659Z",
+ "sampling": {
+  "strategy": "event-aware",
+  "sampling_config_version": "p9.6-events-2b",
+  "interval_seconds": 3.0,
+  "window_seconds": 210.0,
+  "max_frames_per_camera": 150,
+  "config": {
+   "version": "p9.6-events-2b",
+   "scene_change_bits": 8,
+   "move_fraction": 0.15,
+   "bbox_iou": 0.7,
+   "bbox_area_ratio": 1.25,
+   "overlap_iou": 0.1,
+   "overlap_release_iou": 0.05,
+   "edge_epsilon": 0.01,
+   "grid": 3,
+   "match_iou": 0.3,
+   "match_distance_diagonals": 1.2,
+   "match_area_ratio": 2.0,
+   "track_min_hits": 2,
+   "track_max_age": 2,
+   "min_gap_seconds": 2.0,
+   "hard_floor_seconds": 0.5,
+   "heartbeat_seconds": 45.0,
+   "detect_every_seconds": 0.5,
+   "max_per_reason": 10,
+   "max_samples": 150,
+   "departure_rule": "last_confirmed",
+   "departure_confirm_misses": 0
+  }
+ },
+ "cameras_observed_concurrently": true,
+ "cameras": [
+  {
+   "camera_id": "cam-11",
+   "channel": 11,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=11&subtype=0",
+   "width": 1920,
+   "height": 1080,
+   "codec": "hevc",
+   "stream_fps": 15.0,
+   "frames_decoded": 2494,
+   "frames_kept": 30,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 210.4,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-11_065953_772.jpg",
+    "cam-11_070038_871.jpg",
+    "cam-11_070041_211.jpg",
+    "cam-11_070042_695.jpg",
+    "cam-11_070044_765.jpg",
+    "cam-11_070045_873.jpg",
+    "cam-11_070047_695.jpg",
+    "cam-11_070055_140.jpg",
+    "cam-11_070100_631.jpg",
+    "cam-11_070103_039.jpg",
+    "cam-11_070105_012.jpg",
+    "cam-11_070114_631.jpg",
+    "cam-11_070116_916.jpg",
+    "cam-11_070119_106.jpg",
+    "cam-11_070123_356.jpg",
+    "cam-11_070125_394.jpg",
+    "cam-11_070127_644.jpg",
+    "cam-11_070139_270.jpg",
+    "cam-11_070140_903.jpg",
+    "cam-11_070203_700.jpg",
+    "cam-11_070205_264.jpg",
+    "cam-11_070207_917.jpg",
+    "cam-11_070209_486.jpg",
+    "cam-11_070231_708.jpg",
+    "cam-11_070232_598.jpg",
+    "cam-11_070239_678.jpg",
+    "cam-11_070241_801.jpg",
+    "cam-11_070242_308.jpg",
+    "cam-11_070245_614.jpg",
+    "cam-11_070252_611.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-11_065953_772.jpg",
+     "sequence": 0,
+     "offset_seconds": 3.134,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070038_871.jpg",
+     "sequence": 1,
+     "offset_seconds": 48.156,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070041_211.jpg",
+     "sequence": 2,
+     "offset_seconds": 50.433,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 2,
+     "tracks_live": 2
+    },
+    {
+     "file": "cam-11_070042_695.jpg",
+     "sequence": 3,
+     "offset_seconds": 51.952,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070044_765.jpg",
+     "sequence": 4,
+     "offset_seconds": 54.059,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070045_873.jpg",
+     "sequence": 5,
+     "offset_seconds": 55.152,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070047_695.jpg",
+     "sequence": 6,
+     "offset_seconds": 56.757,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070055_140.jpg",
+     "sequence": 7,
+     "offset_seconds": 64.439,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070100_631.jpg",
+     "sequence": 8,
+     "offset_seconds": 69.926,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070103_039.jpg",
+     "sequence": 9,
+     "offset_seconds": 72.224,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070105_012.jpg",
+     "sequence": 10,
+     "offset_seconds": 74.248,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070114_631.jpg",
+     "sequence": 11,
+     "offset_seconds": 83.93,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070116_916.jpg",
+     "sequence": 12,
+     "offset_seconds": 86.115,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070119_106.jpg",
+     "sequence": 13,
+     "offset_seconds": 88.326,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070123_356.jpg",
+     "sequence": 14,
+     "offset_seconds": 92.534,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070125_394.jpg",
+     "sequence": 15,
+     "offset_seconds": 94.612,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070127_644.jpg",
+     "sequence": 16,
+     "offset_seconds": 96.83,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070139_270.jpg",
+     "sequence": 17,
+     "offset_seconds": 108.478,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070140_903.jpg",
+     "sequence": 18,
+     "offset_seconds": 110.068,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070203_700.jpg",
+     "sequence": 19,
+     "offset_seconds": 132.96,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070205_264.jpg",
+     "sequence": 20,
+     "offset_seconds": 134.55,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070207_917.jpg",
+     "sequence": 21,
+     "offset_seconds": 137.195,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070209_486.jpg",
+     "sequence": 22,
+     "offset_seconds": 138.786,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070231_708.jpg",
+     "sequence": 23,
+     "offset_seconds": 160.983,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070232_598.jpg",
+     "sequence": 24,
+     "offset_seconds": 161.842,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070239_678.jpg",
+     "sequence": 25,
+     "offset_seconds": 168.637,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070241_801.jpg",
+     "sequence": 26,
+     "offset_seconds": 170.792,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-11_070242_308.jpg",
+     "sequence": 27,
+     "offset_seconds": 171.301,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070245_614.jpg",
+     "sequence": 28,
+     "offset_seconds": 174.517,
+     "sampling_reason": "occlusion_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-11_070252_611.jpg",
+     "sequence": 29,
+     "offset_seconds": 181.597,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    }
+   ],
+   "by_reason": {
+    "person_entered": 8,
+    "person_left": 9,
+    "occlusion_changed": 1,
+    "scene_changed": 10,
+    "periodic_heartbeat": 2
+   },
+   "event_triggered": 28,
+   "baseline_triggered": 2,
+   "suppressed": {
+    "cooldown": 31,
+    "reason_cap": 73
+   },
+   "retrospective_captures": 9,
+   "retrospective_missed": 0,
+   "candidate_subject_tracks": 9
+  },
+  {
+   "camera_id": "cam-14",
+   "channel": 14,
+   "redacted_uri": "rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=14&subtype=0",
+   "width": 960,
+   "height": 576,
+   "codec": "hevc",
+   "stream_fps": 25.0,
+   "frames_decoded": 3456,
+   "frames_kept": 10,
+   "frames_failed": 0,
+   "reconnects": 0,
+   "seconds": 210.2,
+   "status": "ok",
+   "error": "",
+   "files": [
+    "cam-14_065952_899.jpg",
+    "cam-14_065956_595.jpg",
+    "cam-14_065958_094.jpg",
+    "cam-14_070029_005.jpg",
+    "cam-14_070030_859.jpg",
+    "cam-14_070032_187.jpg",
+    "cam-14_070034_210.jpg",
+    "cam-14_070119_179.jpg",
+    "cam-14_070204_202.jpg",
+    "cam-14_070249_402.jpg"
+   ],
+   "samples": [
+    {
+     "file": "cam-14_065952_899.jpg",
+     "sequence": 0,
+     "offset_seconds": 2.258,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_065956_595.jpg",
+     "sequence": 1,
+     "offset_seconds": 5.957,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-14_065958_094.jpg",
+     "sequence": 2,
+     "offset_seconds": 7.464,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070029_005.jpg",
+     "sequence": 3,
+     "offset_seconds": 38.311,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070030_859.jpg",
+     "sequence": 4,
+     "offset_seconds": 39.993,
+     "sampling_reason": "person_entered",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 1,
+     "tracks_live": 1
+    },
+    {
+     "file": "cam-14_070032_187.jpg",
+     "sequence": 5,
+     "offset_seconds": 41.468,
+     "sampling_reason": "person_left",
+     "sample_class": "event",
+     "retrospective_capture": true,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070034_210.jpg",
+     "sequence": 6,
+     "offset_seconds": 43.491,
+     "sampling_reason": "scene_changed",
+     "sample_class": "event",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070119_179.jpg",
+     "sequence": 7,
+     "offset_seconds": 88.618,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070204_202.jpg",
+     "sequence": 8,
+     "offset_seconds": 133.635,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    },
+    {
+     "file": "cam-14_070249_402.jpg",
+     "sequence": 9,
+     "offset_seconds": 178.818,
+     "sampling_reason": "periodic_heartbeat",
+     "sample_class": "baseline",
+     "retrospective_capture": false,
+     "people_detected": 0,
+     "tracks_live": 0
+    }
+   ],
+   "by_reason": {
+    "person_entered": 2,
+    "person_left": 2,
+    "scene_changed": 2,
+    "periodic_heartbeat": 4
+   },
+   "event_triggered": 6,
+   "baseline_triggered": 4,
+   "suppressed": {
+    "cooldown": 14
+   },
+   "retrospective_captures": 2,
+   "retrospective_missed": 0,
+   "candidate_subject_tracks": 2
+  }
+ ],
+ "totals": {
+  "frames_decoded": 5950,
+  "frames_kept": 40,
+  "frames_failed": 0,
+  "reconnects": 0,
+  "cameras_ok": 2,
+  "cameras_failed": 0,
+  "event_triggered": 34,
+  "baseline_triggered": 6,
+  "candidate_subject_tracks": 11,
+  "by_reason": {
+   "scene_changed": 12,
+   "person_left": 11,
+   "person_entered": 10,
+   "periodic_heartbeat": 6,
+   "occlusion_changed": 1
+  }
+ }
+}

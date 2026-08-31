@@ -83,7 +83,7 @@ def extract_json(text: str) -> dict[str, Any] | None:
 def _braceless_object(text: str) -> dict[str, Any] | None:
     """Recover an object whose wrapper the model omitted. ``None`` otherwise.
 
-    ``meta/llama-3.2-11b-vision-instruct`` answers a "respond with JSON
+    ``minimaxai/minimax-m3`` answers a "respond with JSON
     containing exactly these keys" prompt with the object **body** and no
     braces, one pair per line and no commas::
 

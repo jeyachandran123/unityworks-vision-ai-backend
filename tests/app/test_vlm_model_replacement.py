@@ -55,23 +55,23 @@ def test_the_deployment_can_name_the_model():
     """
     adapter, _ = build_understander(
         producible=PRODUCIBLE,
-        env={PROVIDER_ENV: "nvidia", "VISION_NVIDIA_MODEL": "meta/llama-3.2-11b-vision-instruct",
+        env={PROVIDER_ENV: "nvidia", "VISION_NVIDIA_MODEL": "minimaxai/minimax-m3",
              **KEYED},
     )
-    assert adapter._model == "meta/llama-3.2-11b-vision-instruct"
+    assert adapter._model == "minimaxai/minimax-m3"
 
 
 def test_settings_carry_the_model_from_file_to_the_factory():
     """`.env` reaches the settings object, never `os.environ`. This is the bridge."""
     options = Settings(
-        VISION_NVIDIA_MODEL="meta/llama-3.2-11b-vision-instruct",
+        VISION_NVIDIA_MODEL="minimaxai/minimax-m3",
         VISION_NVIDIA_BASE_URL="https://nim.internal/v1",
     ).understander_options()
 
     adapter, _ = build_understander(
         producible=PRODUCIBLE, provider="nvidia", env=KEYED, defaults=options
     )
-    assert adapter._model == "meta/llama-3.2-11b-vision-instruct"
+    assert adapter._model == "minimaxai/minimax-m3"
     assert adapter._base == "https://nim.internal/v1"
 
 
@@ -217,7 +217,7 @@ def test_a_transient_failure_is_not_reported_as_a_retirement(monkeypatch):
 
 # --- 4. the replacement model's answer shape ------------------------------------- #
 
-#: Verbatim from `meta/llama-3.2-11b-vision-instruct` against the shipped kitchen
+#: Verbatim from `minimaxai/minimax-m3` against the shipped kitchen
 #: prompt. It answers the object **body** with no braces and no commas — every
 #: value correct and in-domain, and the whole answer was being discarded.
 BRACELESS = (

@@ -1,0 +1,806 @@
+{
+ "_comment": [
+  "One variant's answers over the whole kitchen-01 corpus.",
+  "EVIDENCE. Never edited to make a result look better; re-run to change.",
+  "`raw` is the model's verbatim text, truncated to 600 chars for size."
+ ],
+ "variant": "D",
+ "title": "Evidence-first + structured inference-time context",
+ "hypothesis": "Supplying the metadata the platform already holds at inference time \u2014 including the pose observability signal \u2014 should improve agreement further, or reveal that the model over-trusts a supplied prior.",
+ "notes": [
+  "C's body with a metadata header. The ONLY difference from C.",
+  "No ground truth, no expected answer, no annotation text.",
+  "The pose signal is real and available at this point in the pipeline."
+ ],
+ "prompt": "EVIDENCE CONTEXT\n  attribute_under_evaluation: head_covering\n  body_region: top of the head\n  evidence_region: upper {region_pct}% of the detected person box\n  crop_resolution: {width}x{height}\n  evidence_source: fixed CCTV camera, kitchen, single frame\n  subject_reference: {subject_ref}\n  upstream_observability_signal: {observability_signal}\n\nThe upstream signal is a geometric estimate from a separate pose model. It is advisory and is sometimes wrong. Use it as a prior, not as an answer: if the image plainly disagrees with it, report what you can see.\n\nYou are a visual evidence reporter examining one cropped CCTV image. Work through the image in this order and report only what the pixels support.\n\n1. INSPECT. Look at the image you were given. Do not imagine any part of the scene that was not supplied.\n2. LOCATE. Find the top of the head of the person in this crop. If you cannot find it, say so - that is a complete and useful answer.\n3. OBSERVABILITY. State whether that region is visible enough to judge.\n4. EVIDENCE. If and only if it is visible, state what you can actually see on it.\n5. REPORT. Produce the structured result below.\n\nThree rules govern this task:\n\n  ABSENCE OF EVIDENCE IS NOT EVIDENCE OF ABSENCE. If the top of the head is not in this crop, the correct answer is that it was not visible - never that it was uncovered.\n\n  UNSEEN AREAS MUST NOT BE INFERRED. A visible shoulder, uniform, hairline or piece of equipment tells you nothing about the top of the head. Neither does the kind of room this is.\n\n  DO NOT GUESS. You are being graded on refusing to answer questions this image cannot answer, not on filling every field. An honest refusal scores full marks.\n\nA covering is any net, cap, hood, scarf or fabric on the top of the head. Loose hair visible below or around a covering is normal and does not make the head uncovered.\n\nRespond with JSON containing exactly these keys:\n  \"observability\": one of \"VISIBLE\", \"NOT_VISIBLE\", \"UNCERTAIN\"\n  \"attribute\": one of \"PRESENT\", \"ABSENT\", \"UNCERTAIN\", \"NOT_EVALUATED\"\n  \"evidence_reason\": a short phrase naming what you actually saw\nAnswer with the JSON object only. No prose before or after it.",
+ "prompt_sha256": "1e7feded265956cf",
+ "max_output_tokens": 256,
+ "templated": true,
+ "model": "minimaxai/minimax-m3",
+ "binding": "nvidia (understander.nvidia_vl)",
+ "temperature": 0.0,
+ "max_side": 448,
+ "dataset": "kitchen-01",
+ "attribute": "head_covering",
+ "corpus_digest": "bbe9e0559523b9b0",
+ "recorded_at": "2026-08-27T08:23:52+00:00",
+ "latency_p50_ms": 2198.2,
+ "latency_p95_ms": 7798.1,
+ "prompt_tokens_total": 359014,
+ "cases": [
+  {
+   "frame": "f00060",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet; both hands bare on the mixing bowl",
+   "crop_sha256": "ff22f9c6333d9e08",
+   "pose_state": "located",
+   "predicted": "present",
+   "detail": {
+    "observability": "VISIBLE",
+    "attribute": "PRESENT",
+    "evidence_reason": "a blue hairnet"
+   },
+   "raw": "{\"observability\": \"VISIBLE\", \"attribute\": \"PRESENT\", \"evidence_reason\": \"a blue hairnet\"}",
+   "latency_ms": 1930.3,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00060",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue cap; forearm raised, hand behind the head",
+   "crop_sha256": "0614b5cdfd665658",
+   "pose_state": "located",
+   "predicted": "present",
+   "detail": {
+    "observability": "VISIBLE",
+    "attribute": "PRESENT",
+    "evidence_reason": "a blue cap"
+   },
+   "raw": "{\"observability\": \"VISIBLE\", \"attribute\": \"PRESENT\", \"evidence_reason\": \"a blue cap\"}",
+   "latency_ms": 2530.8,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00180",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet; hands in front, out of view",
+   "crop_sha256": "91e39fd72fe5b3f4",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image"
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image\"}",
+   "latency_ms": 1969.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00180",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "bent over, head region dark and unresolvable",
+   "crop_sha256": "95191e516fe6dd25",
+   "pose_state": "low_confidence",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2292.3,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00300",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet clear; hands below the counter line",
+   "crop_sha256": "0388dd3957f91f3c",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 4077.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00300",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue cap; arm motion-blurred, hand behind the head",
+   "crop_sha256": "0ea624910168a952",
+   "pose_state": "low_confidence",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2198.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00420",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "d4262f00dc57641b",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 8674.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00420",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue cap; hands at hips, roughly 15px, not resolvable",
+   "crop_sha256": "b10bcbfc0cbacf7f",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2263.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00420",
+   "subject": "s2",
+   "truth": "present",
+   "note": "blue cap; hands together at chest but too small to read",
+   "crop_sha256": "59976e2c2e8458ec",
+   "pose_state": "low_confidence",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image"
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image\"}",
+   "latency_ms": 9610.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00420",
+   "subject": "s3",
+   "truth": "present",
+   "note": "dark bandana covering the head; hands out of view",
+   "crop_sha256": "92c4dfbd8b9799c1",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2085.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00540",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "05bfad247cc0de4d",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 1831.1,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00540",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "bent fully over; head is an unresolvable dark mass",
+   "crop_sha256": "ea6a3dc8f4fb9338",
+   "pose_state": "low_confidence",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in this crop."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in this crop.\"}",
+   "latency_ms": 1969.7,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00660",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet; pale object near the hand, not identifiable",
+   "crop_sha256": "6b28f75854069f6c",
+   "pose_state": "located",
+   "predicted": "present",
+   "detail": {
+    "observability": "VISIBLE",
+    "attribute": "PRESENT",
+    "evidence_reason": "a blue net covering the top of the head"
+   },
+   "raw": "{\"observability\": \"VISIBLE\", \"attribute\": \"PRESENT\", \"evidence_reason\": \"a blue net covering the top of the head\"}",
+   "latency_ms": 2460.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00660",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "head cropped off at the frame edge",
+   "crop_sha256": "a67ef61a7b8763cd",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2157.7,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00660",
+   "subject": "s2",
+   "truth": "present",
+   "note": "dark cap, clearly worn; hands below the counter",
+   "crop_sha256": "d036eb61eb74c786",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in this crop"
+   },
+   "raw": "\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in this crop\"",
+   "latency_ms": 3632.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00660",
+   "subject": "s3",
+   "truth": "present",
+   "note": "blue hairnet visible despite blur",
+   "crop_sha256": "a32e85b19dfa3bdd",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1509.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00780",
+   "subject": "s0",
+   "truth": "present",
+   "note": "dark bandana; extended arm bare but the hand is blurred",
+   "crop_sha256": "25a52e5d4c984772",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2177.6,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00780",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue hairnet; facing away",
+   "crop_sha256": "389067b7e7423f5f",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in this crop."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in this crop.\"}",
+   "latency_ms": 3315.9,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00780",
+   "subject": "s2",
+   "truth": "not_visible",
+   "note": "facing away and bent; head region ambiguous",
+   "crop_sha256": "69d4899dabf36beb",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2279.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00780",
+   "subject": "s3",
+   "truth": "not_visible",
+   "note": "head cropped off at the top of the box",
+   "crop_sha256": "f90b269bbb1927c9",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1797.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00780",
+   "subject": "s4",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "aaa257b5e01ab168",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 6888.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00900",
+   "subject": "s0",
+   "truth": "present",
+   "note": "dark knitted cap, close to the lens",
+   "crop_sha256": "5951e9eff670859f",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in this cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in this cropped image.\"}",
+   "latency_ms": 1927.8,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00900",
+   "subject": "s1",
+   "truth": "present",
+   "note": "pale cap; distant",
+   "crop_sha256": "c11b79e2979670d4",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2170.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00900",
+   "subject": "s2",
+   "truth": "present",
+   "note": "blue hairnet; bent over a pot",
+   "crop_sha256": "74712ade39ceeaf0",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1724.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f00900",
+   "subject": "s3",
+   "truth": "not_visible",
+   "note": "head only partly in the box",
+   "crop_sha256": "a2a3983dafcf5dfb",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not in the image.\"}",
+   "latency_ms": 1712.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01020",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "a2eaffbedb059276",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2036.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01020",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue hairnet; bare forearm, hand not resolvable",
+   "crop_sha256": "5fd55684e4489c65",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2801.3,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01020",
+   "subject": "s2",
+   "truth": "present",
+   "note": "dark cap; hand near the counter but heavily blurred",
+   "crop_sha256": "dfb56fee3579aca9",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1952.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01020",
+   "subject": "s3",
+   "truth": "not_visible",
+   "note": "head turned away and out of the box",
+   "crop_sha256": "bd8549684d40cd50",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2059.9,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01140",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "b02f6a13f35fac13",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2333.6,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01140",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue hairnet; distant",
+   "crop_sha256": "5cc099c6e715e517",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1320.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01140",
+   "subject": "s2",
+   "truth": "not_visible",
+   "note": "bent over; head outside the box",
+   "crop_sha256": "afdf04fd1c51b7d8",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2764.7,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01260",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "ec6f5d5aaec96334",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image"
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image\"}",
+   "latency_ms": 2287.0,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01260",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "bent over, head not in view",
+   "crop_sha256": "8ff9266116a91133",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1953.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01380",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "4808e31908061a58",
+   "pose_state": "located",
+   "predicted": "present",
+   "detail": {
+    "observability": "VISIBLE",
+    "attribute": "PRESENT",
+    "evidence_reason": "a blue hairnet"
+   },
+   "raw": "{\"observability\": \"VISIBLE\", \"attribute\": \"PRESENT\", \"evidence_reason\": \"a blue hairnet\"}",
+   "latency_ms": 1724.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01500",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet; hand in the bowl",
+   "crop_sha256": "bc8ad957b2371b76",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 7798.1,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01500",
+   "subject": "s1",
+   "truth": "present",
+   "note": "blue hairnet; both hands bare, holding an item at the waist",
+   "crop_sha256": "8d677d8d25d9e4a7",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image"
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image\"}",
+   "latency_ms": 1556.6,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01500",
+   "subject": "s2",
+   "truth": "not_visible",
+   "note": "head turned away; both hands bare and clearly visible",
+   "crop_sha256": "b25691f7b858b928",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 7506.1,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01620",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "9a0711fd364ca3a1",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2253.1,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01620",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "bent over, head out of frame",
+   "crop_sha256": "5466b14b685fd44c",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2260.2,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01740",
+   "subject": "s0",
+   "truth": "present",
+   "note": "blue hairnet",
+   "crop_sha256": "7e04809588980e7e",
+   "pose_state": "located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the image.\"}",
+   "latency_ms": 2946.5,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01740",
+   "subject": "s1",
+   "truth": "not_visible",
+   "note": "head not in the box",
+   "crop_sha256": "f8ffe27313f3bf00",
+   "pose_state": "not_located",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 2264.4,
+   "refused": false,
+   "refusal_reason": ""
+  },
+  {
+   "frame": "f01740",
+   "subject": "s2",
+   "truth": "not_visible",
+   "note": "distant and truncated",
+   "crop_sha256": "e5cb0acffcc7dcbe",
+   "pose_state": "low_confidence",
+   "predicted": "not_visible",
+   "detail": {
+    "observability": "NOT_VISIBLE",
+    "attribute": "NOT_EVALUATED",
+    "evidence_reason": "Not visible in the cropped image."
+   },
+   "raw": "{\"observability\": \"NOT_VISIBLE\", \"attribute\": \"NOT_EVALUATED\", \"evidence_reason\": \"Not visible in the cropped image.\"}",
+   "latency_ms": 1436.3,
+   "refused": false,
+   "refusal_reason": ""
+  }
+ ]
+}

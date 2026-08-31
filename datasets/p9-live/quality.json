@@ -1,0 +1,1176 @@
+{
+ "_comment": [
+  "P9.6 collection quality and diversity. NO LABELS ARE COMPUTED HERE.",
+  "Every stage carries its own denominator because the stages disagree:",
+  "P9.5 sampled all four cameras equally and still saw a 12x spread in",
+  "candidate yield. Where two ratios disagree, that IS the finding.",
+  "Balance flags compare against a uniform share, which is a reference",
+  "point and not a target \u2014 the kitchen itself is not uniform. The only",
+  "legal correction for an under-represented category is more",
+  "observation; duplication is forbidden."
+ ],
+ "sessions": 34,
+ "days": [
+  "2026-08-27",
+  "2026-08-28"
+ ],
+ "cameras": [
+  "cam-11",
+  "cam-12",
+  "cam-13",
+  "cam-14"
+ ],
+ "efficiency": {
+  "frames_decoded": 258930,
+  "frames_sampled": 3760,
+  "frames_retained": 3082,
+  "collection_efficiency": 0.0119,
+  "event_yield": 0.01174,
+  "duplicate_rate": 0.1803,
+  "person_yield": 0.7897,
+  "candidate_yield": 1.406,
+  "candidates_per_decoded": 0.01673,
+  "event_triggered": 3041,
+  "baseline_triggered": 199,
+  "baseline_share": 0.0614
+ },
+ "deduplication": {
+  "frames": 3760,
+  "unique": 1486,
+  "exact_duplicates": 123,
+  "near_duplicates": 555,
+  "meaningful_change": 1596,
+  "removed": 678,
+  "retained": 3082,
+  "removal_rate": 0.1803,
+  "rescued_by_event": 1596,
+  "rescued_rate": 0.4245
+ },
+ "rescue_audit": {
+  "_comment": [
+   "Does the protection rule earn its keep? A rescued frame is",
+   "corroborated when the confirmed person count differs from the frame",
+   "it resembled. A low corroborated share means the rule is too broad.",
+   "Scored ONLY for reasons that claim the population changed: an",
+   "unchanged count is what occlusion_changed and region_transition",
+   "predict, so scoring them here would manufacture a failure.",
+   "Necessary, not sufficient: two people swapping places is a real",
+   "change no count can see."
+  ],
+  "rescued": 1596,
+  "count_testable": 1189,
+  "not_count_testable": 407,
+  "corroborated_by_count_change": 879,
+  "count_unchanged": 310,
+  "count_unknown": 0,
+  "corroborated_rate": 0.7393,
+  "by_reason": {
+   "occlusion_changed": {
+    "rescued": 298,
+    "count_changed": 0,
+    "count_unchanged": 0,
+    "count_testable": false
+   },
+   "periodic_heartbeat": {
+    "rescued": 91,
+    "count_changed": 0,
+    "count_unchanged": 0,
+    "count_testable": false
+   },
+   "person_count_changed": {
+    "rescued": 195,
+    "count_changed": 147,
+    "count_unchanged": 48,
+    "count_testable": true
+   },
+   "person_entered": {
+    "rescued": 446,
+    "count_changed": 335,
+    "count_unchanged": 111,
+    "count_testable": true
+   },
+   "person_left": {
+    "rescued": 548,
+    "count_changed": 397,
+    "count_unchanged": 151,
+    "count_testable": true
+   },
+   "region_transition": {
+    "rescued": 18,
+    "count_changed": 0,
+    "count_unchanged": 0,
+    "count_testable": false
+   }
+  }
+ },
+ "by_sample_class": {
+  "unclassified": {
+   "frames": 230,
+   "with_person": 151,
+   "person_free": 79,
+   "person_positive_rate": 0.6565,
+   "person_free_rate": 0.3435
+  },
+  "baseline": {
+   "frames": 199,
+   "with_person": 38,
+   "person_free": 161,
+   "person_positive_rate": 0.191,
+   "person_free_rate": 0.809
+  },
+  "event": {
+   "frames": 2653,
+   "with_person": 2245,
+   "person_free": 408,
+   "person_positive_rate": 0.8462,
+   "person_free_rate": 0.1538
+  },
+  "_note": {
+   "unclassified": "P9.5 wall-clock frames, which predate the distinction",
+   "baseline_is_not_scored_on_people": "a baseline frame is the record of stillness and detector failure; its purpose is temporal coverage, not person yield"
+  }
+ },
+ "by_camera": {
+  "cam-11": {
+   "sampled": 834,
+   "retained": 678,
+   "decoded": 59752,
+   "seconds": 5568.0,
+   "candidates": 380,
+   "sessions": 34,
+   "tracks": 196,
+   "candidates_per_camera_minute": 4.09,
+   "collection_efficiency": 0.01135,
+   "duplicate_rate": 0.1871
+  },
+  "cam-12": {
+   "sampled": 1057,
+   "retained": 921,
+   "decoded": 58754,
+   "seconds": 3668.0,
+   "candidates": 1698,
+   "sessions": 25,
+   "tracks": 294,
+   "candidates_per_camera_minute": 27.78,
+   "collection_efficiency": 0.01568,
+   "duplicate_rate": 0.1287
+  },
+  "cam-13": {
+   "sampled": 1069,
+   "retained": 853,
+   "decoded": 35943,
+   "seconds": 3676.3,
+   "candidates": 1698,
+   "sessions": 25,
+   "tracks": 413,
+   "candidates_per_camera_minute": 27.71,
+   "collection_efficiency": 0.02373,
+   "duplicate_rate": 0.2021
+  },
+  "cam-14": {
+   "sampled": 800,
+   "retained": 630,
+   "decoded": 104481,
+   "seconds": 5562.2,
+   "candidates": 556,
+   "sessions": 34,
+   "tracks": 226,
+   "candidates_per_camera_minute": 6.0,
+   "collection_efficiency": 0.00603,
+   "duplicate_rate": 0.2125
+  }
+ },
+ "by_session": {
+  "live-20260827-a": {
+   "collected_at": "2026-08-27T09:25:51+00:00",
+   "day": "2026-08-27",
+   "period": "unspecified",
+   "strategy": "wall-clock interval, PPE-blind",
+   "cameras": 4,
+   "decoded": 7027,
+   "sampled": 120,
+   "retained": 54,
+   "candidates": 96,
+   "candidates_per_retained": 1.778
+  },
+  "live-20260827-b": {
+   "collected_at": "2026-08-27T09:32:05+00:00",
+   "day": "2026-08-27",
+   "period": "unspecified",
+   "strategy": "wall-clock interval, PPE-blind",
+   "cameras": 4,
+   "decoded": 10967,
+   "sampled": 140,
+   "retained": 47,
+   "candidates": 22,
+   "candidates_per_retained": 0.468
+  },
+  "live-20260827-c": {
+   "collected_at": "2026-08-27T09:42:10+00:00",
+   "day": "2026-08-27",
+   "period": "unspecified",
+   "strategy": "wall-clock interval, PPE-blind",
+   "cameras": 4,
+   "decoded": 11681,
+   "sampled": 120,
+   "retained": 47,
+   "candidates": 47,
+   "candidates_per_retained": 1.0
+  },
+  "live-20260828-d": {
+   "collected_at": "2026-08-28T01:36:12+00:00",
+   "day": "2026-08-28",
+   "period": "unspecified",
+   "strategy": "wall-clock interval, PPE-blind",
+   "cameras": 4,
+   "decoded": 10979,
+   "sampled": 140,
+   "retained": 82,
+   "candidates": 139,
+   "candidates_per_retained": 1.695
+  },
+  "live-20260828-e": {
+   "collected_at": "2026-08-28T02:44:29+00:00",
+   "day": "2026-08-28",
+   "period": "morning-prep",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 10620,
+   "sampled": 127,
+   "retained": 104,
+   "candidates": 129,
+   "candidates_per_retained": 1.24
+  },
+  "live-20260828-f": {
+   "collected_at": "2026-08-28T02:47:04+00:00",
+   "day": "2026-08-28",
+   "period": "morning-prep",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 8274,
+   "sampled": 15,
+   "retained": 14,
+   "candidates": 1,
+   "candidates_per_retained": 0.071
+  },
+  "live-20260828-g": {
+   "collected_at": "2026-08-28T02:50:39+00:00",
+   "day": "2026-08-28",
+   "period": "morning-prep",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 11813,
+   "sampled": 70,
+   "retained": 64,
+   "candidates": 56,
+   "candidates_per_retained": 0.875
+  },
+  "live-20260828-h": {
+   "collected_at": "2026-08-28T02:53:14+00:00",
+   "day": "2026-08-28",
+   "period": "morning-service",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 10395,
+   "sampled": 96,
+   "retained": 86,
+   "candidates": 115,
+   "candidates_per_retained": 1.337
+  },
+  "live-20260828-i": {
+   "collected_at": "2026-08-28T02:55:50+00:00",
+   "day": "2026-08-28",
+   "period": "morning-service",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 8309,
+   "sampled": 39,
+   "retained": 37,
+   "candidates": 20,
+   "candidates_per_retained": 0.541
+  },
+  "live-20260828-j": {
+   "collected_at": "2026-08-28T02:59:25+00:00",
+   "day": "2026-08-28",
+   "period": "morning-service",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 11814,
+   "sampled": 120,
+   "retained": 110,
+   "candidates": 140,
+   "candidates_per_retained": 1.273
+  },
+  "live-20260828-k": {
+   "collected_at": "2026-08-28T03:02:01+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 11785,
+   "sampled": 66,
+   "retained": 57,
+   "candidates": 45,
+   "candidates_per_retained": 0.789
+  },
+  "live-20260828-l": {
+   "collected_at": "2026-08-28T03:04:36+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 8245,
+   "sampled": 51,
+   "retained": 45,
+   "candidates": 22,
+   "candidates_per_retained": 0.489
+  },
+  "live-20260828-m": {
+   "collected_at": "2026-08-28T03:08:11+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 11622,
+   "sampled": 135,
+   "retained": 117,
+   "candidates": 85,
+   "candidates_per_retained": 0.726
+  },
+  "live-20260828-n": {
+   "collected_at": "2026-08-28T03:10:47+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 10666,
+   "sampled": 183,
+   "retained": 160,
+   "candidates": 199,
+   "candidates_per_retained": 1.244
+  },
+  "live-20260828-n1": {
+   "collected_at": "2026-08-28T09:52:28+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0952Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 2909,
+   "sampled": 108,
+   "retained": 94,
+   "candidates": 101,
+   "candidates_per_retained": 1.074
+  },
+  "live-20260828-n2": {
+   "collected_at": "2026-08-28T09:55:12+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0955Z",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 7300,
+   "sampled": 72,
+   "retained": 64,
+   "candidates": 43,
+   "candidates_per_retained": 0.672
+  },
+  "live-20260828-n3": {
+   "collected_at": "2026-08-28T09:58:49+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0958Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 4144,
+   "sampled": 167,
+   "retained": 152,
+   "candidates": 244,
+   "candidates_per_retained": 1.605
+  },
+  "live-20260828-n4": {
+   "collected_at": "2026-08-28T10:01:27+00:00",
+   "day": "2026-08-28",
+   "period": "observed-1001Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 4122,
+   "sampled": 136,
+   "retained": 113,
+   "candidates": 164,
+   "candidates_per_retained": 1.451
+  },
+  "live-20260828-n5": {
+   "collected_at": "2026-08-28T10:04:05+00:00",
+   "day": "2026-08-28",
+   "period": "observed-1004Z",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 5620,
+   "sampled": 70,
+   "retained": 63,
+   "candidates": 79,
+   "candidates_per_retained": 1.254
+  },
+  "live-20260828-n6": {
+   "collected_at": "2026-08-28T10:07:41+00:00",
+   "day": "2026-08-28",
+   "period": "observed-1007Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 5842,
+   "sampled": 103,
+   "retained": 90,
+   "candidates": 116,
+   "candidates_per_retained": 1.289
+  },
+  "live-20260828-n7": {
+   "collected_at": "2026-08-28T10:10:20+00:00",
+   "day": "2026-08-28",
+   "period": "observed-1010Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 5237,
+   "sampled": 143,
+   "retained": 122,
+   "candidates": 160,
+   "candidates_per_retained": 1.311
+  },
+  "live-20260828-n8": {
+   "collected_at": "2026-08-28T10:12:58+00:00",
+   "day": "2026-08-28",
+   "period": "observed-1012Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 6262,
+   "sampled": 166,
+   "retained": 135,
+   "candidates": 175,
+   "candidates_per_retained": 1.296
+  },
+  "live-20260828-o": {
+   "collected_at": "2026-08-28T03:13:22+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 8290,
+   "sampled": 58,
+   "retained": 53,
+   "candidates": 34,
+   "candidates_per_retained": 0.642
+  },
+  "live-20260828-p": {
+   "collected_at": "2026-08-28T03:16:57+00:00",
+   "day": "2026-08-28",
+   "period": "mid-morning",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 11795,
+   "sampled": 135,
+   "retained": 117,
+   "candidates": 110,
+   "candidates_per_retained": 0.94
+  },
+  "live-20260828-q": {
+   "collected_at": "2026-08-28T06:48:22+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0648Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 10577,
+   "sampled": 178,
+   "retained": 158,
+   "candidates": 272,
+   "candidates_per_retained": 1.722
+  },
+  "live-20260828-r": {
+   "collected_at": "2026-08-28T06:50:59+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0650Z",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 7555,
+   "sampled": 58,
+   "retained": 51,
+   "candidates": 33,
+   "candidates_per_retained": 0.647
+  },
+  "live-20260828-s": {
+   "collected_at": "2026-08-28T06:54:35+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0654Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 3275,
+   "sampled": 76,
+   "retained": 73,
+   "candidates": 103,
+   "candidates_per_retained": 1.411
+  },
+  "live-20260828-t": {
+   "collected_at": "2026-08-28T06:57:13+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0657Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 8055,
+   "sampled": 166,
+   "retained": 149,
+   "candidates": 296,
+   "candidates_per_retained": 1.987
+  },
+  "live-20260828-u": {
+   "collected_at": "2026-08-28T06:59:50+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0659Z",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 5950,
+   "sampled": 40,
+   "retained": 35,
+   "candidates": 22,
+   "candidates_per_retained": 0.629
+  },
+  "live-20260828-v": {
+   "collected_at": "2026-08-28T07:03:27+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0703Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 2058,
+   "sampled": 150,
+   "retained": 141,
+   "candidates": 377,
+   "candidates_per_retained": 2.674
+  },
+  "live-20260828-w": {
+   "collected_at": "2026-08-28T07:06:06+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0706Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 2608,
+   "sampled": 174,
+   "retained": 156,
+   "candidates": 309,
+   "candidates_per_retained": 1.981
+  },
+  "live-20260828-x": {
+   "collected_at": "2026-08-28T07:08:44+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0708Z",
+   "strategy": "event-aware",
+   "cameras": 2,
+   "decoded": 6318,
+   "sampled": 75,
+   "retained": 62,
+   "candidates": 53,
+   "candidates_per_retained": 0.855
+  },
+  "live-20260828-y": {
+   "collected_at": "2026-08-28T07:12:21+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0712Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 3458,
+   "sampled": 132,
+   "retained": 118,
+   "candidates": 225,
+   "candidates_per_retained": 1.907
+  },
+  "live-20260828-z": {
+   "collected_at": "2026-08-28T07:15:01+00:00",
+   "day": "2026-08-28",
+   "period": "observed-0715Z",
+   "strategy": "event-aware",
+   "cameras": 4,
+   "decoded": 3358,
+   "sampled": 131,
+   "retained": 112,
+   "candidates": 300,
+   "candidates_per_retained": 2.679
+  }
+ },
+ "diversity": {
+  "camera": {
+   "total": 4332,
+   "categories": {
+    "cam-12": {
+     "count": 1698,
+     "share": 0.392,
+     "vs_uniform": 1.57,
+     "flag": "BALANCED"
+    },
+    "cam-13": {
+     "count": 1698,
+     "share": 0.392,
+     "vs_uniform": 1.57,
+     "flag": "BALANCED"
+    },
+    "cam-14": {
+     "count": 556,
+     "share": 0.1283,
+     "vs_uniform": 0.51,
+     "flag": "BALANCED"
+    },
+    "cam-11": {
+     "count": 380,
+     "share": 0.0877,
+     "vs_uniform": 0.35,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "day": {
+   "total": 4332,
+   "categories": {
+    "2026-08-28": {
+     "count": 4167,
+     "share": 0.9619,
+     "vs_uniform": 1.92,
+     "flag": "BALANCED"
+    },
+    "2026-08-27": {
+     "count": 165,
+     "share": 0.0381,
+     "vs_uniform": 0.08,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "session": {
+   "total": 4332,
+   "categories": {
+    "live-20260828-v": {
+     "count": 377,
+     "share": 0.087,
+     "vs_uniform": 2.96,
+     "flag": "OVERREPRESENTED"
+    },
+    "live-20260828-w": {
+     "count": 309,
+     "share": 0.0713,
+     "vs_uniform": 2.43,
+     "flag": "OVERREPRESENTED"
+    },
+    "live-20260828-z": {
+     "count": 300,
+     "share": 0.0693,
+     "vs_uniform": 2.35,
+     "flag": "OVERREPRESENTED"
+    },
+    "live-20260828-t": {
+     "count": 296,
+     "share": 0.0683,
+     "vs_uniform": 2.32,
+     "flag": "OVERREPRESENTED"
+    },
+    "live-20260828-q": {
+     "count": 272,
+     "share": 0.0628,
+     "vs_uniform": 2.13,
+     "flag": "OVERREPRESENTED"
+    },
+    "live-20260828-n3": {
+     "count": 244,
+     "share": 0.0563,
+     "vs_uniform": 1.92,
+     "flag": "BALANCED"
+    },
+    "live-20260828-y": {
+     "count": 225,
+     "share": 0.0519,
+     "vs_uniform": 1.77,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n": {
+     "count": 199,
+     "share": 0.0459,
+     "vs_uniform": 1.56,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n8": {
+     "count": 175,
+     "share": 0.0404,
+     "vs_uniform": 1.37,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n4": {
+     "count": 164,
+     "share": 0.0379,
+     "vs_uniform": 1.29,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n7": {
+     "count": 160,
+     "share": 0.0369,
+     "vs_uniform": 1.26,
+     "flag": "BALANCED"
+    },
+    "live-20260828-j": {
+     "count": 140,
+     "share": 0.0323,
+     "vs_uniform": 1.1,
+     "flag": "BALANCED"
+    },
+    "live-20260828-d": {
+     "count": 139,
+     "share": 0.0321,
+     "vs_uniform": 1.09,
+     "flag": "BALANCED"
+    },
+    "live-20260828-e": {
+     "count": 129,
+     "share": 0.0298,
+     "vs_uniform": 1.01,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n6": {
+     "count": 116,
+     "share": 0.0268,
+     "vs_uniform": 0.91,
+     "flag": "BALANCED"
+    },
+    "live-20260828-h": {
+     "count": 115,
+     "share": 0.0265,
+     "vs_uniform": 0.9,
+     "flag": "BALANCED"
+    },
+    "live-20260828-p": {
+     "count": 110,
+     "share": 0.0254,
+     "vs_uniform": 0.86,
+     "flag": "BALANCED"
+    },
+    "live-20260828-s": {
+     "count": 103,
+     "share": 0.0238,
+     "vs_uniform": 0.81,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n1": {
+     "count": 101,
+     "share": 0.0233,
+     "vs_uniform": 0.79,
+     "flag": "BALANCED"
+    },
+    "live-20260827-a": {
+     "count": 96,
+     "share": 0.0222,
+     "vs_uniform": 0.75,
+     "flag": "BALANCED"
+    },
+    "live-20260828-m": {
+     "count": 85,
+     "share": 0.0196,
+     "vs_uniform": 0.67,
+     "flag": "BALANCED"
+    },
+    "live-20260828-n5": {
+     "count": 79,
+     "share": 0.0182,
+     "vs_uniform": 0.62,
+     "flag": "BALANCED"
+    },
+    "live-20260828-g": {
+     "count": 56,
+     "share": 0.0129,
+     "vs_uniform": 0.44,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-x": {
+     "count": 53,
+     "share": 0.0122,
+     "vs_uniform": 0.42,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260827-c": {
+     "count": 47,
+     "share": 0.0108,
+     "vs_uniform": 0.37,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-k": {
+     "count": 45,
+     "share": 0.0104,
+     "vs_uniform": 0.35,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-n2": {
+     "count": 43,
+     "share": 0.0099,
+     "vs_uniform": 0.34,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-o": {
+     "count": 34,
+     "share": 0.0078,
+     "vs_uniform": 0.27,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-r": {
+     "count": 33,
+     "share": 0.0076,
+     "vs_uniform": 0.26,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260827-b": {
+     "count": 22,
+     "share": 0.0051,
+     "vs_uniform": 0.17,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-l": {
+     "count": 22,
+     "share": 0.0051,
+     "vs_uniform": 0.17,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-u": {
+     "count": 22,
+     "share": 0.0051,
+     "vs_uniform": 0.17,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-i": {
+     "count": 20,
+     "share": 0.0046,
+     "vs_uniform": 0.16,
+     "flag": "UNDERREPRESENTED"
+    },
+    "live-20260828-f": {
+     "count": 1,
+     "share": 0.0002,
+     "vs_uniform": 0.01,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "period": {
+   "total": 4332,
+   "categories": {
+    "mid-morning": {
+     "count": 495,
+     "share": 0.1143,
+     "vs_uniform": 2.51,
+     "flag": "OVERREPRESENTED"
+    },
+    "observed-0703Z": {
+     "count": 377,
+     "share": 0.087,
+     "vs_uniform": 1.91,
+     "flag": "BALANCED"
+    },
+    "observed-0706Z": {
+     "count": 309,
+     "share": 0.0713,
+     "vs_uniform": 1.57,
+     "flag": "BALANCED"
+    },
+    "unspecified": {
+     "count": 304,
+     "share": 0.0702,
+     "vs_uniform": 1.54,
+     "flag": "BALANCED"
+    },
+    "observed-0715Z": {
+     "count": 300,
+     "share": 0.0693,
+     "vs_uniform": 1.52,
+     "flag": "BALANCED"
+    },
+    "observed-0657Z": {
+     "count": 296,
+     "share": 0.0683,
+     "vs_uniform": 1.5,
+     "flag": "BALANCED"
+    },
+    "morning-service": {
+     "count": 275,
+     "share": 0.0635,
+     "vs_uniform": 1.4,
+     "flag": "BALANCED"
+    },
+    "observed-0648Z": {
+     "count": 272,
+     "share": 0.0628,
+     "vs_uniform": 1.38,
+     "flag": "BALANCED"
+    },
+    "observed-0958Z": {
+     "count": 244,
+     "share": 0.0563,
+     "vs_uniform": 1.24,
+     "flag": "BALANCED"
+    },
+    "observed-0712Z": {
+     "count": 225,
+     "share": 0.0519,
+     "vs_uniform": 1.14,
+     "flag": "BALANCED"
+    },
+    "morning-prep": {
+     "count": 186,
+     "share": 0.0429,
+     "vs_uniform": 0.94,
+     "flag": "BALANCED"
+    },
+    "observed-1012Z": {
+     "count": 175,
+     "share": 0.0404,
+     "vs_uniform": 0.89,
+     "flag": "BALANCED"
+    },
+    "observed-1001Z": {
+     "count": 164,
+     "share": 0.0379,
+     "vs_uniform": 0.83,
+     "flag": "BALANCED"
+    },
+    "observed-1010Z": {
+     "count": 160,
+     "share": 0.0369,
+     "vs_uniform": 0.81,
+     "flag": "BALANCED"
+    },
+    "observed-1007Z": {
+     "count": 116,
+     "share": 0.0268,
+     "vs_uniform": 0.59,
+     "flag": "BALANCED"
+    },
+    "observed-0654Z": {
+     "count": 103,
+     "share": 0.0238,
+     "vs_uniform": 0.52,
+     "flag": "BALANCED"
+    },
+    "observed-0952Z": {
+     "count": 101,
+     "share": 0.0233,
+     "vs_uniform": 0.51,
+     "flag": "BALANCED"
+    },
+    "observed-1004Z": {
+     "count": 79,
+     "share": 0.0182,
+     "vs_uniform": 0.4,
+     "flag": "UNDERREPRESENTED"
+    },
+    "observed-0708Z": {
+     "count": 53,
+     "share": 0.0122,
+     "vs_uniform": 0.27,
+     "flag": "UNDERREPRESENTED"
+    },
+    "observed-0955Z": {
+     "count": 43,
+     "share": 0.0099,
+     "vs_uniform": 0.22,
+     "flag": "UNDERREPRESENTED"
+    },
+    "observed-0650Z": {
+     "count": 33,
+     "share": 0.0076,
+     "vs_uniform": 0.17,
+     "flag": "UNDERREPRESENTED"
+    },
+    "observed-0659Z": {
+     "count": 22,
+     "share": 0.0051,
+     "vs_uniform": 0.11,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "event": {
+   "total": 3082,
+   "categories": {
+    "person_entered": {
+     "count": 662,
+     "share": 0.2148,
+     "vs_uniform": 2.15,
+     "flag": "OVERREPRESENTED"
+    },
+    "person_left": {
+     "count": 658,
+     "share": 0.2135,
+     "vs_uniform": 2.13,
+     "flag": "OVERREPRESENTED"
+    },
+    "occlusion_changed": {
+     "count": 446,
+     "share": 0.1447,
+     "vs_uniform": 1.45,
+     "flag": "BALANCED"
+    },
+    "scene_changed": {
+     "count": 388,
+     "share": 0.1259,
+     "vs_uniform": 1.26,
+     "flag": "BALANCED"
+    },
+    "person_count_changed": {
+     "count": 290,
+     "share": 0.0941,
+     "vs_uniform": 0.94,
+     "flag": "BALANCED"
+    },
+    "unrecorded": {
+     "count": 230,
+     "share": 0.0746,
+     "vs_uniform": 0.75,
+     "flag": "BALANCED"
+    },
+    "periodic_heartbeat": {
+     "count": 199,
+     "share": 0.0646,
+     "vs_uniform": 0.65,
+     "flag": "BALANCED"
+    },
+    "bbox_changed": {
+     "count": 137,
+     "share": 0.0445,
+     "vs_uniform": 0.44,
+     "flag": "UNDERREPRESENTED"
+    },
+    "region_transition": {
+     "count": 61,
+     "share": 0.0198,
+     "vs_uniform": 0.2,
+     "flag": "UNDERREPRESENTED"
+    },
+    "person_moved": {
+     "count": 11,
+     "share": 0.0036,
+     "vs_uniform": 0.04,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "people_per_frame": {
+   "total": 4332,
+   "categories": {
+    "2": {
+     "count": 1512,
+     "share": 0.349,
+     "vs_uniform": 2.44,
+     "flag": "OVERREPRESENTED"
+    },
+    "1": {
+     "count": 1201,
+     "share": 0.2772,
+     "vs_uniform": 1.94,
+     "flag": "BALANCED"
+    },
+    "3": {
+     "count": 984,
+     "share": 0.2271,
+     "vs_uniform": 1.59,
+     "flag": "BALANCED"
+    },
+    "4": {
+     "count": 460,
+     "share": 0.1062,
+     "vs_uniform": 0.74,
+     "flag": "BALANCED"
+    },
+    "5": {
+     "count": 150,
+     "share": 0.0346,
+     "vs_uniform": 0.24,
+     "flag": "UNDERREPRESENTED"
+    },
+    "6": {
+     "count": 18,
+     "share": 0.0042,
+     "vs_uniform": 0.03,
+     "flag": "UNDERREPRESENTED"
+    },
+    "7": {
+     "count": 7,
+     "share": 0.0016,
+     "vs_uniform": 0.01,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "review_flag": {
+   "total": 5918,
+   "categories": {
+    "population_change": {
+     "count": 2399,
+     "share": 0.4054,
+     "vs_uniform": 2.43,
+     "flag": "OVERREPRESENTED"
+    },
+    "crowded": {
+     "count": 1619,
+     "share": 0.2736,
+     "vs_uniform": 1.64,
+     "flag": "BALANCED"
+    },
+    "low_detector_confidence": {
+     "count": 963,
+     "share": 0.1627,
+     "vs_uniform": 0.98,
+     "flag": "BALANCED"
+    },
+    "occlusion_transition": {
+     "count": 751,
+     "share": 0.1269,
+     "vs_uniform": 0.76,
+     "flag": "BALANCED"
+    },
+    "region_change": {
+     "count": 123,
+     "share": 0.0208,
+     "vs_uniform": 0.12,
+     "flag": "UNDERREPRESENTED"
+    },
+    "baseline_sample": {
+     "count": 63,
+     "share": 0.0106,
+     "vs_uniform": 0.06,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "head_observability_hint": {
+   "total": 4332,
+   "categories": {
+    "located": {
+     "count": 3632,
+     "share": 0.8384,
+     "vs_uniform": 2.52,
+     "flag": "OVERREPRESENTED"
+    },
+    "not_located": {
+     "count": 479,
+     "share": 0.1106,
+     "vs_uniform": 0.33,
+     "flag": "UNDERREPRESENTED"
+    },
+    "low_confidence": {
+     "count": 221,
+     "share": 0.051,
+     "vs_uniform": 0.15,
+     "flag": "UNDERREPRESENTED"
+    }
+   }
+  },
+  "subject": {
+   "flag": "UNKNOWN",
+   "note": "Subject identity is not established. Track ids are association aids that survive no occlusion and no session boundary, and promoting one to a person would put the same human on both sides of a split while every leakage check reported clean.",
+   "candidate_subject_tracks": 1129
+  },
+  "hard_case": {
+   "flag": "UNKNOWN",
+   "note": "Hard-case tags are populated by human annotation, which has not occurred. The 33-tag taxonomy exists and is validated; inferring tags from a model would make the corpus describe the model."
+  },
+  "ppe_state": {
+   "flag": "UNKNOWN",
+   "note": "No PPE label exists for any live frame, by design. P9.6 is data acquisition only."
+  }
+ }
+}

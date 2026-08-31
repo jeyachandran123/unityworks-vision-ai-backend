@@ -6,7 +6,7 @@ are different questions. A perfect `unknown_values` implementation protects
 nobody from a model that answers `none` for a head it cannot see.
 
 So this replays 43 recorded answers from
-`meta/llama-3.2-11b-vision-instruct` — real crops from the human-annotated
+`minimaxai/minimax-m3` — real crops from the human-annotated
 kitchen-01 dataset, real policy prompt, real crop geometry — through the real
 shipped kitchen rule, and measures the verdicts.
 
