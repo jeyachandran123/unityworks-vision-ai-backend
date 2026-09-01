@@ -3,7 +3,7 @@
   "variant": "A",
   "title": "Production baseline (control)",
   "prompt_sha256": "21b9d57e07a1b3cd",
-  "model": "minimaxai/minimax-m3",
+  "model": "meta/llama-3.2-11b-vision-instruct",
   "corpus_digest": "bbe9e0559523b9b0",
   "n": 43,
   "ungated": {
@@ -117,7 +117,7 @@
   "variant": "B",
   "title": "Observability + attribute decomposition",
   "prompt_sha256": "9cdb4b1e49f7df62",
-  "model": "minimaxai/minimax-m3",
+  "model": "meta/llama-3.2-11b-vision-instruct",
   "corpus_digest": "bbe9e0559523b9b0",
   "n": 43,
   "ungated": {
@@ -232,7 +232,7 @@
   "variant": "C",
   "title": "Evidence-first structured",
   "prompt_sha256": "de954e8531b173ca",
-  "model": "minimaxai/minimax-m3",
+  "model": "meta/llama-3.2-11b-vision-instruct",
   "corpus_digest": "bbe9e0559523b9b0",
   "n": 43,
   "ungated": {
@@ -343,7 +343,7 @@
   "variant": "D",
   "title": "Evidence-first + structured inference-time context",
   "prompt_sha256": "1e7feded265956cf",
-  "model": "minimaxai/minimax-m3",
+  "model": "meta/llama-3.2-11b-vision-instruct",
   "corpus_digest": "bbe9e0559523b9b0",
   "n": 43,
   "ungated": {

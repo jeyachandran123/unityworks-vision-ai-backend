@@ -41,6 +41,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -69,7 +70,7 @@ DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
 #: to report" and "the analysis is dead" look identical from the outside. That
 #: is why `probe()` exists below and why a 410 is now reported as a retirement
 #: rather than counted as one more failed call.
-DEFAULT_MODEL = "minimaxai/minimax-m3"
+DEFAULT_MODEL = "meta/llama-3.2-90b-vision-instruct"
 
 #: Statuses that mean *the model is gone*, not *this call failed*.
 #:
@@ -78,6 +79,40 @@ DEFAULT_MODEL = "minimaxai/minimax-m3"
 #: the same operator problem wearing a different number: no amount of retrying
 #: will fix it, and a deployment must be told to name a different model.
 MODEL_RETIRED_STATUSES = frozenset({404, 410})
+
+#: The account is over quota for this model. Retryable in principle, and
+#: therefore NOT a retirement — but see `health()` for why a *sustained* one is
+#: still an operator problem rather than weather.
+RATE_LIMIT_STATUS = 429
+
+#: How many recent calls `health()` judges the adapter on.
+#:
+#: 32 so that a recovered quota is reflected within about half a minute of live
+#: traffic rather than after a restart, and so a single unlucky call cannot move
+#: the verdict by more than ~3 percentage points.
+HEALTH_WINDOW = 32
+
+#: Below this many observed calls `health()` declines to judge at all.
+#:
+#: A cold adapter has answered nothing, and "0 successes out of 0" is not
+#: evidence of ill health. Ten is the point at which a 50% floor stops being a
+#: coin flip.
+HEALTH_MIN_SAMPLES = 10
+
+#: Recent success fraction below which the analysis is reported as unavailable.
+#:
+#: **Measured, not chosen.** On 2026-08-31 the same API key, endpoint, crops and
+#: prompt produced:
+#:
+#:   minimaxai/minimax-m3                 51/1609 live (3.2%), 1/16 controlled
+#:   meta/llama-3.2-11b-vision-instruct   16/16 controlled (100%)
+#:
+#: A floor of 0.5 sits an order of magnitude above the failing configuration and
+#: far below the working one, so it separates them without being fitted to
+#: either. It is also the point past which the product is misleading on its own
+#: terms: when more than half of crops yield no evidence, an empty Alerts page
+#: says more about the quota than about the kitchen.
+HEALTH_MIN_SUCCESS = 0.5
 
 
 class ModelRetiredError(RuntimeError):
@@ -97,6 +132,29 @@ class ModelRetiredError(RuntimeError):
         self.detail = detail
         self.model = model
 
+
+class RateLimitedError(RuntimeError):
+    """The endpoint refused this call for quota, not for content.
+
+    Its own type rather than a string in a generic `RuntimeError` because two
+    layers need to tell it apart from every other failure and neither should be
+    matching on message text: `understand()` records it as a distinct outcome,
+    and `health()` reports a sustained run of it as `rate_limited` — an operator
+    problem with an operator fix (raise the quota, or name a model this account
+    can actually serve), not a flaky network.
+
+    It is deliberately **not** a `ModelRetiredError`. The model exists and the
+    endpoint lists it; nothing about the configuration is misspelled. Latching
+    it permanently would leave a deployment dark after its quota reset.
+    """
+
+    def __init__(self, detail: str, model: str) -> None:
+        super().__init__(f"model '{model}' is rate limited (HTTP {RATE_LIMIT_STATUS}): {detail}")
+        self.status = RATE_LIMIT_STATUS
+        self.detail = detail
+        self.model = model
+
+
 #: Self-reported and uncalibrated. Surfaced through ``field_confidence`` so M9
 #: can label it ``SELF_REPORTED`` (U4). This endpoint returns no per-field
 #: probability, and inventing a spread per field would be fabrication dressed as
@@ -113,8 +171,8 @@ class _Stats:
     joining across a metrics backend, and they are deliberately not authoritative.
     """
 
-    __slots__ = ("failed", "latencies", "prompt_tokens", "refused", "requests",
-                 "eval_tokens", "succeeded", "timed_out", "unparseable")
+    __slots__ = ("failed", "latencies", "prompt_tokens", "rate_limited", "refused",
+                 "requests", "eval_tokens", "succeeded", "timed_out", "unparseable")
 
     def __init__(self) -> None:
         self.requests = 0
@@ -123,6 +181,10 @@ class _Stats:
         self.refused = 0
         self.timed_out = 0
         self.unparseable = 0
+        #: Counted apart from `failed` (which still includes it) because "the
+        #: kitchen was quiet" and "we were over quota" are the two readings an
+        #: empty Alerts page has, and only this number tells them apart.
+        self.rate_limited = 0
         self.prompt_tokens = 0
         self.eval_tokens = 0
         self.latencies: list[float] = []
@@ -157,6 +219,10 @@ class _Stats:
             "refused": self.refused,
             "timed_out": self.timed_out,
             "unparseable": self.unparseable,
+            # Added, never renamed — see the note above. The console reads this
+            # mapping by key, so a new one is invisible to an old client and
+            # available to a new one.
+            "rate_limited": self.rate_limited,
             "prompt_tokens": self.prompt_tokens,
             "eval_tokens": self.eval_tokens,
             "p50_latency_ms": self.percentile(0.5),
@@ -173,7 +239,7 @@ class NvidiaVisionUnderstander:
     """
 
     __slots__ = ("_base", "_id", "_key", "_lock", "_max_side", "_model",
-                 "_producible", "_timeout", "binding_calls", "retired", "stats")
+                 "_producible", "_recent", "_timeout", "binding_calls", "retired", "stats")
 
     def __init__(
         self,
@@ -205,6 +271,13 @@ class NvidiaVisionUnderstander:
         self._producible = tuple(producible)
         self._lock = threading.Lock()
         self.stats = _Stats()
+        #: Recent per-call outcomes, newest last: "ok" | "rate_limited" | "failed".
+        #:
+        #: A bounded window rather than the lifetime totals in `stats`, because
+        #: health is a question about *now*. An adapter that answered ten
+        #: thousand crops yesterday and is refusing every one today is not
+        #: healthy, and any ratio taken over all time would say it was.
+        self._recent: deque[str] = deque(maxlen=HEALTH_WINDOW)
         self.binding_calls = 0
         #: Latched detail once the model is known to be gone, else empty.
         #:
@@ -288,6 +361,14 @@ class NvidiaVisionUnderstander:
             with self._lock:
                 self.stats.timed_out += 1
             return self._refusal(str(exc), started=started)
+        except RateLimitedError as exc:
+            # Downstream this is a refusal like any other — U2 holds, and a
+            # quota error must never become an attribute. What changes is only
+            # what an operator is told: `health()` can now say the analysis is
+            # rate limited instead of reporting "ok" while every crop dies.
+            with self._lock:
+                self.stats.rate_limited += 1
+            return self._refusal(str(exc), started=started, outcome="rate_limited")
         except ModelRetiredError as exc:
             # Latched, and phrased so the reason reads as a configuration fault
             # rather than a flaky call. Downstream this is still a refusal — it
@@ -314,6 +395,9 @@ class NvidiaVisionUnderstander:
         if not raw_text.strip():
             with self._lock:
                 self.stats.unparseable += 1
+                # Not "ok": the transport worked but no field survived, so this
+                # produced exactly as much evidence as a refusal did.
+                self._recent.append("failed")
             return UnderstandingPortResponse(
                 structured={},
                 unparsed="",
@@ -328,6 +412,9 @@ class NvidiaVisionUnderstander:
             # did not parse is not an answer that said nothing.
             with self._lock:
                 self.stats.unparseable += 1
+                # Not "ok": the transport worked but no field survived, so this
+                # produced exactly as much evidence as a refusal did.
+                self._recent.append("failed")
             return UnderstandingPortResponse(
                 structured={},
                 unparsed=raw_text,
@@ -340,6 +427,7 @@ class NvidiaVisionUnderstander:
 
         with self._lock:
             self.stats.succeeded += 1
+            self._recent.append("ok")
 
         return UnderstandingPortResponse(
             structured=structured,
@@ -382,6 +470,27 @@ class NvidiaVisionUnderstander:
         from the outside — an empty Alerts page — and for eighteen hours they
         were, after the configured model was retired upstream.
 
+        ### Why a retirement was not enough
+
+        That first fix caught only 404 and 410. On 2026-08-31 the same silence
+        returned wearing a 429: `minimaxai/minimax-m3` was listed by `/models`,
+        so `probe()` passed, and the account was then rate limited to **51 of
+        1,609 crops (3.2%)**. Detection, tracking, cropping, the registry, the
+        rules and the alert path were all measured working — 5,477 people
+        detected, 2,720 crops cut — and the product still reported nothing,
+        because 96.8% of the evidence died at inference while this method
+        answered `"ok"`.
+
+        So health is no longer a single latched flag. A **sustained** run of
+        unanswered crops is reported as unavailable whatever caused it, and a
+        rate limit is named because its fix is an operator action rather than a
+        wait. Transient failure is deliberately not reported: see
+        `HEALTH_WINDOW` and `HEALTH_MIN_SAMPLES`.
+
+        This changes what is *reported*, never what is *produced*. A refusal was
+        already a refusal and never became an attribute (U2); the bug was that
+        nobody was told.
+
         `reason` is safe to display: it carries the upstream explanation and the
         model name, and never the key.
         """
@@ -393,7 +502,49 @@ class NvidiaVisionUnderstander:
                 "reason": f"the model '{self._model}' is no longer available upstream: "
                           f"{self.retired}",
             }
-        return {"available": True, "state": "ok", "model": self._model, "reason": ""}
+
+        with self._lock:
+            recent = list(self._recent)
+
+        # Too early to judge. Reporting "degraded" on a cold adapter would make
+        # every restart look like an outage.
+        if len(recent) < HEALTH_MIN_SAMPLES:
+            return {"available": True, "state": "ok", "model": self._model, "reason": ""}
+
+        successes = sum(1 for outcome in recent if outcome == "ok")
+        rate = successes / len(recent)
+        if rate >= HEALTH_MIN_SUCCESS:
+            return {"available": True, "state": "ok", "model": self._model, "reason": ""}
+
+        # Below the floor. Which kind of failure decides the wording, because
+        # the operator's next action differs: a quota needs raising or the model
+        # needs changing, whereas a mixed failure needs looking at.
+        limited = sum(1 for outcome in recent if outcome == "rate_limited")
+        percent = f"{rate * 100:.0f}%"
+        if limited > (len(recent) - successes) / 2:
+            return {
+                "available": False,
+                "state": "rate_limited",
+                "model": self._model,
+                "reason": (
+                    f"the model service is rate limiting this account: only "
+                    f"{successes} of the last {len(recent)} crops were answered "
+                    f"({percent}). No PPE attribute is being produced for the rest, "
+                    f"so an empty Alerts page reflects the quota and not the scene. "
+                    f"Raise the quota for '{self._model}' or name a model this "
+                    f"account can serve."
+                ),
+            }
+        return {
+            "available": False,
+            "state": "failing",
+            "model": self._model,
+            "reason": (
+                f"only {successes} of the last {len(recent)} crops were answered "
+                f"({percent}); no PPE attribute is being produced for the rest, so "
+                f"an empty Alerts page reflects the analysis and not the scene."
+            ),
+        }
 
     def probe(self) -> dict[str, Any]:
         """Reachable and authorised? Reported, never assumed.
@@ -478,6 +629,11 @@ class NvidiaVisionUnderstander:
             # configuration, and nothing downstream can recover from it.
             if exc.code in MODEL_RETIRED_STATUSES:
                 raise ModelRetiredError(exc.code, detail, self._model) from exc
+            # Quota, not content. Its own type so `health()` can report a
+            # sustained run of it without parsing this message — see
+            # RateLimitedError for why it is not treated as a retirement.
+            if exc.code == RATE_LIMIT_STATUS:
+                raise RateLimitedError(detail, self._model) from exc
             # The status is named rather than folded into a generic failure: a
             # 429 is retryable and a 401 is not, and an operator reading a log
             # needs to tell those apart without a packet capture.
@@ -491,10 +647,22 @@ class NvidiaVisionUnderstander:
 
     # --- non-answers ------------------------------------------------------------------ #
 
-    def _refusal(self, reason: str, *, started: float | None = None) -> UnderstandingPortResponse:
-        """An explicit non-answer. **Never a plausible default (U2).**"""
+    def _refusal(
+        self,
+        reason: str,
+        *,
+        started: float | None = None,
+        outcome: str = "failed",
+    ) -> UnderstandingPortResponse:
+        """An explicit non-answer. **Never a plausible default (U2).**
+
+        ``outcome`` records *why* in the health window without changing what is
+        returned. Every refusal is equally a non-answer to M9; the distinction
+        exists solely so an operator can be told whether to wait or to act.
+        """
         with self._lock:
             self.stats.failed += 1
+            self._recent.append(outcome)
         elapsed = (time.perf_counter() - started) * 1000.0 if started else 0.0
         return UnderstandingPortResponse(
             structured={},
@@ -537,6 +705,12 @@ def _content_of(body: Mapping[str, Any]) -> str:
 __all__ = [
     "DEFAULT_BASE_URL",
     "DEFAULT_MODEL",
+    "HEALTH_MIN_SAMPLES",
+    "HEALTH_MIN_SUCCESS",
+    "HEALTH_WINDOW",
+    "ModelRetiredError",
     "NvidiaVisionUnderstander",
+    "RATE_LIMIT_STATUS",
+    "RateLimitedError",
     "SELF_REPORTED_CONFIDENCE",
 ]

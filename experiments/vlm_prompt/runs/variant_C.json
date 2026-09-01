@@ -14,7 +14,7 @@
  "prompt_sha256": "de954e8531b173ca",
  "max_output_tokens": 256,
  "templated": false,
- "model": "minimaxai/minimax-m3",
+ "model": "meta/llama-3.2-11b-vision-instruct",
  "binding": "nvidia (understander.nvidia_vl)",
  "temperature": 0.0,
  "max_side": 448,

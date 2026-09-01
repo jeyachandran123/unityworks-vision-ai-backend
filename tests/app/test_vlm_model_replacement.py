@@ -217,7 +217,7 @@ def test_a_transient_failure_is_not_reported_as_a_retirement(monkeypatch):
 
 # --- 4. the replacement model's answer shape ------------------------------------- #
 
-#: Verbatim from `minimaxai/minimax-m3` against the shipped kitchen
+#: Verbatim from `meta/llama-3.2-11b-vision-instruct` against the shipped kitchen
 #: prompt. It answers the object **body** with no braces and no commas — every
 #: value correct and in-domain, and the whole answer was being discarded.
 BRACELESS = (

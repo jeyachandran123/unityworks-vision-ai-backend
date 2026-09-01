@@ -124,6 +124,21 @@ class UnderstandingRuntime:
         self._stats = UnderstandingRuntimeStats()
         self._queue: deque[_Pending] = deque(maxlen=max(1, queue_capacity))
         self._lock = asyncio.Lock()
+        #: True while a batch is in flight. Read and written only on the event
+        #: loop, so it needs no lock of its own.
+        #:
+        #: It exists because the model call no longer blocks that loop. While it
+        #: did, no second `on_crops` task could even be created — the sink runs
+        #: on the same loop — so nothing could pile up behind `_lock`. Now that
+        #: the loop keeps running, every crop batch would otherwise become a
+        #: coroutine *waiting* on `_lock`, and each waiter holds its crop
+        #: pixels. The bounded queue below does not bound those waiters.
+        #:
+        #: So a caller that finds a batch already running enqueues and returns.
+        #: That is the same shed-not-queue rule this edge already states — "a
+        #: queued call outlives the frame it describes" — applied to the one
+        #: place the offload would otherwise have introduced a queue.
+        self._running = False
         self._started = False
         self._last_report_ns = 0
 
@@ -164,10 +179,26 @@ class UnderstandingRuntime:
             return
 
         try:
+            # Enqueue first, and always. The deque is bounded and drops oldest
+            # with a counter, so back-pressure stays expressed where it already
+            # was rather than moving into an unbounded set of lock waiters.
+            self._enqueue(result, crops)
+            if self._running:
+                # A batch is in flight; it drains the queue before it finishes,
+                # so these crops are already accounted for. Returning here is
+                # what keeps waiters at zero.
+                return
             async with self._lock:
-                self._enqueue(result, crops)
-                await self._run_ready()
+                self._running = True
+                try:
+                    # Drain, because items enqueued *during* a batch must not
+                    # wait for the next camera frame to be noticed.
+                    while self._queue:
+                        await self._run_ready()
+                finally:
+                    self._running = False
         except asyncio.CancelledError:
+            self._running = False
             raise
         except Exception as exc:  # noqa: BLE001 - the seam is a firewall
             self._stats.frames_failed += 1
@@ -261,7 +292,27 @@ class UnderstandingRuntime:
             )
 
         self._stats.requests_made += len(requests)
-        results = self._engine.understand_batch(requests, crops=crops)
+        # Off the event loop. `understand_batch` is synchronous and spends
+        # essentially all of its time blocked on a model — measured p50 2.07 s,
+        # p95 14.3 s, max 40.2 s on 2026-09-01 — and this loop is the single
+        # thread that also consumes frames for every camera. Calling it inline
+        # froze that loop for the whole batch: 5.7 analysed frames/min/camera
+        # against a requested 60, with 201-362 queue-full drops per camera per
+        # 300 s while CPU sat at 21% of capacity.
+        #
+        # `to_thread` moves only the *wait*. It adds no concurrency: the batch
+        # already fans out over its own ThreadPoolExecutor bounded by
+        # `_batch_workers`, and `ModelSemaphore` remains the authority on how
+        # many remote calls exist at once (2, globally, across all cameras).
+        # Neither the engine nor the adapter touches asyncio, so nothing in
+        # there depends on running here.
+        results = await asyncio.to_thread(
+            self._engine.understand_batch, requests, crops=crops
+        )
+        # Deliberately back on the loop. `_publish` writes through to the
+        # registry, and keeping it single-threaded here preserves write
+        # ordering exactly as before — it is fast (registry apply p50 0 ms) and
+        # nothing is gained by moving it.
         self._publish(tuple(results.values()))
 
     def _publish(self, results: Sequence[UnderstandingResult]) -> None:
@@ -284,9 +335,21 @@ class UnderstandingRuntime:
             self._stats.sink_failures += 1
 
     async def drain(self) -> None:
-        """Run everything queued. Used at shutdown and by tests."""
+        """Run everything queued. Used at shutdown and by tests.
+
+        Waits for an in-flight batch rather than shedding, which is the opposite
+        of `on_crops` and correct for both callers: a shutdown wants the work
+        finished, and a test wants determinism. `_running` is still set so that
+        any `on_crops` arriving mid-drain enqueues and returns instead of
+        stacking up behind the lock.
+        """
         async with self._lock:
-            await self._run_ready()
+            self._running = True
+            try:
+                while self._queue:
+                    await self._run_ready()
+            finally:
+                self._running = False
 
     # --- observability ------------------------------------------------------------ #
 
