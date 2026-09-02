@@ -487,6 +487,23 @@ async def test_the_evaluation_route_is_permission_gated(
     assert (await client.get("/api/v1/evaluation", headers=developer)).status_code == 200
 
 
+async def test_an_organisation_administrator_no_longer_reads_evaluation(
+    client: AsyncClient, admin
+) -> None:
+    """The Phase 4 role correction, asserted at the route rather than the map.
+
+    Hiding the navigation entry is not closing the door. This is the door: an
+    org_admin who types the address, follows a bookmark or replays a saved
+    request is refused by the server, with the refusal audited exactly as every
+    other refusal on this route already is.
+    """
+    headers = await bearer(client, "admin@example.com")
+    assert (await client.get("/api/v1/evaluation", headers=headers)).status_code == 403
+    assert (
+        await client.get("/api/v1/evaluation/artifacts", headers=headers)
+    ).status_code == 403
+
+
 async def test_the_evaluation_route_refuses_an_unauthenticated_caller(
     client: AsyncClient, seeded
 ) -> None:
@@ -538,13 +555,22 @@ async def test_there_is_no_write_route_on_the_evaluation_surface(developer) -> N
 
 
 def test_the_evaluation_permission_is_not_granted_broadly() -> None:
-    """Three roles, and the operational ones are not among them."""
+    """Two roles, and no operational or administrative one is among them.
+
+    ORG_ADMIN was removed deliberately. The reasoning that put it there —
+    an organisation administrator answers for what the system claims — is
+    served by VIEW_REPORTS, which that role still holds and which carries
+    coverage, completeness and the ruleset version behind every figure.
+    What this permission actually opens is attribute agreement on a
+    43-subject split and per-state confusion matrices, which answer a
+    shipping question rather than an operational one.
+    """
     holders = {
         role.value
         for role in Role
         if Permission.VIEW_MODEL_EVALUATION in permissions_for(frozenset({role}))
     }
-    assert holders == {"super_admin", "org_admin", "developer"}
+    assert holders == {"super_admin", "developer"}
 
 
 def test_nothing_in_the_evaluation_package_writes_to_disk() -> None:

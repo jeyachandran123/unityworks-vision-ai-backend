@@ -241,9 +241,27 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.MANAGE_POS_INTEGRATION,
             Permission.VIEW_REPORTS,
             Permission.EXPORT_REPORTS,
-            # Model evaluation. An organisation administrator answers for what
-            # the system claims, so they may see how well it actually scores.
-            Permission.VIEW_MODEL_EVALUATION,
+            # No VIEW_MODEL_EVALUATION.
+            #
+            # It was held here on the reasoning that an organisation
+            # administrator answers for what the system claims, so they may see
+            # how well it scores. That reasoning is sound about accountability
+            # and wrong about this permission. What the dashboard actually shows
+            # is per-attribute agreement on a 43-subject annotated split,
+            # per-state confusion matrices, prompt-variant comparisons and a
+            # dataset's own written admission that it cannot measure detection
+            # recall. Those answer "should we ship this model" — an engineering
+            # question — and an administrator scanning for an operational figure
+            # is the wrong reader for them.
+            #
+            # The accountability the reasoning was reaching for is served by
+            # VIEW_REPORTS, which this role holds: reports carry coverage,
+            # completeness and the ruleset version every figure was computed
+            # under, which is what "answering for what the system claims"
+            # actually needs.
+            #
+            # Holders are now SUPER_ADMIN and DEVELOPER.
+            #
             # Reads that patron identification exists and is blocked. Does NOT
             # hold MANAGE_PATRON_ID: an organisation administrator is the wrong
             # altitude for a decision that needs a DPIA behind it, and the
