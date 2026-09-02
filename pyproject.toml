@@ -39,6 +39,15 @@ dependencies = [
     "bcrypt>=4.2,<5",
     "prometheus-client>=0.21,<0.22",
     "loguru>=0.7.3,<0.8",
+    # Reporting resolves period boundaries in each site's own timezone —
+    # "September" for a Singapore kitchen begins at 16:00 UTC on 31 August, and
+    # UTC boundaries misattribute eight hours of every month. `zoneinfo` reads
+    # the operating system's tz database, which a Windows host and most minimal
+    # containers do not have, so a report would silently mean something
+    # different depending on where it ran. Declared here rather than left to the
+    # host: a boundary that differs between dev and production is the worst kind
+    # of reporting bug, because both answers look correct.
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
@@ -65,6 +74,16 @@ eval = [
     "Pillow>=10.4,<12",
 ]
 
+# PDF and Excel export. Separate from the base set for the same reason
+# `inference` is: a deployment that only ever reads reports on screen, or that
+# exports CSV, installs neither. Without them the report engine still runs, still
+# renders JSON and CSV, and **names the capability gap** rather than failing with
+# an import traceback at request time — `app/reporting/render.py:format_available`.
+reports = [
+    "reportlab>=4.2,<5",
+    "openpyxl>=3.1,<4",
+]
+
 test = [
     "pytest>=8.3,<9",
     "pytest-asyncio>=0.24,<0.25",
@@ -79,7 +98,7 @@ lint = [
 ]
 
 dev = [
-    "unityworks-vision-ai-backend[inference,video,eval,test,lint]",
+    "unityworks-vision-ai-backend[inference,video,eval,reports,test,lint]",
 ]
 
 [project.scripts]

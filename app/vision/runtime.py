@@ -365,6 +365,12 @@ class VisionRuntime:
                 # attributes the schema considers illegal into the permanent
                 # record — the one place they can never be taken back out.
                 attributes=attributes,
+                # The system of record. Passing nothing here is what made
+                # observation history session-scoped: `build_synthesis_layer`
+                # falls through to `InMemoryObservationLog`, and every restart
+                # dropped the log on the floor. Naming the adapter is the
+                # platform's own documented way to claim durability.
+                log=self._observation_log(),
                 attach=True,
             )
         except Exception as exc:  # noqa: BLE001 - reported, never fatal
@@ -564,6 +570,36 @@ class VisionRuntime:
         from vision_os.adapters.registry import InMemoryObjectStore
 
         return InMemoryObjectStore()
+
+    def _observation_log(self) -> Any:
+        """The ObservationLogPort adapter this deployment binds.
+
+        Both come from the platform's own adapter package; neither is
+        reimplemented here, and the application stores no perception result of
+        its own either way. This is composition choosing between two of Vision
+        OS's implementations, which is the choice `build_synthesis_layer`
+        documents as the caller's to make.
+
+        A path that cannot be created is **not** silently downgraded to memory.
+        A deployment that asked for a durable record and quietly received a
+        volatile one would report an empty observation history as though nothing
+        had been seen — the exact class of lie this product exists to avoid — so
+        the failure is loud and the caller decides.
+        """
+        from vision_os.adapters.synthesis import FileObservationLog, InMemoryObservationLog
+
+        if self._settings.observation_log != "file":
+            return InMemoryObservationLog()
+
+        root = Path(self._settings.observation_log_path)
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise ConfigurationInvalidError(
+                f"observation_log is 'file' but its directory could not be created: {root}",
+                details={"path": str(root), "error": type(exc).__name__},
+            ) from exc
+        return FileObservationLog(root)
 
     def _config_document(self) -> dict[str, Any]:
         """A minimal valid platform configuration with **no cameras**.

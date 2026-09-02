@@ -192,8 +192,38 @@ class VisionUnavailableError(AppError):
     retryable = True
 
 
+# ── Compliance gates ─────────────────────────────────────────────────────────
+
+
+class CapabilityNotConfiguredError(AppError):
+    """A module exists but has no source of truth bound to it yet.
+
+    Distinct from ``NOT_FOUND``, which would say the surface does not exist, and
+    from ``VISION_UNAVAILABLE``, which says a working thing is temporarily down.
+    This says the thing is real, its shape is decided, and nobody has connected
+    it — and it carries the exact inputs still required.
+    """
+
+    code = "CAPABILITY_NOT_CONFIGURED"
+    http_status = 409
+
+
+class PatronIdentificationBlockedError(AppError):
+    """The patron-identification write path was reached and refused.
+
+    Its own type rather than a generic authorization failure, because the reason
+    is a compliance state and not a permission one: an operator holding every
+    permission in the product still gets this, and the message must say why
+    rather than implying they should ask for more access.
+    """
+
+    code = "PATRON_IDENTIFICATION_BLOCKED"
+    http_status = 409
+
+
 __all__ = [
     "AppError",
+    "CapabilityNotConfiguredError",
     "AuthenticationError",
     "AuthorizationError",
     "ConfigurationInvalidError",
@@ -203,6 +233,7 @@ __all__ = [
     "InvalidCredentialsError",
     "NoSessionError",
     "NotFoundError",
+    "PatronIdentificationBlockedError",
     "RateLimitedError",
     "ScopeError",
     "TokenExpiredError",

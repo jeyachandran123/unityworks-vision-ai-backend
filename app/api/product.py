@@ -23,7 +23,7 @@ to defend a finding. Each route names the exact permission it needs.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query, Request, Response
@@ -33,6 +33,7 @@ from app.authorization.model import AccessDecision, Permission, ScopeBreadth
 from app.domain import cameras as camera_domain
 from app.domain import evidence as evidence_domain
 from app.domain import incidents as incident_domain
+from app.domain import observations as observation_fold
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.audit import to_wire as audit_to_wire
 from app.errors import AppError, EvidenceForbiddenError, ValidationError
@@ -97,6 +98,9 @@ async def create_camera(
         purpose=str(payload.get("purpose", "")),
         zone_id=payload.get("zone_id"),
         enabled=False,
+        # Recorded on the zone interval this creates. An attribution nobody can
+        # trace is worth less than one that is wrong and known to be.
+        assigned_by=access.subject,
     )
     await audit.record(
         action=AuditAction.CAMERA_CREATED,
@@ -129,7 +133,10 @@ async def update_camera(
     ).enabled
 
     camera = await service.update(
-        organization_id=access.tenant_id, camera_key=camera_key, **payload
+        organization_id=access.tenant_id,
+        camera_key=camera_key,
+        assigned_by=access.subject,
+        **payload,
     )
 
     # Enabling a camera starts processing video of people. It gets its own audit
@@ -158,6 +165,106 @@ async def update_camera(
         )
 
     return camera_domain.to_wire(camera)
+
+
+@router.delete(
+    "/cameras/{camera_key}",
+    dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
+)
+async def delete_camera(
+    camera_key: str,
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Remove a camera and destroy its observation partition.
+
+    ### Two audit rows, always
+
+    Deleting a camera is a configuration change *and* a destruction of records
+    about people at work, so it writes both `camera.deleted` and
+    `observation.truncated`. A deletion that left only the first would be a
+    record of the change with no record of the data it destroyed — and the
+    observation sweep's own discipline is that every truncation is provable.
+
+    ### The refusal is the point
+
+    If this process cannot reach a durable observation log, the camera is not
+    deleted and the caller is told why. Deleting it there would orphan the
+    partition: retention enumerates partitions from the camera table, so a
+    deleted row means nothing ever sweeps those observations again.
+    """
+    settings = settings_of(request)
+    service = camera_domain.CameraService(session)
+    audit = AuditTrail(session)
+
+    # Reached through the composition rather than rebuilt: a second
+    # `FileObservationLog` over the same directory would be a second writer to
+    # an append-only store, and the purge must reach the log the pipeline is
+    # actually appending to.
+    from app.main import _observation_log_of
+
+    log = _observation_log_of(request.app)
+    durable = settings.observation_log == "file"
+
+    try:
+        removed = await service.retire(
+            organization_id=access.tenant_id,
+            camera_key=camera_key,
+            retired_by=access.subject,
+            observation_log=log,
+            durable_log=durable,
+        )
+    except AppError as exc:
+        # A refused deletion is still an attempt to destroy a camera's records,
+        # and it is recorded with the same weight as a success — the pattern
+        # evidence retrieval already follows.
+        await audit.record(
+            action=AuditAction.CAMERA_DELETED,
+            organization_id=access.tenant_id,
+            actor=access.subject,
+            actor_roles=_roles(access),
+            resource_type="camera",
+            resource_id=camera_key,
+            outcome=AuditOutcome.DENIED,
+            request_id=_request_id(request),
+            detail={"reason": type(exc).__name__},
+        )
+        await session.commit()
+        raise
+
+    await audit.record(
+        action=AuditAction.CAMERA_DELETED,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="camera",
+        resource_id=camera_key,
+        request_id=_request_id(request),
+        detail={"observations_removed": removed, "durable_log": durable},
+    )
+    # The same row the retention sweep writes, for the same reason: a deletion
+    # of observations that leaves no trace of having happened cannot be shown to
+    # have happened.
+    await audit.record(
+        action=AuditAction.OBSERVATIONS_TRUNCATED,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="observation",
+        resource_id=camera_key,
+        request_id=_request_id(request),
+        detail={"reason": "camera deleted", "removed": removed},
+    )
+
+    return {
+        "deleted": camera_key,
+        "observations_removed": removed,
+        # Stated rather than implied: the zone history survives on purpose,
+        # because incidents and evidence still name this camera_key and still
+        # need to say where they happened.
+        "zone_history_retained": True,
+    }
 
 
 # ── Incidents ────────────────────────────────────────────────────────────────
@@ -479,6 +586,212 @@ def _parse_time(value: str | None) -> datetime | None:
     except ValueError as exc:
         raise ValidationError(f"'{value}' is not an ISO-8601 timestamp") from exc
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+# ── Observations ─────────────────────────────────────────────────────────────
+#
+# The product's read of what the cameras actually saw, and the first non-DevTools
+# surface for it.
+#
+# **The application stores none of this.** Every value is read from Vision OS's
+# own observation log through its Observation API; there is no application table
+# holding a perception result, and `app/domain/models.py` explains at length why
+# there must never be one. This route is a projection for a screen, not a second
+# source of truth.
+#
+# Two gates, both real. `VIEW_OBSERVATIONS` is checked here, on the route, before
+# anything is read. The platform then checks `READ_OBSERVATIONS` against the
+# principal's tenant and narrows the scope itself. Neither substitutes for the
+# other, and the camera scope handed to the platform is built from the caller's
+# grant rather than from anything in the request.
+
+
+def _observation_window(
+    since: datetime | None, until: datetime | None
+) -> tuple[datetime, datetime]:
+    """The query window, defaulted to the last 24 hours and validated.
+
+    Bounded here as well as by the platform: `query_observations` raises
+    `WindowTooLargeError` past its own policy limit, and a route that let a
+    caller ask for a decade would turn that into a 500 rather than a clear answer.
+    """
+    end = until or datetime.now(UTC)
+    start = since or (end - timedelta(hours=24))
+    if end < start:
+        raise ValidationError("'since' must not be later than 'until'")
+    return start, end
+
+
+@router.get(
+    "/observations",
+    dependencies=[Depends(requires(Permission.VIEW_OBSERVATIONS))],
+)
+async def list_observations(
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+    since: Annotated[str | None, Query()] = None,
+    until: Annotated[str | None, Query()] = None,
+    camera_key: Annotated[str | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=500)] = 200,
+) -> dict[str, Any]:
+    """PPE observation history for the caller's cameras, grouped by subject.
+
+    The fold itself lives in `app/domain/observations.py` — one implementation,
+    shared with the reporting engine, because it is the single place where
+    `not_visible` could be collapsed into `none` and two copies would mean two
+    places to get that wrong.
+
+    ### Why grouped by subject rather than returned as a flat stream
+
+    The log holds one observation per attribute per capture. A screen asking
+    "who was observed, and what were they wearing" wants those assembled back
+    into a subject, with the **most recent** value for each attribute — which is
+    what `latest` means here and why each attribute carries its own timestamp
+    rather than the group's.
+
+    ### Availability is not emptiness
+
+    A platform that is not assembled returns `available: false` with a reason,
+    never an empty list. "No subject was observed" and "nothing was watching"
+    are different facts, and a hygiene screen that renders them identically is
+    the failure this product is built to avoid.
+    """
+    from app.api.dependencies import vision_of
+
+    start, end = _observation_window(_parse_time(since), _parse_time(until))
+    cameras = scope_cameras(access)
+
+    # An explicit empty grant matches nothing. It must never read as a wildcard,
+    # and it is not the same answer as "the platform is down".
+    if cameras is not None and not cameras:
+        return {
+            "available": True,
+            "reason": "",
+            "subjects": [],
+            "count": 0,
+            "cameras_queried": [],
+            "window": {"since": start.isoformat(), "until": end.isoformat()},
+            "window_fully_observable": True,
+        }
+
+    vision = vision_of(request)
+    composition = getattr(vision, "composition", None)
+    exposure = getattr(composition, "exposure", None) if composition else None
+    if exposure is None or getattr(exposure, "api", None) is None:
+        return {
+            "available": False,
+            # The platform's own words when it has them, so an operator is told
+            # which of the many ways this can be unassembled actually happened.
+            "reason": getattr(vision, "reason", "")
+            or "Vision OS is not assembled in this process, so no observation can be read.",
+            "subjects": [],
+            "count": 0,
+            "cameras_queried": [],
+            "window": {"since": start.isoformat(), "until": end.isoformat()},
+            "window_fully_observable": False,
+        }
+
+    # A tenant-wide grant still needs a concrete camera list for `Scope`. Read
+    # from the durable camera table rather than from live sessions: a camera
+    # that is configured but not currently streaming still has history worth
+    # returning, and reading live sessions would silently hide it.
+    if cameras is None:
+        registered = await camera_domain.CameraService(session).list(
+            organization_id=access.tenant_id, camera_keys=None
+        )
+        cameras = tuple(c.camera_key for c in registered)
+    if camera_key:
+        if camera_key not in cameras:
+            raise ValidationError(f"camera '{camera_key}' is not within your access")
+        cameras = (camera_key,)
+
+    subjects, page_count, fully_observable = observation_fold.query_observations(
+        exposure.api, access, cameras, start, end, limit
+    )
+    await _attribute_zones(session, access.tenant_id, cameras, subjects)
+
+    trail = AuditTrail(session)
+    await trail.record(
+        action=AuditAction.OBSERVATIONS_READ,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="observation",
+        # A window and a count, never an attribute value. An audit row that
+        # copied the observations would become a second, unretained store of
+        # exactly the record it exists to govern.
+        resource_id=",".join(cameras)[:255],
+        request_id=_request_id(request),
+        detail={
+            "since": start.isoformat(),
+            "until": end.isoformat(),
+            "cameras": len(cameras),
+            "subjects": len(subjects),
+            "observations": page_count,
+        },
+    )
+
+    return {
+        "available": True,
+        "reason": "",
+        "subjects": subjects,
+        "count": len(subjects),
+        "observation_count": page_count,
+        "cameras_queried": list(cameras),
+        "window": {"since": start.isoformat(), "until": end.isoformat()},
+        "window_fully_observable": fully_observable,
+    }
+
+
+async def _attribute_zones(
+    session: Any,
+    organization_id: str,
+    cameras: tuple[str, ...],
+    subjects: list[dict[str, Any]],
+) -> None:
+    """Attach the zone each subject was observed in, **as it was then**.
+
+    ### Why this is not `join cameras on camera_key`
+
+    `cameras.zone_id` says where a camera is *now*. Reading it onto a past
+    observation would mean that moving a camera from the prep line to the wash
+    station silently relocates every reading it has ever produced — a quarter of
+    prep-line history rewritten by one dropdown, with nothing in the record
+    showing it happened. That is the same class of error `finding_snapshot`
+    exists to prevent, and it is why `camera_zone_assignments` records the
+    mapping as closed intervals instead.
+
+    ### `zone_recorded: false` is a real answer
+
+    Intervals begin the first time a camera's zone was written after that table
+    existed. An observation older than a camera's first interval has no recorded
+    zone, and this reports that rather than inferring one from today's mapping —
+    inferring would commit the exact error being avoided. Nothing is backfilled.
+
+    Resolved at `last_seen`, which is the instant the row's attribute values are
+    current as of, so the zone shown and the readings shown describe the same
+    moment.
+    """
+    if not subjects:
+        return
+
+    from app.domain.zone_attribution import ZoneHistory
+
+    history = await ZoneHistory.load(
+        session, organization_id=organization_id, camera_keys=cameras
+    )
+    for subject in subjects:
+        attribution = history.resolve_ns(
+            str(subject.get("camera_key", "")), subject.get("last_seen")
+        )
+        subject["zone_id"] = attribution.zone_id if attribution else None
+        subject["zone_name"] = attribution.zone_name if attribution else ""
+        # Distinguishes "recorded as belonging to no zone" from "nobody wrote it
+        # down". Both render as no zone; only one of them is a gap somebody can
+        # close, and a client that could not tell them apart would report the
+        # second as the first.
+        subject["zone_recorded"] = attribution is not None
 
 
 __all__ = ["router", "scope_cameras"]

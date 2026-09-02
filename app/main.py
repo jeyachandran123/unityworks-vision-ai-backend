@@ -31,7 +31,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from loguru import logger
 
+from app.api.administration import router as administration_router
+from app.api.analytics import router as analytics_router
+from app.api.evaluation import router as evaluation_router
+from app.api.integrations import router as integrations_router
+from app.api.patron import router as patron_router
 from app.api.product import router as product_router
+from app.api.reports import router as reports_router
 from app.api.routes import build_router, devtools_router
 from app.api.wall import router as wall_router
 from app.api.websocket import router as websocket_router
@@ -111,6 +117,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_router())
     app.include_router(product_router)
+    app.include_router(administration_router)
+    # The seven modules that have a schema and a permission but no data source.
+    # Registered unconditionally: a route that answers "not configured, and here
+    # is what is missing" is more useful than one that 404s, and hiding it
+    # behind a flag would mean the honest answer needs configuring too.
+    app.include_router(analytics_router)
+    app.include_router(integrations_router)
+    app.include_router(patron_router)
+    # Reporting reads what every other surface writes, so it is registered
+    # last — and every route in it is gated on its sources' own permissions.
+    app.include_router(reports_router)
+    # Model evaluation reads committed artifacts from disk. Registered like
+    # any other product surface: its own permission, no write path.
+    app.include_router(evaluation_router)
     app.include_router(wall_router)
     app.include_router(websocket_router)
     if cfg.feature_devtools:
@@ -258,6 +278,20 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Shutdown complete")
 
 
+def _observation_log_of(app: FastAPI) -> object | None:
+    """The bound ObservationLogPort, or `None` if this process has no synthesis.
+
+    Reached through the composition rather than rebuilt, because a second
+    `FileObservationLog` over the same directory would be a second writer to an
+    append-only store — and the sweep must truncate the log the pipeline is
+    actually appending to, not a lookalike.
+    """
+    vision = getattr(app.state, "vision", None)
+    composition = getattr(vision, "composition", None)
+    synthesis = getattr(composition, "synthesis", None) if composition else None
+    return getattr(synthesis, "log", None) if synthesis else None
+
+
 async def _sweep_retention(app: FastAPI) -> None:
     """Apply retention at boot. Never fatal.
 
@@ -278,6 +312,11 @@ async def _sweep_retention(app: FastAPI) -> None:
                 evidence_days=cfg.evidence_retention_days,
                 incident_days=cfg.incident_retention_days,
                 audit_days=cfg.audit_retention_days,
+                observation_days=cfg.observation_retention_days,
+                # `None` when synthesis is not assembled — there is genuinely no
+                # log to sweep then, and the service reports that rather than a
+                # zero that would read as "swept and found nothing".
+                observation_log=_observation_log_of(app),
             )
             report = await service.sweep(erase=cfg.retention_sweep_enabled)
         logger.info("retention at boot: {}", report.as_dict())

@@ -44,6 +44,11 @@ class AuditAction(enum.Enum):
     CAMERA_UPDATED = "camera.updated"
     CAMERA_ENABLED = "camera.enabled"
     CAMERA_DISABLED = "camera.disabled"
+    #: Removing a camera destroys its observation partition, so this row
+    #: always sits beside an `observation.truncated` one. A deletion that
+    #: left only the first would be a record of the configuration change
+    #: with no record of the data it destroyed.
+    CAMERA_DELETED = "camera.deleted"
 
     INCIDENT_CREATED = "incident.created"
     INCIDENT_ACKNOWLEDGED = "incident.acknowledged"
@@ -56,8 +61,36 @@ class AuditAction(enum.Enum):
     EVIDENCE_DELETED = "evidence.deleted"
     EVIDENCE_DENIED = "evidence.denied"
 
+    #: Reading what the cameras observed about people at work. Not imagery — an
+    #: observation names a tracked object, never a person — but it is still a
+    #: record about staff, and §12_SECURITY keeps "a person was here" and "here
+    #: is their picture" as separate authorisations. Separate rows, too.
+    OBSERVATIONS_READ = "observation.read"
+    #: A retention sweep removed a time-bounded prefix of the observation log.
+    #: Written per organisation so the deletion is provable, the same way an
+    #: evidence erasure is.
+    OBSERVATIONS_TRUNCATED = "observation.truncated"
+
+    #: Running a report reads incidents, observations and zone attribution in
+    #: one act. It is audited for the same reason an evidence retrieval is:
+    #: assembling a picture of what staff did is not made harmless by the
+    #: figures being aggregates.
+    REPORT_GENERATED = "report.generated"
+    #: A copy left the system. Recorded separately from generation, because
+    #: the file outlives every retention policy this application enforces and
+    #: "who took a copy" is the question an investigation actually asks.
+    REPORT_EXPORTED = "report.exported"
+    #: A report the caller was refused. Recorded with the same weight as a
+    #: success, exactly as a refused evidence retrieval is.
+    REPORT_DENIED = "report.denied"
+
     POLICY_CHANGED = "policy.changed"
     ADMIN_CHANGED = "admin.changed"
+
+    RESTAURANT_CREATED = "restaurant.created"
+    RESTAURANT_UPDATED = "restaurant.updated"
+    ZONE_CREATED = "zone.created"
+    ZONE_UPDATED = "zone.updated"
 
 
 class AuditOutcome(enum.Enum):

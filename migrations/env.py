@@ -20,6 +20,7 @@ from app.infrastructure.database import Base
 # Import for the side effect of registering every table on Base.metadata.
 # Without it autogenerate sees an empty model and proposes dropping the schema.
 from app.domain import models as _domain_models  # noqa: F401
+from app.domain import modules as _module_models  # noqa: F401
 from app.users import models as _identity_models  # noqa: F401
 
 config = context.config

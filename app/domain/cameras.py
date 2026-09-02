@@ -28,8 +28,9 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.models import Camera, FrameRecord
-from app.errors import ConflictError, NotFoundError, ValidationError
+from app.domain.models import Camera, CameraZoneAssignment, FrameRecord
+from app.domain.zone_attribution import record_assignment
+from app.errors import ConfigurationInvalidError, ConflictError, NotFoundError, ValidationError
 
 if TYPE_CHECKING:
     from app.vision.sources.rtsp import RtspCameraConfig
@@ -62,6 +63,7 @@ class CameraService:
         purpose: str = "",
         zone_id: str | None = None,
         enabled: bool = False,
+        assigned_by: str = "",
     ) -> Camera:
         """Register a camera. **Disabled by default.**
 
@@ -98,9 +100,25 @@ class CameraService:
             enabled=enabled,
         )
         self._session.add(camera)
+
+        # Open the first zone interval. Recorded here rather than left to the
+        # caller because "where was this camera" must be answerable for every
+        # camera the moment it exists — a camera whose zone was never written
+        # down produces observations nobody can place, and a route that forgot
+        # this call would create one silently.
+        await record_assignment(
+            self._session,
+            organization_id=organization_id,
+            camera_key=camera_key,
+            zone_id=zone_id,
+            restaurant_id=restaurant_id,
+            assigned_by=assigned_by,
+        )
         return camera
 
-    async def update(self, *, organization_id: str, camera_key: str, **changes: Any) -> Camera:
+    async def update(
+        self, *, organization_id: str, camera_key: str, assigned_by: str = "", **changes: Any
+    ) -> Camera:
         camera = await self.get(organization_id=organization_id, camera_key=camera_key)
 
         allowed = {
@@ -116,10 +134,24 @@ class CameraService:
             "zone_id",
             "enabled",
         }
+        zone_before = camera.zone_id
         for field, value in changes.items():
             if field not in allowed or value is None:
                 continue
             setattr(camera, field, value)
+
+        # A zone change closes the interval in force and opens a new one. The
+        # old row keeps its zone forever, so every reading this camera produced
+        # before the move stays attributed to where it actually happened.
+        if camera.zone_id != zone_before:
+            await record_assignment(
+                self._session,
+                organization_id=organization_id,
+                camera_key=camera.camera_key,
+                zone_id=camera.zone_id,
+                restaurant_id=camera.restaurant_id,
+                assigned_by=assigned_by,
+            )
 
         _validate(
             camera_key=camera.camera_key,
@@ -136,6 +168,105 @@ class CameraService:
         camera.enabled = enabled
         camera.updated_at = datetime.now(UTC)
         return camera
+
+    async def retire(
+        self,
+        *,
+        organization_id: str,
+        camera_key: str,
+        retired_by: str = "",
+        observation_log: Any = None,
+        durable_log: bool = False,
+    ) -> int:
+        """Delete a camera **and** destroy its observation partition, or do neither.
+
+        Returns the number of observations removed.
+
+        ### The gap this closes
+
+        Retention enumerates observation-log partitions from this table, because
+        a partition read from the store instead could not be attributed to a
+        tenant. The consequence is that a deleted camera row would orphan its
+        partition: the sweep would stop visiting it, and its observations —
+        records about identifiable staff at work — would sit on disk past their
+        retention date with nothing left to clean them up.
+
+        The fix belongs here rather than in the sweep. A sweep that went looking
+        for orphaned directories would have to guess which of them were once
+        cameras and which tenant each belonged to, and a guess is exactly what
+        the roster-based enumeration exists to avoid.
+
+        ### Neither, rather than one
+
+        If the partition cannot be purged, **the camera is not deleted**. That
+        ordering is the whole safety property: a deployment that binds a durable
+        log but runs this request in a process with no synthesis assembled
+        cannot reach the log, and deleting the row there would create precisely
+        the orphan this method exists to prevent. It refuses instead, and says
+        why.
+
+        The purge is total — `truncate(partition, now)` removes every record
+        before this instant, which is all of them. That is a deliberate choice
+        over letting them age out: a camera that no longer exists has no
+        retention schedule to age out *on*, and no configuration a later
+        operator could consult to find out what the schedule had been.
+
+        ### What is deliberately kept
+
+        `camera_zone_assignments` rows survive, with the open interval closed.
+        They are the historical attribution for incidents, evidence and frames
+        that still exist and still name this `camera_key`; deleting them would
+        erase where those past events happened, which is the exact failure the
+        assignment history was built to prevent. A camera is configuration; where
+        it was is history.
+        """
+        camera = await self.get(organization_id=organization_id, camera_key=camera_key)
+
+        if durable_log and observation_log is None:
+            raise ConfigurationInvalidError(
+                "refusing to delete a camera: this deployment keeps a durable "
+                "observation log and this process cannot reach it, so the "
+                "camera's observations would outlive their retention with "
+                "nothing left to sweep them",
+                details={"camera_key": camera_key},
+            )
+
+        removed = 0
+        if observation_log is not None:
+            from vision_os.core.model.ids import CameraId
+            from vision_os.core.model.timebase import Instant
+
+            now = datetime.now(UTC)
+            # Everything before this instant, which is everything. `truncate` is
+            # the only shortening operation P20 offers and its own contract says
+            # it exists "for retention alone"; this is a retention act.
+            removed = int(
+                observation_log.truncate(
+                    CameraId(camera_key),
+                    Instant(int(now.timestamp() * 1_000_000_000)),
+                )
+            )
+
+        # Close the interval in force. The row is never deleted and never
+        # rewritten — a past observation still resolves to the zone it was
+        # actually observed in.
+        open_interval = (
+            await self._session.execute(
+                select(CameraZoneAssignment)
+                .where(
+                    CameraZoneAssignment.organization_id == organization_id,
+                    CameraZoneAssignment.camera_key == camera_key,
+                    CameraZoneAssignment.effective_to.is_(None),
+                )
+                .order_by(CameraZoneAssignment.effective_from.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if open_interval is not None:
+            open_interval.effective_to = datetime.now(UTC)
+
+        await self._session.delete(camera)
+        return removed
 
     async def get(self, *, organization_id: str, camera_key: str) -> Camera:
         camera = await self._by_key(organization_id, camera_key)

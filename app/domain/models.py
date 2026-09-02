@@ -161,6 +161,87 @@ class Camera(Base):
     zone: Mapped[Zone | None] = relationship(back_populates="cameras")
 
 
+class CameraZoneAssignment(Base):
+    """Which zone a camera belonged to, **and for how long**.
+
+    ### The problem this exists to solve
+
+    `cameras.zone_id` is current state: it says where a camera is *now*. An
+    observation, an incident and a piece of evidence all carry a `camera_key`
+    and a capture time, and answering "which zone did this happen in" by joining
+    `cameras.zone_id` reads today's answer onto a past event. Move a camera from
+    the prep line to the wash station and every reading it ever produced
+    silently relocates — a whole quarter of prep-line history rewritten by one
+    dropdown, with nothing in the record showing it happened.
+
+    That is the same class of error `Incident.finding_snapshot` exists to
+    prevent, and it deserves the same shape of answer: freeze the attribution
+    where it was made rather than recompute it later.
+
+    ### Why an interval table rather than a column on the observation
+
+    The natural fix is a `zone_id` written onto each observation at the moment
+    it is produced. The application cannot do that: observations are produced by
+    Vision OS, whose `Observation` envelope carries `site_id` and no zone, and
+    which this phase may not modify. Nor should it — a zone is an organisational
+    idea the platform deliberately does not hold.
+
+    So the attribution is recorded once per *assignment* instead of once per
+    observation, which is strictly better here: it costs one row per camera move
+    rather than one field per reading, and it fixes historical zone attribution
+    for incidents, evidence and frames at the same time, none of which carry a
+    zone today either.
+
+    ### Append-only, and never back-dated
+
+    `effective_from` is the moment the assignment was made, and a row is closed
+    by setting `effective_to` — never by editing `zone_id`. A camera's history is
+    the ordered set of its intervals, and an instant that predates the first
+    interval resolves to **no zone**, which is the honest answer: nobody
+    recorded where that camera was. It is emphatically not backfilled from
+    today's mapping, because that would commit the exact error the table exists
+    to prevent.
+    """
+
+    __tablename__ = "camera_zone_assignments"
+    __table_args__ = (
+        Index("ix_cza_camera_time", "organization_id", "camera_key", "effective_from"),
+        Index("ix_cza_open", "organization_id", "camera_key", "effective_to"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    #: The camera as the pipeline names it, not the row id: an observation
+    #: carries `camera_id`, and matching on anything else would need a join that
+    #: could itself go stale.
+    camera_key: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    #: `None` records "assigned to no zone", which is a real assignment and
+    #: different from having no interval at all.
+    zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    #: The zone's name **as it was when the assignment was made**. Frozen for the
+    #: same reason the finding is: renaming a zone must not rewrite what a past
+    #: reading was labelled.
+    zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    restaurant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    effective_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    #: `None` while this is the assignment in force. Set once, when the camera
+    #: moves; the row is never otherwise edited.
+    effective_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    #: Who made the assignment. An attribution nobody can trace is worth less
+    #: than one that is wrong and known to be.
+    assigned_by: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+
+
 # ── Evidence ─────────────────────────────────────────────────────────────────
 
 
@@ -456,6 +537,7 @@ class AuditEvent(Base):
 __all__ = [
     "AuditEvent",
     "Camera",
+    "CameraZoneAssignment",
     "EvidenceRecord",
     "EvidenceState",
     "FrameRecord",

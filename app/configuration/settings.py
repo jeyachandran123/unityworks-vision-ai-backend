@@ -285,7 +285,29 @@ class Settings(BaseSettings):
     notification_file_path: str = "./var/notifications.jsonl"
     evidence_store: Literal["memory", "local"] = "memory"
     evidence_path: str = "./data/evidence"
-    evidence_retention_days: int = 30
+
+    # ── The observation log ──────────────────────────────────────────────────
+    #
+    # Which ObservationLogPort adapter Flow 7 binds. Until this existed the
+    # composition passed no `log=` at all, so `build_synthesis_layer` fell
+    # through to its default — `InMemoryObservationLog`, whose own docstring
+    # calls it *"correct, fast, volatile"*. That is an honest choice for an
+    # embedded deployment and the wrong one for a product surface that claims to
+    # show observation history: every restart emptied it.
+    #
+    # `file` binds the platform's own `FileObservationLog`, exactly as its
+    # bootstrap anticipates — *"a site claiming durability binds log.file or
+    # something replicated"*. It is the platform's system of record either way;
+    # the application still stores no perception result of its own, which is the
+    # invariant `app/domain/models.py` states and this setting does not touch.
+    #
+    # **This makes PPE observations durable on disk.** They are not imagery and
+    # name no person — an observation carries a tracked `object_id`, not an
+    # identity — but they are still a record about people at work, and they now
+    # outlive the process. Retention is the platform's `state.log_retention_ms`
+    # sweep, which truncates a time-bounded prefix of the log; see the report.
+    observation_log: Literal["memory", "file"] = "file"
+    observation_log_path: str = "./data/observations"
 
     # ── Retention ────────────────────────────────────────────────────────────
     #
@@ -299,9 +321,60 @@ class Settings(BaseSettings):
     evidence_retention_days: int = 30
     incident_retention_days: int = 365
     audit_retention_days: int = 730
+    #: How long the durable observation log keeps a reading.
+    #:
+    #: **90 is an interim placeholder, not a decided policy.** It is written
+    #: here so the log is swept by *some* rule rather than by none — before this
+    #: setting existed, `observation_log = "file"` made PPE readings outlive the
+    #: process with no expiry at all, which is collection without a limit.
+    #:
+    #: The final figure is a legal determination, not an engineering one, and
+    #: needs formal DPO review: an observation is not imagery and names nobody,
+    #: but it is still a record about identifiable staff at work, and the lawful
+    #: basis that justifies keeping it for a week may not justify a quarter.
+    #: Until that review lands, 90 days sits deliberately between the imagery
+    #: clock (30) and the compliance-record clock (365) — long enough that a
+    #: quarterly hygiene review can be evidenced, short enough that it is not a
+    #: standing behavioural archive of a named shift team.
+    #:
+    #: See `docs/architecture/NOT_YET_CONNECTED.md` for the open question.
+    observation_retention_days: int = 90
     #: Sweeps mark and erase. Off by default: deletion should begin because a
     #: deployment decided so, not because a process started.
     retention_sweep_enabled: bool = False
+
+    # ── Patron identification (blocked) ──────────────────────────────────────
+    #
+    # Biometric re-identification. Off, and it takes three separate deliberate
+    # acts to turn on rather than one, because the failure mode of a single
+    # boolean is somebody flipping it to "see what happens".
+    #
+    # Vision OS's own posture is the reason these exist as a gate rather than as
+    # a feature flag: `EmbeddingPort` (P10) is classified **C2 · Biometric** and
+    # left *"declared, unbound, and unimplemented … deliberately"*, and 07_STATE
+    # §8.2 states the platform *"holds no persistent biometric identity, which is
+    # a deliberate privacy posture, not a limitation."* Enabling this is the
+    # first thing in the product that would contradict that, so the application
+    # refuses until a named legal artifact says otherwise.
+    #
+    # **Setting `patron_id_enabled = true` without the other two changes
+    # nothing.** The gate reports every missing input by name and the write path
+    # still refuses.
+    patron_id_enabled: bool = False
+    #: The DPIA / DPO sign-off that authorised the capability, as a reference an
+    #: auditor can follow — a document id, a ticket, a signed record. Recorded on
+    #: every token written, so no row exists without naming its authority.
+    patron_id_legal_gate_ref: str = ""
+    #: A **reference** the SecretProvider resolves to the site-scoped pepper, in
+    #: the same shape as `Camera.credential_ref`. Never the pepper itself: a
+    #: pepper in configuration is a pepper in a process listing and a container
+    #: image. Site-scoped so a token from one site does not match the same person
+    #: at another, which is what stops this becoming a cross-site gallery.
+    patron_id_pepper_ref: str = ""
+    #: How long a token survives without being seen again. Shorter than every
+    #: other clock here on purpose: a re-identification handle that outlives its
+    #: purpose is a tracking record. Also a placeholder pending DPO review.
+    patron_id_retention_days: int = 30
 
     # ── Observability ────────────────────────────────────────────────────────
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
