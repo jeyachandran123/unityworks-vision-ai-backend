@@ -353,7 +353,25 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
             rows = await CameraService(session).enabled_for_runtime(
                 organization_id=cfg.default_tenant_id
             )
-            configs = [to_rtsp_config(row) for row in rows if row.host]
+            # Only cameras marked for analysis get a perception session.
+            # `enabled_for_runtime` returns the enabled rows and the camera wall
+            # starts every one of them; this narrows the far more expensive
+            # half. A site with sixteen channels and four kitchens should pay
+            # detection, tracking, cropping and model calls for four.
+            configs = [
+                to_rtsp_config(row) for row in rows if row.host and row.analysis_enabled
+            ]
+            watched_only = sorted(
+                row.camera_key for row in rows if row.host and not row.analysis_enabled
+            )
+            if watched_only:
+                # Said out loud, because a camera that streams without being
+                # analysed is a deliberate state and must not read as a fault.
+                logger.info(
+                    "{} camera(s) stream to the wall without analysis: {}",
+                    len(watched_only),
+                    ", ".join(watched_only),
+                )
     except Exception as exc:  # noqa: BLE001 - reported, never fatal
         logger.error(
             "could not read camera configuration: {}: {}. No camera session "

@@ -133,7 +133,24 @@ class CameraService:
             "analysis_fps",
             "zone_id",
             "enabled",
+            "analysis_enabled",
         }
+        # A truthy string is the dangerous case: `"false"` is truthy in Python,
+        # so an untyped payload could switch analysis ON while the operator
+        # believed they had switched it off. Rejected rather than coerced —
+        # guessing what a client meant about whether people are analysed is not
+        # a decision this layer may make.
+        #
+        # Scoped to this flag deliberately. `enabled` has the same untyped
+        # exposure and is left exactly as it is: widening the check would change
+        # an existing API's behaviour in a stage scoped to `analysis_enabled`.
+        analysis_flag = changes.get("analysis_enabled")
+        if analysis_flag is not None and not isinstance(analysis_flag, bool):
+            raise ValidationError(
+                f"analysis_enabled must be true or false, got "
+                f"{type(analysis_flag).__name__}"
+            )
+
         zone_before = camera.zone_id
         for field, value in changes.items():
             if field not in allowed or value is None:
@@ -365,6 +382,10 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "credential_configured": bool(camera.credential_ref),
         "analysis_fps": camera.analysis_fps,
         "enabled": camera.enabled,
+        # Two decisions, not one. `enabled` is "this camera streams"; this is
+        # "this camera is analysed". A client that shows only the first cannot
+        # explain why a visibly live camera raises nothing.
+        "analysis_enabled": camera.analysis_enabled,
         # Redacted, and still diagnosable. Never the dialling URL.
         "uri": _redacted_uri(camera),
         "created_at": _iso(camera.created_at),

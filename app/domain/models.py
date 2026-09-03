@@ -35,6 +35,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
+from sqlalchemy import true as sa_true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database import Base
@@ -150,6 +151,22 @@ class Camera(Base):
     #: Independent of camera fps: a 25 fps stream must not become 25 fps of work.
     analysis_fps: Mapped[float] = mapped_column(nullable=False, default=4.0)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    #: Whether this camera is *analysed*, as distinct from whether it streams.
+    #:
+    #: `enabled` alone was doing two jobs: it started the RTSP session and it
+    #: enrolled the camera in perception. A site with sixteen channels and four
+    #: kitchens could not watch the corridors on the wall without also paying
+    #: detection, tracking, cropping and the understander's call budget for them
+    #: — and that budget is a single global allowance the kitchens already spend
+    #: in full.
+    #:
+    #: Defaults to true, matching the migration's `server_default`, so a row that
+    #: predates the column keeps exactly the behaviour it had. Narrowing is a
+    #: deliberate, per-camera, durable act.
+    analysis_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=sa_true()
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
