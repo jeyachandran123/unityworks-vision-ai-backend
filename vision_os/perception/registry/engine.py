@@ -693,6 +693,62 @@ class ObjectRegistry:
         shed: list[ObjectId] = []
 
         touched: set[ObjectId] = set()
+
+        # ── Release objects whose track ended THIS frame, before absorbing ──
+        #
+        # This ordering is the whole repair, and the old ordering is why one
+        # person became many.
+        #
+        # A fragmenting track dies and its replacement is born in the *same*
+        # frame: T101 appears in `update.terminated` while T204 appears in
+        # `update.active`. The absorb loop below runs first, so when `_absorb`
+        # asked `bind_reentry` whether T204 might be a known object, the
+        # predecessor was still `ACTIVE` and still bound — and those are exactly
+        # the two conditions `bind_reentry` rejects (it considers only
+        # `OCCLUDED`/`DORMANT`, unbound records). It returned "no_candidates"
+        # every single time, `_mint` produced a fresh `ObjectId`, and the
+        # ageing loop below then quietly aged the abandoned predecessor.
+        #
+        # Re-entry was therefore not merely rare, it was *unreachable*: in 1,990
+        # production incidents it fired zero times, and incidents equalled
+        # distinct object ids exactly.
+        #
+        # So the release happens here instead. It uses the tracker's own
+        # `terminated` list — which is a declared transition now that the update
+        # travels intact — rather than inferring death from a track's absence,
+        # and it applies the lifecycle machine's ordinary `on_unmeasured` edge
+        # rather than forcing a state.
+        #
+        # **This widens no threshold.** It only puts the predecessor into the
+        # candidate set; `max_reentry_distance`, `max_reentry_gap`,
+        # `class_must_match`, `min_binding_confidence` and the `ambiguity_margin`
+        # refusal all still decide, unchanged. Two plausible predecessors still
+        # refuse to merge and still mint a new object, which is what keeps this
+        # from becoming "one object id for everybody".
+        ended = {track_id for track_id, _ in getattr(update, "terminated", ())}
+        if ended:
+            for record in partition.records():
+                if record.lifecycle.is_terminal or record.bound_track not in ended:
+                    continue
+                partition.close_bindings(record, now=now)
+                transition = self._machine.on_unmeasured(
+                    state=record.lifecycle,
+                    since_confirmed=Duration(max(0, now.ns - record.last_confirmed.ns)),
+                    left_field_of_view=self._left_field_of_view(record),
+                )
+                if transition.changed:
+                    partition.set_lifecycle(record, transition.current)
+                    changes.append(
+                        (record.object_id, transition.previous, transition.current)
+                    )
+                    self._publish_lifecycle(
+                        camera_id,
+                        record.object_id,
+                        transition.previous,
+                        transition.current,
+                        transition.trigger.value,
+                    )
+
         records = partition.records()
 
         for track in update.active:

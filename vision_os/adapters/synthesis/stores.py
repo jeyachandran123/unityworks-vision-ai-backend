@@ -26,8 +26,10 @@ a retry after an uncertain outcome cannot double-count.
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
 import threading
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
 
 from ...core.errors import LogUnavailableError
@@ -305,6 +307,44 @@ class FileObservationLog:
                 self._ids.pop(partition, None)
                 self._positions.pop(partition, None)
             return removed
+
+    def for_conformance(self) -> tuple[FileObservationLog, Callable[[], None]]:
+        """A disposable twin for the conformance kit, and how to dispose of it.
+
+        ### The outage this prevents
+
+        The kit must write, because a store can only be shown to store by
+        storing. Run against the live adapter it wrote seven ``kit-*`` partitions
+        straight into the deployment's durable log, and this class has no
+        `reset()` for the composition root to call afterwards — so they stayed.
+
+        On the *next* boot the kit ran again over the same directory, found its
+        own records already present, and failed L2 (idempotent-by-id), L3
+        (positions monotonic) and L7 (tail must not block). The gate refused the
+        adapter, synthesis never bound, exposure was never built, and every
+        observation the pipeline produced had nowhere to go. Detection, tracking
+        and the model kept running and costing money; nothing they learned could
+        leave M7, and the only visible symptom was that alerts stopped.
+
+        It was self-inflicted and permanent: once poisoned, *every* subsequent
+        boot failed, and the only remedy was deleting files by hand.
+
+        ### Why a twin rather than a cleanup
+
+        Cleanup is the dangerous shape. Anything that deletes kit partitions from
+        a live log is one bad glob away from deleting a camera's observations —
+        the system of record — to fix a test fixture. A twin cannot make that
+        mistake: the kit is handed a different root, writes only there, and the
+        directory is removed whole. The production log is never written to and
+        never deleted from, so boot 1 and boot N are identical.
+        """
+        root = Path(tempfile.mkdtemp(prefix="conformance-log-"))
+        twin = FileObservationLog(root)
+
+        def dispose() -> None:
+            shutil.rmtree(root, ignore_errors=True)
+
+        return twin, dispose
 
 
 class CollectingSink:

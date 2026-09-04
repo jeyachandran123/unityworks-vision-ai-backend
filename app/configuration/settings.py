@@ -170,6 +170,25 @@ class Settings(BaseSettings):
     #: reports stale claims as current. 60 s is a starting point for kitchen
     #: PPE, where a hairnet does not come off between one minute and the next.
     vision_demand_freshness_ms: int = 60_000
+    #: Which tracker the platform should bind. One of the names in
+    #: `TRACKER_FACTORIES`: `tracker.iou`, `tracker.sort`, `tracker.bytetrack`.
+    #:
+    #: **This was a hard-coded literal, and it named the fallback.** `tracker.iou`
+    #: ships as the universal fallback — no motion model, greedy single-stage
+    #: association, `handles_occlusion="none"` — and it was what production
+    #: constructed. Nothing had *fallen back*: the composition root asked for it
+    #: by name, so `TrackingManager.is_fallback` correctly reported `False` and
+    #: every health check agreed the tracker was fine.
+    #:
+    #: With no motion model the predictor asserts the box does not move, so a
+    #: detection must overlap the track's **previous** box. A person walking at
+    #: ordinary pace does not, their track fragments, and each fragment mints a
+    #: fresh logical object — which is how one person became many incidents.
+    #:
+    #: `tracker.sort` is the same `GeometricTracker` class with a linear motion
+    #: model and optimal assignment. No new dependency, no new code path, and
+    #: the lifecycle bounds are identical to the ones already configured.
+    vision_tracker_id: str = "tracker.sort"
     #: Which understander the platform should bind.
     #:
     #: Empty lets the platform read its own `VISION_UNDERSTANDER_PROVIDER` from

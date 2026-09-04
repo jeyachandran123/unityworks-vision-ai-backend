@@ -222,11 +222,27 @@ class DefaultTriggerPolicy:
     def _wanted_for(self, candidate: TriggerCandidate, resolver) -> dict:
         if resolver is None:
             return {}
-        return resolver(
-            camera_id=candidate.camera_id,
-            class_id=candidate.class_id,
-            region_ids=candidate.region_ids,
-        )
+        try:
+            return resolver(
+                camera_id=candidate.camera_id,
+                class_id=candidate.class_id,
+                region_ids=candidate.region_ids,
+                # The candidate already knows both. Passing them is what lets a
+                # policy's declared `lifecycle` and `min_confidence` scope be
+                # enforced instead of merely recorded — without them the
+                # resolver has to treat every object as eligible.
+                lifecycle=candidate.lifecycle,
+                confidence=candidate.identity_confidence,
+            )
+        except TypeError:
+            # A resolver from before this contract widened. Falling back keeps a
+            # third-party or older adapter working exactly as it did rather than
+            # failing the frame; it simply cannot enforce the two extra filters.
+            return resolver(
+                camera_id=candidate.camera_id,
+                class_id=candidate.class_id,
+                region_ids=candidate.region_ids,
+            )
 
     def _priority_of(self, wanted: dict) -> str:
         """The highest-priority class among the demands wanting this object.

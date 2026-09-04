@@ -651,9 +651,16 @@ class VisionRuntime:
             # geometry is a domain decision.
             # ── Perception (M5/M6) ──────────────────────────────────────────
             "detection": {"enabled": True},
-            # The platform has no opinion about which tracker suits a site,
-            # so the site must name one. IoU is the shipped default.
-            "tracking": {"enabled": True, "tracker_id": "tracker.iou"},
+            # The platform has no opinion about which tracker suits a site, so
+            # the site must name one — and the site says so through settings
+            # rather than through a literal here. See `vision_tracker_id`: this
+            # line named `tracker.iou`, which is the *fallback* tracker, and a
+            # deliberately-constructed fallback is indistinguishable from a
+            # healthy tracker to every check that asks "did we fall back?".
+            "tracking": {
+                "enabled": True,
+                "tracker_id": self._settings.vision_tracker_id,
+            },
             "cropping": {
                 "enabled": True,
                 "crop_strategy": "crop.part_focused",

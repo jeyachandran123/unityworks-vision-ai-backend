@@ -243,13 +243,53 @@ def _gate(platform: VisionPlatform, port, kit, adapter) -> None:
     """
     registered = platform.conformance.get(port)
     effective = registered or kit
-    report = effective.run(adapter, fast_only=True)
+
+    # Run against a disposable twin when the adapter can provide one.
+    #
+    # The kit writes real records, which is fine for a store that can forget and
+    # ruinous for one that cannot. A durable file-backed log kept the fixtures
+    # forever, and the *next* boot's kit run then failed against its own
+    # leftovers — refusing the adapter, unbinding synthesis, and silently ending
+    # observation publication until somebody deleted files by hand.
+    #
+    # An adapter that offers `for_conformance()` is gated on a throwaway instead,
+    # so what the kit proves is still proven by the same code path while the
+    # deployment's own log is neither written to nor deleted from. Adapters
+    # without the factory are gated exactly as before.
+    probe, dispose = _conformance_twin(adapter)
+    try:
+        report = effective.run(probe, fast_only=True)
+    finally:
+        dispose()
+
     if not report.passed:
         raise ObservationError(
             f"adapter for {port} failed conformance: {'; '.join(report.failures)}",
             port=str(port),
         )
-    _purge_kit_traces(adapter)
+
+    # Only meaningful when the kit ran against the real adapter; a twin has
+    # already been thrown away whole.
+    if probe is adapter:
+        _purge_kit_traces(adapter)
+
+
+def _conformance_twin(adapter):
+    """`(probe, dispose)` — a throwaway to gate, or the adapter itself.
+
+    Optional by design: the protocol is one method, `for_conformance()`, and an
+    adapter that does not declare it is gated in place exactly as it always was.
+    A factory that raises is not fatal either — gating the real adapter is worse
+    than gating a twin and far better than refusing to boot.
+    """
+    factory = getattr(adapter, "for_conformance", None)
+    if not callable(factory):
+        return adapter, lambda: None
+    try:
+        twin, dispose = factory()
+    except Exception:  # noqa: BLE001 - fall back to the old behaviour, never fail boot
+        return adapter, lambda: None
+    return twin, dispose
 
 
 def _purge_kit_traces(adapter) -> None:

@@ -84,6 +84,22 @@ class TrackingOutcome:
     reason: str = ""
     latency_ms: float = 0.0
 
+    update: TrackUpdate | None = None
+    """The tracker's own account of what this frame did — **the transitions, not
+    a count of them**.
+
+    The four integers above are a summary. They are kept because consumers read
+    them, but a summary is all they ever were: `created=3` cannot say *which*
+    three, and `terminated` and `recovered` had no id-bearing counterpart at all.
+    A downstream layer handed only these had to reconstruct transitions by
+    inspecting track *states*, and state is not event — a track sitting in
+    `TENTATIVE` for three frames looks "newly created" on all three.
+
+    So the update travels intact. Nothing downstream needs to guess which track
+    was created, which came back, or which ended, because the tracker knew all
+    three exactly and now says so.
+    """
+
     @property
     def count(self) -> int:
         return len(self.tracks)
@@ -173,6 +189,8 @@ class TrackingEngine:
             recovered=len(update.recovered),
             coasting=len(update.coasting),
             latency_ms=latency_ms,
+            # Carried whole. The counts above are what this line used to be.
+            update=update,
         )
 
     def tracks(self, camera_id: CameraId) -> Sequence[Track]:

@@ -157,6 +157,40 @@ class SubjectFilter:
             for allowed in self.class_ids
         )
 
+    def matches_lifecycle(self, lifecycle: str | None) -> bool:
+        """Whether an object in this lifecycle state is one this demand is about.
+
+        An empty ``self.lifecycle`` means *every* state, matching
+        ``covers_camera``'s empty-means-all convention — a demand that does not
+        narrow is site-wide, not silent.
+
+        An empty **argument** means "the caller did not say", and passes. The two
+        emptinesses are different questions and conflating them is dangerous in
+        one direction only: reading an unsupplied state as a state name would
+        make every older three-argument caller match nothing, silently stopping
+        all analysis. Symmetrical with ``matches_confidence(None)``.
+
+        This is the gate that keeps a **provisional** object out of expensive
+        analysis. ``VisualObject.is_present`` deliberately admits ``provisional``
+        (it is a broad domain predicate with other callers), so the decision that
+        an unconfirmed object is not yet worth a model call belongs here, where
+        the policy already declares it.
+        """
+        if not self.lifecycle or not lifecycle:
+            return True
+        return lifecycle in self.lifecycle
+
+    def matches_confidence(self, confidence: float | None) -> bool:
+        """Whether identity confidence clears the policy's floor.
+
+        An **unknown** confidence passes. Refusing on absence would silently
+        exclude every object whose confidence a caller did not supply, turning a
+        missing input into a policy decision nobody wrote.
+        """
+        if self.min_confidence is None or confidence is None:
+            return True
+        return confidence >= self.min_confidence
+
 
 @dataclass(frozen=True, slots=True)
 class DemandBudget:

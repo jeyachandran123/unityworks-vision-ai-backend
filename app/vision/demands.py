@@ -137,32 +137,76 @@ def register_policy_demands(
     )
     from vision_os.kernel.clock import Duration
 
-    demand = Demand(
-        # Deterministic, so a restart re-registers the same demand rather than
-        # accumulating a new one on every boot.
-        demand_id=DemandId(f"{SUBSCRIBER}/standing"),
-        subscriber=SubscriberId(SUBSCRIBER),
-        scope=DemandScope(camera_ids=tuple(CameraId(c) for c in camera_ids)),
-        subject_filter=SubjectFilter(class_ids=tuple(ClassId(c) for c in classes)),
-        required_attributes=tuple(AttributeKey(a) for a in attributes),
-        freshness=Duration.from_millis(freshness_ms),
-    )
+    cameras = tuple(CameraId(c) for c in camera_ids)
 
-    audit.attempted = 1
-    try:
-        acknowledgement = engine.register_demand(demand)
-    except Exception as exc:  # noqa: BLE001 - reported, never fatal
-        audit.rejected = 1
-        audit.errors.append(f"{type(exc).__name__}: {exc}")
-        logger.warning(
-            "the standing compliance demand was refused: {}: {}",
-            type(exc).__name__,
-            exc,
-        )
+    # One demand per policy, built by the policy itself.
+    #
+    # This function has always been named `register_policy_demands` and has
+    # always documented "one demand per policy". It nonetheless built a single
+    # aggregate `Demand` by hand, and that hand-built object carried only
+    # `class_ids` — dropping `lifecycle`, `min_confidence`, the trigger hints,
+    # the priority class and the per-demand budget that every policy document
+    # declares. A policy asking for `lifecycle: [active, occluded]` and
+    # `min_confidence: 0.4` was parsed, carried and then discarded here, one
+    # layer before the registry that would have enforced it.
+    #
+    # `SemanticPolicy.build_demand` is the platform's own translation and is
+    # already complete. Using it means the policy contract reaches the registry
+    # intact, and it means this application stops holding a second, poorer
+    # opinion about what a policy means.
+    demands: list[Demand] = []
+    for policy in getattr(composition, "policies", ()) or ():
+        build = getattr(policy, "build_demand", None)
+        if not callable(build):
+            continue
+        try:
+            demands.append(build(subscriber=SUBSCRIBER, cameras=cameras))
+        except Exception as exc:  # noqa: BLE001 - one policy, not the boot
+            audit.errors.append(
+                f"policy {getattr(policy, 'policy_id', '?')}: "
+                f"{type(exc).__name__}: {exc}"
+            )
+
+    if not demands:
+        # No policy object could describe itself. The aggregate demand is kept
+        # as the fallback so a deployment whose composition exposes attributes
+        # but no policy objects behaves exactly as it did before.
+        demands = [
+            Demand(
+                # Deterministic, so a restart re-registers the same demand
+                # rather than accumulating a new one on every boot.
+                demand_id=DemandId(f"{SUBSCRIBER}/standing"),
+                subscriber=SubscriberId(SUBSCRIBER),
+                scope=DemandScope(camera_ids=cameras),
+                subject_filter=SubjectFilter(
+                    class_ids=tuple(ClassId(c) for c in classes)
+                ),
+                required_attributes=tuple(AttributeKey(a) for a in attributes),
+                freshness=Duration.from_millis(freshness_ms),
+            )
+        ]
+
+    acknowledgement = None
+    for demand in demands:
+        audit.attempted += 1
+        try:
+            acknowledgement = engine.register_demand(demand)
+        except Exception as exc:  # noqa: BLE001 - reported, never fatal
+            audit.rejected += 1
+            audit.errors.append(f"{demand.demand_id}: {type(exc).__name__}: {exc}")
+            logger.warning(
+                "compliance demand {} was refused: {}: {}",
+                demand.demand_id,
+                type(exc).__name__,
+                exc,
+            )
+            continue
+
+        audit.accepted += 1
+        _read_acknowledgement(acknowledgement, audit)
+
+    if not audit.accepted:
         return audit
-
-    audit.accepted = 1
-    _read_acknowledgement(acknowledgement, audit)
 
     logger.info(
         "standing demand registered — {} attribute(s) over {} class(es), " "freshness {} ms{}",

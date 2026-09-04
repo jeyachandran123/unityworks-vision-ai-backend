@@ -345,19 +345,46 @@ class DemandRegistry:
         return tuple(self._demands[key] for key in sorted(self._demands))
 
     def matching(
-        self, *, camera_id: CameraId, class_id: ClassId, region_ids: Sequence = ()
+        self,
+        *,
+        camera_id: CameraId,
+        class_id: ClassId,
+        region_ids: Sequence = (),
+        lifecycle: str = "",
+        confidence: float | None = None,
     ) -> tuple[DemandState, ...]:
-        """Serving demands whose scope and filter cover this object."""
+        """Serving demands whose scope and filter cover this object.
+
+        ``lifecycle`` and ``confidence`` describe the object being considered.
+        Both default to "not supplied", which passes every filter — a caller
+        that cannot say what state an object is in must not have that silence
+        read as a policy decision.
+
+        The two named filters used to be declared on ``SubjectFilter``, parsed
+        out of every policy document, carried all the way here — and never read.
+        A policy asking for ``lifecycle: [active, occluded]`` and
+        ``min_confidence: 0.4`` was fully honoured on paper and enforced
+        nowhere, so a provisional object minted from a single-frame detection
+        reached the model and could become a compliance violation.
+        """
         return tuple(
             state
             for state in self.active()
             if state.demand.scope.covers_camera(camera_id)
             and state.demand.scope.covers_region(region_ids)
             and state.demand.subject_filter.matches_class(class_id)
+            and state.demand.subject_filter.matches_lifecycle(lifecycle)
+            and state.demand.subject_filter.matches_confidence(confidence)
         )
 
     def required_attributes(
-        self, *, camera_id: CameraId, class_id: ClassId, region_ids: Sequence = ()
+        self,
+        *,
+        camera_id: CameraId,
+        class_id: ClassId,
+        region_ids: Sequence = (),
+        lifecycle: str = "",
+        confidence: float | None = None,
     ) -> dict[AttributeKey, tuple[Duration, str, tuple[DemandId, ...]]]:
         """Attributes wanted for this object, with the **strictest** freshness.
 
@@ -368,7 +395,11 @@ class DemandRegistry:
         """
         wanted: dict[AttributeKey, tuple[Duration, str, tuple[DemandId, ...]]] = {}
         for state in self.matching(
-            camera_id=camera_id, class_id=class_id, region_ids=region_ids
+            camera_id=camera_id,
+            class_id=class_id,
+            region_ids=region_ids,
+            lifecycle=lifecycle,
+            confidence=confidence,
         ):
             for attribute in state.acknowledgement.satisfiable:
                 freshness = state.effective_freshness or state.demand.freshness

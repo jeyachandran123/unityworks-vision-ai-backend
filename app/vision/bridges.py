@@ -153,13 +153,42 @@ class TrackingToRegistryBridge:
     def _to_update(outcome: Any) -> Any:
         """`TrackingOutcome` → `TrackUpdate`. Shape only, no judgement.
 
-        `TrackingOutcome` carries the tracks plus *counts* of what changed;
-        `TrackUpdate` wants the changed track **ids**. The ids are recovered
-        from the tracks' own states rather than invented, so a track this bridge
-        reports as new is one the tracker marked new.
+        ### What this used to do, and why it was wrong
+
+        `TrackingOutcome` carried the tracks plus *counts* of what changed, so
+        this method reconstructed the changed ids by reading each track's
+        **state**:
+
+            new=ids_in(TrackState.TENTATIVE)
+            coasting=ids_in(TrackState.COASTING)
+
+        A state is not an event. `TENTATIVE` persists for
+        `min_hits_to_confirm` frames, so a single track was reported as *new* on
+        every one of those frames, while a track created and confirmed in one
+        frame was never reported as new at all. `terminated`, `recovered`,
+        `associations`, `refused` and `unmatched_detections` had no counterpart
+        in the counts, so they silently took their empty defaults on every
+        frame — the registry was told, forever, that nothing ever ended and
+        nothing ever came back.
+
+        ### What it does now
+
+        The tracker already produces a complete `TrackUpdate` and the engine now
+        carries it through, so the honest adaptation is to pass it along. No
+        state is inspected, no transition is inferred, and the frame reference
+        is the value object the tracker actually used rather than one re-parsed
+        from its rendering.
+
+        The reconstruction is kept **only** for an outcome with no update — a
+        failed frame, or an older producer — so this bridge still degrades to
+        exactly its previous behaviour rather than dropping the frame.
         """
         from vision_os.core.model.ids import FrameRef
         from vision_os.core.model.track import TrackState, TrackUpdate
+
+        update = getattr(outcome, "update", None)
+        if update is not None:
+            return update
 
         tracks = tuple(getattr(outcome, "tracks", ()) or ())
 
