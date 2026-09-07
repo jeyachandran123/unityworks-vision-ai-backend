@@ -33,7 +33,13 @@ from app.auth.passwords import hash_password, verify_password
 from app.authorization.model import Role, ScopeBreadth
 from app.configuration.settings import Settings
 from app.infrastructure.database import Database
-from app.users.models import AccessGrant, Organization, RoleAssignment, User
+from app.users.models import (
+    AccessGrant,
+    Organization,
+    PlatformOperatorGrant,
+    RoleAssignment,
+    User,
+)
 
 DEFAULT_ORG_ID = "org-unityworks"
 DEFAULT_ORG_NAME = "UnityWorks"
@@ -253,6 +259,88 @@ def _grant_for(user_id: str, cameras: str) -> AccessGrant:
     )
 
 
+async def grant_operator(settings: Settings, args) -> int:
+    """Make an account a platform operator, or take it away.
+
+    Deliberately a command-line act with no HTTP equivalent. An organization
+    administrator who could mint platform operators would *be* a platform
+    operator, and the tenant boundary would be a formality — so the only way
+    to create one is to already have database access, which is a different and
+    much smaller set of people. See `app.authorization.platform`.
+
+    A reason is required. This privilege reaches every customer's data, and a
+    grant nobody wrote a sentence about is one nobody will be able to justify
+    later.
+    """
+    database = await _session(settings)
+    try:
+        async with database.session_scope() as session:
+            user = (
+                await session.execute(select(User).where(User.email == args.email.lower()))
+            ).scalar_one_or_none()
+            if user is None:
+                print(f"no account with email {args.email}", file=sys.stderr)
+                return 1
+
+            existing = (
+                await session.execute(
+                    select(PlatformOperatorGrant).where(
+                        PlatformOperatorGrant.user_id == user.id
+                    )
+                )
+            ).scalar_one_or_none()
+
+            if args.revoke:
+                if existing is None:
+                    print(f"{args.email} is not a platform operator")
+                    return 0
+                await session.delete(existing)
+                print(f"revoked platform operator from {args.email}")
+                return 0
+
+            if existing is not None:
+                print(f"{args.email} is already a platform operator")
+                return 0
+
+            session.add(
+                PlatformOperatorGrant(
+                    user_id=user.id,
+                    granted_by=args.by or "",
+                    reason=args.reason,
+                )
+            )
+            print(f"granted platform operator to {args.email}")
+            print(f"  reason: {args.reason}")
+            print(
+                "  This account can now create, suspend and archive any "
+                "organization on this deployment."
+            )
+            return 0
+    finally:
+        await database.disconnect()
+
+
+async def list_operators(settings: Settings) -> int:
+    database = await _session(settings)
+    try:
+        async with database.session_scope() as session:
+            rows = (
+                await session.execute(
+                    select(User.email, PlatformOperatorGrant.granted_at, PlatformOperatorGrant.reason)
+                    .join(PlatformOperatorGrant, PlatformOperatorGrant.user_id == User.id)
+                    .order_by(User.email)
+                )
+            ).all()
+        if not rows:
+            print("no platform operators")
+            return 0
+        for email, granted_at, reason in rows:
+            print(f"{email:40} {granted_at:%Y-%m-%d}  {reason}")
+        return 0
+    finally:
+        await database.disconnect()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -280,6 +368,21 @@ def main() -> int:
     access.add_argument("--email", required=True)
     access.add_argument("--cameras", required=True, help="all | none | cam-01,cam-02")
 
+    operator = sub.add_parser(
+        "grant-operator",
+        help="make an account a platform operator (manages organizations)",
+    )
+    operator.add_argument("--email", required=True)
+    operator.add_argument(
+        "--reason",
+        required=True,
+        help="why this account needs authority over every organization",
+    )
+    operator.add_argument("--by", default="", help="who is granting it")
+    operator.add_argument("--revoke", action="store_true")
+
+    sub.add_parser("list-operators", help="show every platform operator")
+
     args = parser.parse_args()
     settings = Settings()
 
@@ -289,6 +392,8 @@ def main() -> int:
         "reset-password": lambda: reset_password(settings, args),
         "check-password": lambda: check_password(settings, args),
         "grant": lambda: grant(settings, args),
+        "grant-operator": lambda: grant_operator(settings, args),
+        "list-operators": lambda: list_operators(settings),
     }
     return asyncio.run(handlers[args.command]())
 

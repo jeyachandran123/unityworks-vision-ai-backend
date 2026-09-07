@@ -92,6 +92,37 @@ class AuditAction(enum.Enum):
     ZONE_CREATED = "zone.created"
     ZONE_UPDATED = "zone.updated"
 
+    # ── user administration (Stage 5) ─────────────────────────────────────
+    #
+    # Never carries a password, hash, or generated credential — `_scrub()`
+    # would strip a literal `password` key anyway, but the callers in
+    # `app/api/user_administration.py` never put one in `detail` to begin
+    # with.
+    USER_CREATED = "user.created"
+    USER_UPDATED = "user.updated"
+    USER_ACTIVATED = "user.activated"
+    USER_DEACTIVATED = "user.deactivated"
+    ROLE_ASSIGNED = "role.assigned"
+    ROLE_REMOVED = "role.removed"
+    PERMISSION_GRANTED = "permission.granted"
+    PERMISSION_REVOKED = "permission.revoked"
+    PERMISSION_RESET = "permission.reset"
+    #: Which cameras an account may watch. Audited beside the permission rows
+    #: because it is the other half of access: a user with `view_live` and no
+    #: camera grant sees nothing, and one with a tenant-wide grant sees every
+    #: kitchen. Changing either is the same kind of act.
+    CAMERA_SCOPE_CHANGED = "user.camera_scope_changed"
+
+    # ── organization lifecycle ───────────────────────────────────────
+    #
+    # Creating a tenant and changing its status are platform-operator acts, not
+    # tenant administration, and they are the most consequential rows in this
+    # table: a status change reaches authentication, authorization and the
+    # camera runtime at once.
+    ORGANIZATION_CREATED = "organization.created"
+    ORGANIZATION_UPDATED = "organization.updated"
+    ORGANIZATION_STATUS_CHANGED = "organization.status_changed"
+
 
 class AuditOutcome(enum.Enum):
     SUCCESS = "success"
@@ -113,6 +144,13 @@ _FORBIDDEN_KEYS = frozenset(
         "secret_key",
         "credential",
         "credentials",
+        # `credential_ref` is nominally a pointer, and `literal:` made it a
+        # channel that could carry the value itself. Substring matching would
+        # not have caught it: the scrubber compares whole key names, so
+        # `credential` in this set never matched `credential_ref`. Named
+        # explicitly rather than by loosening the match, because a substring
+        # rule would start redacting unrelated keys nobody chose.
+        "credential_ref",
         "authorization",
         "cookie",
         "bytes",
@@ -128,6 +166,11 @@ _SECRET_SHAPES = (
     re.compile(r"\brtsp://[^\s:@/]+:[^\s@/]+@"),  # rtsp://user:pass@host
     re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+"),  # JWT
     re.compile(r"\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}"),  # bcrypt hash
+    # `literal:hunter2` — the one credential scheme whose value *is* the
+    # secret. New ones can no longer be written (`app.domain.cameras._validate`)
+    # but rows predating that refusal still exist, and an audit row is the
+    # longest-retained data in the system.
+    re.compile(r"literal:\S+"),
 )
 
 REDACTED = "***"

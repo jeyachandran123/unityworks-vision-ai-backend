@@ -19,6 +19,16 @@ The third is what this does. A leaked ticket is worth one camera for sixty
 seconds, and it grants nothing else — not the API, not another camera, not
 evidence.
 
+### Why every lookup here composes a runtime id
+
+`CameraWall` is keyed on `organization_id ":" camera_key`, because a camera
+key is unique only inside its organization and the wall is process-wide. This
+module never hands it a bare key. The tenant half comes from the authenticated
+session on the API routes, and on the unauthenticated streaming route from the
+tenant the HMAC ticket was signed over — so it is always a value the caller
+proved rather than one they asserted. URLs keep the plain camera key; the
+qualification happens on this side of them.
+
 ### What never reaches the browser
 
 The DVR username, the DVR password, the credential reference and the RTSP URL —
@@ -40,6 +50,7 @@ from fastapi.responses import StreamingResponse
 from app.api.dependencies import CurrentAccess, DbSession, requires, settings_of
 from app.authorization.model import Permission
 from app.domain.cameras import CameraService
+from app.domain.runtime_identity import runtime_camera_id
 from app.errors import AuthenticationError, NotFoundError
 from app.vision.wall import DEFAULT_DETAIL_FPS, DEFAULT_WALL_FPS
 
@@ -115,7 +126,7 @@ async def list_wall_cameras(
 
     cameras = []
     for camera in rows:
-        stream = wall.get(camera.camera_key)
+        stream = wall.get(runtime_camera_id(access.tenant_id, camera.camera_key))
         if stream is not None:
             entry = stream.to_wire()
         else:
@@ -216,19 +227,26 @@ async def stream_camera(
         raise AuthenticationError("this stream ticket is not valid for this camera")
 
     wall = request.app.state.wall
-    stream = wall.get(camera_id)
+    # Tenancy is settled by the ticket, and it is settled *in the lookup*.
+    #
+    # The ticket is HMAC-signed over exactly (tenant, camera, subject) and was
+    # minted only after a tenant-scoped database read proved the camera exists
+    # in that tenant, so `tenant` here is a value the caller proved. Composing
+    # the runtime id from it is what makes the fetch tenant-safe: the previous
+    # `wall.get(camera_id)` verified the signature correctly and then looked up
+    # a bare key, so an operator at the second organization to own a `cam-01`
+    # would pass a valid ticket for their own camera and be handed the first
+    # organization's stream.
+    #
+    # Still no re-check against `stream.camera`. That was removed for a good
+    # reason and it stays removed: the wall holds ORM rows loaded at start-up,
+    # so a camera moved between tenants left every stream returning 403 until
+    # the process restarted — a stale cache acting as an authorization input.
+    # The key itself now carries the tenant, which is the durable version of
+    # the check that comparison was reaching for.
+    stream = wall.get(runtime_camera_id(tenant, camera_id))
     if stream is None:
         raise NotFoundError("this camera is not streaming")
-
-    # Tenancy is settled by the ticket, not by the stream's copy of the camera.
-    #
-    # The ticket was minted only after a tenant-scoped database read proved the
-    # camera exists in that tenant, and it is HMAC-signed over exactly
-    # (tenant, camera, subject). Re-checking against `stream.camera` would add
-    # nothing to that and did add a real failure: the wall holds ORM rows loaded
-    # at start-up, so a camera moved between tenants left every stream returning
-    # 403 until the process was restarted — a stale cache silently acting as an
-    # authorization input.
 
     interval = 1.0 / max(fps, 0.5)
 
@@ -277,7 +295,9 @@ async def camera_detail(
     camera = await CameraService(session).get(
         organization_id=access.tenant_id, camera_key=camera_id
     )
-    stream = request.app.state.wall.get(camera_id)
+    stream = request.app.state.wall.get(
+        runtime_camera_id(access.tenant_id, camera_id)
+    )
     detail = stream.to_wire() if stream is not None else {
         "camera_id": camera.camera_key,
         "name": camera.name,

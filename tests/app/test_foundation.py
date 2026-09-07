@@ -226,13 +226,45 @@ class TestTheEmptyScopeHazard:
         assert decision.to_grant().cameras == ()
 
     def test_listed_access_passes_exactly_those_cameras(self) -> None:
+        """Exactly those cameras, named the way the platform knows them.
+
+        The grant stores bare `camera_key` values because `access_grants` is a
+        tenant-scoped table and that is the right identity there. Vision OS
+        partitions on the id the pipeline published with, which carries the
+        tenant, so the translation happens at this boundary and nowhere else.
+        """
         decision = AccessDecision(
             subject="manager@example.com",
             tenant_id="org-1",
             roles=frozenset({Role.RESTAURANT_MANAGER}),
             cameras=CameraScope.listed(("cam-01", "cam-02")),
         )
-        assert [str(c) for c in decision.to_grant().cameras] == ["cam-01", "cam-02"]
+        assert [str(c) for c in decision.to_grant().cameras] == [
+            "org-1:cam-01",
+            "org-1:cam-02",
+        ]
+
+    def test_a_grant_cannot_reach_another_tenants_camera_of_the_same_name(self) -> None:
+        """The whole reason the translation exists.
+
+        Two organizations may each own a `cam-01`. If a grant were expressed to
+        the platform as the bare key, both would name the same partition and
+        the first read would cross the tenant boundary.
+        """
+        def grant_for(tenant: str):
+            return AccessDecision(
+                subject="manager@example.com",
+                tenant_id=tenant,
+                roles=frozenset({Role.RESTAURANT_MANAGER}),
+                cameras=CameraScope.listed(("cam-01",)),
+            ).to_grant()
+
+        a = [str(c) for c in grant_for("org-a").cameras]
+        b = [str(c) for c in grant_for("org-b").cameras]
+
+        assert a != b, "two tenants' grants named the same camera"
+        assert a == ["org-a:cam-01"]
+        assert b == ["org-b:cam-01"]
 
     def test_an_empty_listed_scope_cannot_be_constructed(self) -> None:
         """`LISTED` with nothing listed is the ambiguity itself."""

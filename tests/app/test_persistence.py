@@ -147,7 +147,10 @@ class TestCameraConfiguration:
             analysis_fps=2.0,
         )
         config = to_rtsp_config(camera)
-        assert config.camera_id == "cam-11"
+        # The runtime id, not the bare key. `camera_key` is unique only within
+        # an organization, and this value names a session in registries the
+        # whole process shares.
+        assert config.camera_id == "org-test:cam-11"
         assert config.channel == 11
         assert config.analysis_fps == 2.0
         assert config.credential_ref == "env:CCTV_PASSWORD"
@@ -763,6 +766,9 @@ class TestProductApi:
         self, seeded, client, admin_headers
     ):
         headers = admin_headers
+        restaurant = (
+            await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
+        ).json()
         response = await client.post(
             "/api/v1/cameras",
             headers=headers,
@@ -770,7 +776,7 @@ class TestProductApi:
                 "camera_key": "cam-21",
                 "name": "New",
                 "channel": 21,
-                "restaurant_id": "rest-01",
+                "restaurant_id": restaurant["id"],
                 "host": "10.0.0.5",
                 "credential_ref": "env:CCTV_PASSWORD",
             },
@@ -782,6 +788,9 @@ class TestProductApi:
     @pytest.mark.asyncio
     async def test_enabling_a_camera_gets_its_own_audit_action(self, seeded, client, admin_headers):
         headers = admin_headers
+        restaurant = (
+            await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
+        ).json()
         await client.post(
             "/api/v1/cameras",
             headers=headers,
@@ -789,7 +798,7 @@ class TestProductApi:
                 "camera_key": "cam-22",
                 "name": "New",
                 "channel": 22,
-                "restaurant_id": "rest-01",
+                "restaurant_id": restaurant["id"],
                 "host": "10.0.0.5",
             },
         )
@@ -804,6 +813,52 @@ class TestProductApi:
                 organization_id=ORG, action=AuditAction.CAMERA_ENABLED
             )
         assert [e.resource_id for e in events] == ["cam-22"]
+
+    @pytest.mark.asyncio
+    async def test_a_camera_cannot_be_attached_to_another_organisations_restaurant(
+        self, seeded, client, admin_headers
+    ):
+        """The same ownership guard zone creation already applies (`app/api/administration.py:325`)."""
+        mine = (
+            await client.post(
+                "/api/v1/restaurants", json={"name": "Mine"}, headers=admin_headers
+            )
+        ).json()
+
+        outsider = await bearer(client, "outsider@example.com")
+        response = await client.post(
+            "/api/v1/cameras",
+            headers=outsider,
+            json={
+                "camera_key": "cam-trespass",
+                "name": "Trespass",
+                "channel": 1,
+                "restaurant_id": mine["id"],
+            },
+        )
+        assert response.status_code == 404, response.text
+
+        async with seeded.state.database.session_scope() as session:
+            events = await AuditTrail(session).query(
+                organization_id="org-other", action=AuditAction.CAMERA_CREATED
+            )
+        assert events == [], "no camera row, and nothing audited for a rejected attempt"
+
+    @pytest.mark.asyncio
+    async def test_a_camera_created_into_a_nonexistent_restaurant_is_rejected(
+        self, seeded, client, admin_headers
+    ):
+        response = await client.post(
+            "/api/v1/cameras",
+            headers=admin_headers,
+            json={
+                "camera_key": "cam-orphan",
+                "name": "Orphan",
+                "channel": 1,
+                "restaurant_id": "does-not-exist",
+            },
+        )
+        assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_a_frame_listing_carries_no_pixels(self, seeded, client):

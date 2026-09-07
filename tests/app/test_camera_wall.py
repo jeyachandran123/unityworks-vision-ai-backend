@@ -22,10 +22,22 @@ import pytest
 
 from app.api.wall import TICKET_TTL_S, mint_ticket, verify_ticket
 from app.vision.wall import STALE_AFTER_S, CameraStream, CameraWall, StreamState
+from app.domain.runtime_identity import runtime_camera_id
 from tests.app.conftest import bearer
 
 SECRET = "test-only-secret-value-not-for-any-deployment"
 ORG = "org-test"
+
+
+def wall_key(camera_key: str, *, org: str = ORG) -> str:
+    """The id `CameraWall` actually keys on.
+
+    Spelled out here rather than composed inline at every call site, because
+    the point these tests now carry is that a bare `camera_key` is never a
+    valid wall lookup: it is unique per organization, and the wall is
+    process-wide.
+    """
+    return runtime_camera_id(org, camera_key)
 
 
 class FakeCamera:
@@ -112,7 +124,7 @@ class TestFailureIsolation:
         try:
             assert len(wall.streams) == 4, "every camera must appear, working or not"
             assert started >= 1
-            broken = wall.get("cam-03")
+            broken = wall.get(wall_key("cam-03"))
             assert broken is not None, "the broken camera is still listed"
         finally:
             await wall.stop_all()
@@ -122,7 +134,7 @@ class TestFailureIsolation:
         wall = CameraWall(settings)
         await wall.start_cameras([FakeCamera(1, enabled=False)])
         try:
-            stream = wall.get("cam-01")
+            stream = wall.get(wall_key("cam-01"))
             assert stream is not None, "a disabled camera is still on the wall"
             assert stream.state == StreamState.DISABLED
         finally:
@@ -134,10 +146,10 @@ class TestFailureIsolation:
         wall = CameraWall(settings)
         camera = FakeCamera(1)
         await wall.start_cameras([camera])
-        first = wall.get("cam-01")
+        first = wall.get(wall_key("cam-01"))
         await wall.start_cameras([camera])
         try:
-            assert wall.get("cam-01") is first, "a second start created a second session"
+            assert wall.get(wall_key("cam-01")) is first, "a second start created a second session"
             assert len(wall.streams) == 1
         finally:
             await wall.stop_all()
@@ -377,7 +389,7 @@ class TestPhase6B1Regressions:
         stale = FakeCamera(1, org="an-old-tenant")
         await wall.start_cameras([stale])
         try:
-            stream = wall.get("cam-01")
+            stream = wall.get(wall_key("cam-01", org="an-old-tenant"))
             assert stream is not None
             # The row the wall is holding is out of date...
             assert stream.camera.organization_id == "an-old-tenant"
@@ -525,7 +537,7 @@ class TestPhase6B3Offload:
             t0 = time.monotonic()
             for _ in range(20):
                 wall.summary()
-                wall.get("cam-02").to_wire()
+                wall.get(wall_key("cam-02")).to_wire()
             read_elapsed = time.monotonic() - t0
             assert read_elapsed < 0.2, f"reading wall state took {read_elapsed:.3f}s"
 
@@ -581,7 +593,7 @@ class TestPhase6B3Offload:
             assert len(attempts) >= 3, "the flaky loop never recovered"
             live = [t for t in threading.enumerate() if t.name == "wall-cam-01"]
             assert len(live) == 1, "a reconnect spawned a second worker thread"
-            assert wall.get("cam-01").stats.reconnects >= 2
+            assert wall.get(wall_key("cam-01")).stats.reconnects >= 2
         finally:
             await wall.stop_all()
 
@@ -697,7 +709,7 @@ class TestStallWatchdog:
             # the stall lands at ~0.6s and the re-dial at ~2.8s, so this waits
             # past the second rather than racing it.
             await asyncio.sleep(self.WINDOW + self.REDIAL_BACKOFF + 1.3)
-            stream = wall.get("cam-14")
+            stream = wall.get(wall_key("cam-14"))
 
             assert stream.stats.stalls >= 1, "the watchdog never fired"
             assert stream.stats.reconnects >= 1, "the stall did not cause a reconnect"
@@ -729,7 +741,7 @@ class TestStallWatchdog:
         await wall.start_cameras([FakeCamera(12)])
         try:
             await asyncio.sleep(self.WINDOW * 4)
-            stream = wall.get("cam-12")
+            stream = wall.get(wall_key("cam-12"))
 
             assert stream.stats.stalls == 0, "the watchdog fired on a healthy stream"
             assert len(dials) == 1, "a healthy source was needlessly re-dialled"
@@ -748,7 +760,10 @@ class TestStallWatchdog:
             def __init__(self, config, *a, **k):
                 self.camera_id = str(config.camera_id)
                 dials[self.camera_id] = dials.get(self.camera_id, 0) + 1
-                self._stalls = self.camera_id == "cam-14"
+                # The source is dialled with the camera's *runtime* id, which
+                # is what `to_rtsp_config` now passes: a bare key could not
+                # name a camera unambiguously across organizations.
+                self._stalls = self.camera_id == wall_key("cam-14")
                 self._stop = False
 
             async def frames(self):
@@ -768,12 +783,12 @@ class TestStallWatchdog:
         try:
             await asyncio.sleep(self.WINDOW * 4)
 
-            assert wall.get("cam-14").stats.stalls >= 1, "the stalled camera recovered nothing"
+            assert wall.get(wall_key("cam-14")).stats.stalls >= 1, "the stalled camera recovered nothing"
 
             for healthy in ("cam-11", "cam-12", "cam-13"):
-                stream = wall.get(healthy)
+                stream = wall.get(wall_key(healthy))
                 assert stream.stats.stalls == 0, f"{healthy} was flagged as stalled"
-                assert dials[healthy] == 1, f"{healthy} was needlessly re-dialled"
+                assert dials[wall_key(healthy)] == 1, f"{healthy} was needlessly re-dialled"
                 assert stream.state == StreamState.LIVE, f"{healthy} left LIVE"
 
             # Still one worker thread per camera: a stall must not spawn a
@@ -836,7 +851,7 @@ class TestStallWatchdog:
         await wall.start_cameras([FakeCamera(12)])
         try:
             await asyncio.sleep(0.8)
-            stream = wall.get("cam-12")
+            stream = wall.get(wall_key("cam-12"))
 
             assert stream.stats.stalls == 0, (
                 "a receiving source was torn down as stalled — the feedback loop is back"
@@ -880,5 +895,75 @@ class TestStallWatchdog:
             gaps = [b - a for a, b in zip(at, at[1:], strict=False)]
             # Escalating, not flat: the second wait must exceed the first.
             assert gaps[-1] > gaps[0], f"retries are not backing off: {gaps}"
+        finally:
+            await wall.stop_all()
+
+
+class TestMultiTenantRuntimeIdentity:
+    """Two organizations, both with a camera called `cam-01`.
+
+    This is the case the wall could not previously survive. `camera_key` is
+    unique per organization (`uq_camera_key`), the wall is process-wide, and
+    `cam-01` is the likeliest key anyone picks — so the second organization to
+    register one would have overwritten or shadowed the first's entry, and
+    `wall.get("cam-01")` would return whichever won.
+
+    Nothing about that failure is loud. It is one customer's operator watching
+    another customer's kitchen.
+    """
+
+    async def test_two_organizations_may_both_own_a_camera_called_cam_01(self, settings):
+        wall = CameraWall(settings)
+        await wall.start_cameras(
+            [FakeCamera(1, org="org-a"), FakeCamera(1, org="org-b")]
+        )
+        try:
+            a = wall.get(wall_key("cam-01", org="org-a"))
+            b = wall.get(wall_key("cam-01", org="org-b"))
+
+            assert a is not None, "org-a's camera was not registered"
+            assert b is not None, "org-b's camera was not registered"
+            assert a is not b, (
+                "both organizations resolved to one stream: this is the "
+                "cross-tenant frame delivery the runtime id exists to close"
+            )
+            assert a.camera.organization_id == "org-a"
+            assert b.camera.organization_id == "org-b"
+        finally:
+            await wall.stop_all()
+
+    async def test_a_bare_camera_key_resolves_to_nothing(self, settings):
+        """The unsafe lookup must not merely be discouraged. It must fail.
+
+        A `get` that silently fell back to a bare-key match would reintroduce
+        the collision for every caller that had not been updated, which is the
+        quietest possible way to keep the bug.
+        """
+        wall = CameraWall(settings)
+        await wall.start_cameras([FakeCamera(1, org="org-a")])
+        try:
+            assert wall.get("cam-01") is None
+        finally:
+            await wall.stop_all()
+
+    async def test_stopping_one_organization_leaves_the_other_running(self, settings):
+        """Lifecycle is per-organization, and it reaches the runtime.
+
+        Archiving a customer has to actually stop their cameras — and stop
+        only theirs.
+        """
+        wall = CameraWall(settings)
+        await wall.start_cameras(
+            [FakeCamera(1, org="org-a"), FakeCamera(2, org="org-a"), FakeCamera(1, org="org-b")]
+        )
+        try:
+            stopped = await wall.stop_organization("org-a")
+
+            assert stopped == 2
+            assert wall.get(wall_key("cam-01", org="org-a")) is None
+            assert wall.get(wall_key("cam-02", org="org-a")) is None
+            assert wall.get(wall_key("cam-01", org="org-b")) is not None, (
+                "stopping one organization reached another's streams"
+            )
         finally:
             await wall.stop_all()

@@ -725,7 +725,10 @@ async def test_deleting_a_camera_purges_its_observation_partition(
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["observations_removed"] == 7
-    assert truncated == ["cam-01"]
+    # The tenant-qualified partition. A bare `cam-01` would name whichever
+    # organization's partition happened to be called that — which, once a
+    # second tenant exists, is not necessarily this one's.
+    assert truncated == ["org-test:cam-01"]
     # The zone history survives: incidents still name this camera and still need
     # to say where they happened.
     assert body["zone_history_retained"] is True

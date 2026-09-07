@@ -6,9 +6,19 @@ Three groups, and a deliberate asymmetry between them.
 
 They are organisational structure: a name, a timezone, an area of a kitchen.
 Getting one wrong is an inconvenience, and the blast radius of a mistake is a
-mislabelled row. `MANAGE_ORGANIZATION` gates every write and each one is
+mislabelled row.
+
+Each domain is gated on its own permission — `VIEW_SITES` / `MANAGE_SITES` for
+restaurants, `VIEW_ZONES` / `MANAGE_ZONES` for zones — and each write is
 audited, because renaming the site an incident is attributed to changes how that
 incident reads six months later.
+
+These were once gated on `VIEW_USERS` for reads and `MANAGE_ORGANIZATION` for
+writes, which made two unrelated questions the same grant: "may see who works
+here" also meant "may read every site", and "may rename a zone" also meant "may
+reconfigure the organisation". The product needs those separated — two managers
+holding one role, where one may edit the estate and the other may only read
+it — and no arrangement of a blanket permission expresses that.
 
 ### Users are read-only here, and that is a decision rather than an omission
 
@@ -37,7 +47,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import CurrentAccess, DbSession, requires
@@ -123,21 +133,43 @@ async def _counts(session: AsyncSession, organization_id: str) -> tuple[dict[str
     return zone_counts, camera_counts
 
 
-@router.get("/restaurants", dependencies=[Depends(requires(Permission.VIEW_USERS))])
-async def list_restaurants(access: CurrentAccess, session: DbSession) -> dict[str, Any]:
-    """Every site in the caller's organisation.
+@router.get("/restaurants", dependencies=[Depends(requires(Permission.VIEW_SITES))])
+async def list_restaurants(
+    access: CurrentAccess,
+    session: DbSession,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    is_active: Annotated[bool | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict[str, Any]:
+    """Sites in the caller's organisation.
 
-    Gated on `VIEW_USERS` rather than `MANAGE_ORGANIZATION`: a restaurant
-    manager needs to read the structure their incidents are attributed to, and
-    reading it grants no ability to change it. Writing is a different permission
-    on every route below.
+    Gated on `VIEW_SITES`: a restaurant manager needs to read the structure
+    their incidents are attributed to, and reading it grants no ability to
+    change it. Writing is `MANAGE_SITES`, a permission this role does not hold
+    by default.
+
+    Searchable and paginated. A chain with four restaurants does not need it;
+    the same code with four hundred does, and the version that fetches all of
+    them works perfectly right up until the day it does not.
     """
+    statement = select(Restaurant).where(Restaurant.organization_id == access.tenant_id)
+    if q:
+        needle = f"%{q.strip().lower()}%"
+        statement = statement.where(
+            func.lower(Restaurant.name).like(needle)
+            | func.lower(Restaurant.slug).like(needle)
+        )
+    if is_active is not None:
+        statement = statement.where(Restaurant.is_active.is_(is_active))
+
+    total = int(
+        (await session.execute(select(func.count()).select_from(statement.subquery()))).scalar_one()
+    )
     found = (
         (
             await session.execute(
-                select(Restaurant)
-                .where(Restaurant.organization_id == access.tenant_id)
-                .order_by(Restaurant.name)
+                statement.order_by(Restaurant.name).limit(limit).offset(offset)
             )
         )
         .scalars()
@@ -154,10 +186,33 @@ async def list_restaurants(access: CurrentAccess, session: DbSession) -> dict[st
             for r in found
         ],
         "count": len(found),
+        "total": total,
+        "limit": limit,
+        "offset": offset,
     }
 
 
-@router.post("/restaurants", dependencies=[Depends(requires(Permission.MANAGE_ORGANIZATION))])
+@router.get("/restaurants/{restaurant_id}", dependencies=[Depends(requires(Permission.VIEW_SITES))])
+async def get_restaurant(
+    restaurant_id: str, access: CurrentAccess, session: DbSession
+) -> dict[str, Any]:
+    """One site, for its own page.
+
+    A detail route rather than "find it in the list": a site page is now a real
+    surface with zones and cameras of its own, and asking a client to fetch
+    every site to render one is how a list becomes a hidden dependency of a
+    detail view.
+    """
+    restaurant = await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
+    zone_counts, camera_counts = await _counts(session, access.tenant_id)
+    return restaurant_to_wire(
+        restaurant,
+        zone_count=zone_counts.get(restaurant.id, 0),
+        camera_count=camera_counts.get(restaurant.id, 0),
+    )
+
+
+@router.post("/restaurants", dependencies=[Depends(requires(Permission.MANAGE_SITES))])
 async def create_restaurant(
     request: Request,
     access: CurrentAccess,
@@ -195,7 +250,7 @@ async def create_restaurant(
 
 @router.patch(
     "/restaurants/{restaurant_id}",
-    dependencies=[Depends(requires(Permission.MANAGE_ORGANIZATION))],
+    dependencies=[Depends(requires(Permission.MANAGE_SITES))],
 )
 async def update_restaurant(
     restaurant_id: str,
@@ -273,7 +328,7 @@ def zone_to_wire(zone: Zone, *, camera_count: int = 0) -> dict[str, Any]:
     }
 
 
-@router.get("/zones", dependencies=[Depends(requires(Permission.VIEW_USERS))])
+@router.get("/zones", dependencies=[Depends(requires(Permission.VIEW_ZONES))])
 async def list_zones(
     access: CurrentAccess,
     session: DbSession,
@@ -312,7 +367,7 @@ async def list_zones(
     }
 
 
-@router.post("/zones", dependencies=[Depends(requires(Permission.MANAGE_ORGANIZATION))])
+@router.post("/zones", dependencies=[Depends(requires(Permission.MANAGE_ZONES))])
 async def create_zone(
     request: Request,
     access: CurrentAccess,
@@ -341,7 +396,7 @@ async def create_zone(
     return zone_to_wire(zone)
 
 
-@router.patch("/zones/{zone_id}", dependencies=[Depends(requires(Permission.MANAGE_ORGANIZATION))])
+@router.patch("/zones/{zone_id}", dependencies=[Depends(requires(Permission.MANAGE_ZONES))])
 async def update_zone(
     zone_id: str,
     request: Request,

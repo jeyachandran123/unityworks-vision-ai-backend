@@ -49,6 +49,8 @@ from typing import Any
 
 from loguru import logger
 
+from app.domain.runtime_identity import SEPARATOR, for_camera
+
 #: Frames per second encoded for a wall tile. Sixteen tiles at four fps is
 #: sixty-four JPEG encodes a second; the wall is for noticing movement, not for
 #: reading a clock.
@@ -504,7 +506,21 @@ def _encode_jpeg(payload: bytes, width: int, height: int, quality: int) -> bytes
 
 
 class CameraWall:
-    """Every camera stream for the process. Owns their lifecycle."""
+    """Every camera stream for the process. Owns their lifecycle.
+
+    ### Keyed on runtime identity, never on `camera_key`
+
+    This registry is process-wide and the process serves every organization,
+    while `camera_key` is unique only *within* one organization
+    (`uq_camera_key`). Keying on the bare key meant the first two customers to
+    both name a camera `cam-01` — the single likeliest key anyone picks —
+    would share one entry, and `wall.get("cam-01")` would hand whichever of
+    them asked second the other's frames.
+
+    So the key is `app.domain.runtime_identity.for_camera(camera)`:
+    `organization_id ":" camera_key`, unique by construction. `get()` takes
+    that id and nothing else.
+    """
 
     __slots__ = ("_lock", "_quality", "_secret_environment", "_settings", "_streams")
 
@@ -520,8 +536,15 @@ class CameraWall:
     def streams(self) -> dict[str, CameraStream]:
         return dict(self._streams)
 
-    def get(self, camera_id: str) -> CameraStream | None:
-        return self._streams.get(camera_id)
+    def get(self, runtime_id: str) -> CameraStream | None:
+        """One stream, by its **runtime** id.
+
+        Deliberately no `camera_key` overload and no fallback lookup: a caller
+        holding only a bare key does not yet know which organization's camera
+        it means, and a lookup that guessed would be the cross-tenant delivery
+        this registry's docstring describes.
+        """
+        return self._streams.get(runtime_id)
 
     async def start_cameras(self, cameras: list[Any]) -> int:
         """Open one stream per camera. **A failure starts the others anyway.**
@@ -542,14 +565,15 @@ class CameraWall:
         started = 0
         async with self._lock:
             for camera in cameras:
-                if camera.camera_key in self._streams:
+                runtime_id = for_camera(camera)
+                if runtime_id in self._streams:
                     continue
                 stream = CameraStream(
                     camera,
                     quality=self._quality,
                     secret_environment=self._secret_environment,
                 )
-                self._streams[camera.camera_key] = stream
+                self._streams[runtime_id] = stream
                 if not camera.enabled:
                     # Present on the wall, and honest about why it is dark.
                     continue
@@ -567,6 +591,28 @@ class CameraWall:
                     )
         logger.info("camera wall started {} of {} stream(s)", started, len(cameras))
         return started
+
+    async def stop_organization(self, organization_id: str) -> int:
+        """Stop and forget every stream belonging to one organization.
+
+        Needed because an organization's lifecycle can change while the process
+        runs: archiving one must actually stop its cameras rather than merely
+        hiding them from an API, and suspending one is decided by the same
+        policy. Scoped by the runtime id's own tenant half, so it can never
+        reach another organization's streams.
+        """
+        prefix = f"{organization_id}{SEPARATOR}"
+        async with self._lock:
+            doomed = [k for k in self._streams if k.startswith(prefix)]
+            streams = [self._streams.pop(k) for k in doomed]
+        await asyncio.gather(*(s.stop() for s in streams), return_exceptions=True)
+        if streams:
+            logger.info(
+                "camera wall stopped {} stream(s) for organization {}",
+                len(streams),
+                organization_id,
+            )
+        return len(streams)
 
     async def stop_all(self) -> None:
         async with self._lock:

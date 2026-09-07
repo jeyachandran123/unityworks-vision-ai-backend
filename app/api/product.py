@@ -28,6 +28,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query, Request, Response
 
+from app.api.administration import _restaurant_in_tenant
 from app.api.dependencies import CurrentAccess, DbSession, requires, settings_of
 from app.authorization.model import AccessDecision, Permission, ScopeBreadth
 from app.domain import cameras as camera_domain
@@ -72,6 +73,63 @@ async def list_cameras(access: CurrentAccess, session: DbSession) -> dict[str, A
     }
 
 
+async def _placement(
+    session, organization_id: str, restaurant_id: str, zone_id: Any
+) -> str | None:
+    """Validate where a camera is being put, and refuse anything else.
+
+    Two checks, and the second is the one that was missing.
+
+    **The site belongs to this organization.** Already enforced; a camera could
+    not be attached to another customer's restaurant by naming its id.
+
+    **The zone belongs to that site.** Not enforced anywhere until now. The
+    route accepted `zone_id` from the request body and passed it to the domain
+    service unread, so a caller could attach a camera to any zone in the
+    database — including another organization's — and every observation it
+    produced from then on would be attributed there. The join through
+    `Restaurant` is what makes this checkable at all: `zones` carries no
+    organization column of its own, so the parent is the only thing that can
+    establish tenancy.
+
+    A frontend that only offers zones from the selected site is a convenience.
+    This is the boundary.
+    """
+    from sqlalchemy import select
+
+    from app.domain.models import Restaurant, Zone
+
+    await _restaurant_in_tenant(session, organization_id, restaurant_id)
+
+    key = str(zone_id or "").strip()
+    if not key:
+        # A camera with no zone is legitimate: it has been placed at a site but
+        # not yet in a room. `record_assignment` opens an interval with a null
+        # zone, so "where was this camera" still has an answer.
+        return None
+
+    found = (
+        await session.execute(
+            select(Zone)
+            .join(Restaurant, Restaurant.id == Zone.restaurant_id)
+            .where(
+                Zone.id == key,
+                Zone.restaurant_id == restaurant_id,
+                Restaurant.organization_id == organization_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if found is None:
+        # Deliberately does not distinguish "no such zone" from "that zone is
+        # somewhere else": both answers would confirm something about a row the
+        # caller may not see.
+        raise ValidationError(
+            "that zone is not part of the selected site",
+            details={"zone_id": key, "restaurant_id": restaurant_id},
+        )
+    return key
+
+
 @router.post("/cameras", dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))])
 async def create_camera(
     request: Request,
@@ -83,20 +141,37 @@ async def create_camera(
     service = camera_domain.CameraService(session)
     audit = AuditTrail(session)
 
+    restaurant_id = str(payload.get("restaurant_id", ""))
+    zone_id = await _placement(session, access.tenant_id, restaurant_id, payload.get("zone_id"))
+
+    host = str(payload.get("host", "") or "").strip()
+    if not host:
+        # Required, because the runtime filters on it: `_start_cameras_from_
+        # database` and `_start_camera_wall` both skip rows with no host. A
+        # camera created without one is accepted, listed, and permanently
+        # inert — it never connects and nothing ever says why. Refusing here
+        # is the difference between a validation error and a camera that
+        # silently does not exist.
+        raise ValidationError(
+            "'host' is required: a camera with no address cannot be dialled, "
+            "and the runtime skips rows without one, so it would be created "
+            "and then never connect"
+        )
+
     camera = await service.create(
         organization_id=access.tenant_id,
-        restaurant_id=str(payload.get("restaurant_id", "")),
+        restaurant_id=restaurant_id,
         camera_key=str(payload.get("camera_key", "")).strip(),
         name=str(payload.get("name", "")),
         channel=int(payload.get("channel", 1)),
-        host=str(payload.get("host", "")),
+        host=host,
         rtsp_port=int(payload.get("rtsp_port", 554)),
         stream_type=str(payload.get("stream_type", "sub")),
         username=str(payload.get("username", "")),
         credential_ref=str(payload.get("credential_ref", "")),
         analysis_fps=float(payload.get("analysis_fps", 4.0)),
         purpose=str(payload.get("purpose", "")),
-        zone_id=payload.get("zone_id"),
+        zone_id=zone_id,
         enabled=False,
         # Recorded on the zone interval this creates. An attribution nobody can
         # trace is worth less than one that is wrong and known to be.
@@ -110,9 +185,14 @@ async def create_camera(
         resource_type="camera",
         resource_id=camera.camera_key,
         request_id=_request_id(request),
-        # `credential_ref` is a pointer and safe to record; the scrubber would
-        # remove a value even if one were passed by mistake.
-        detail={"channel": camera.channel, "credential_ref": camera.credential_ref},
+        # The scheme, not the reference. `credential_ref` is now scrubbed by
+        # name anyway (`app.domain.audit._FORBIDDEN_KEYS`), so recording it
+        # would store `***` and lose the one useful fact — that this camera
+        # points at an environment variable rather than a file.
+        detail={
+            "channel": camera.channel,
+            "credential_scheme": camera_domain._credential_scheme(camera.credential_ref),
+        },
     )
     return camera_domain.to_wire(camera)
 
@@ -128,9 +208,23 @@ async def update_camera(
     service = camera_domain.CameraService(session)
     audit = AuditTrail(session)
 
-    was_enabled = (
-        await service.get(organization_id=access.tenant_id, camera_key=camera_key)
-    ).enabled
+    existing = await service.get(organization_id=access.tenant_id, camera_key=camera_key)
+    was_enabled = existing.enabled
+
+    # Placement is re-validated on every update that touches it, not only on
+    # create. `update` passes `**payload` into the domain service, so before
+    # this a camera could be moved into another organization's zone by a PATCH
+    # even though it could not be created in one.
+    if "restaurant_id" in payload or "zone_id" in payload:
+        restaurant_id = str(payload.get("restaurant_id") or existing.restaurant_id)
+        payload = dict(payload)
+        payload["restaurant_id"] = restaurant_id
+        payload["zone_id"] = await _placement(
+            session,
+            access.tenant_id,
+            restaurant_id,
+            payload.get("zone_id", existing.zone_id),
+        )
 
     camera = await service.update(
         organization_id=access.tenant_id,
@@ -167,9 +261,60 @@ async def update_camera(
     return camera_domain.to_wire(camera)
 
 
+@router.post(
+    "/cameras/test-connection",
+    dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
+)
+async def test_camera_connection(
+    access: CurrentAccess,
+    session: DbSession,
+    payload: Annotated[dict, Body(default_factory=dict)],
+) -> dict[str, Any]:
+    """Is anything listening at this address?
+
+    Two ways to ask, and the first is the one to prefer:
+
+    * `{"camera_key": "cam-01"}` — the address comes from the database, is
+      already tenant-scoped, and the caller cannot choose it. No part of the
+      request influences where the socket goes.
+    * `{"host": ..., "rtsp_port": ...}` — for the onboarding wizard, which
+      needs to check an address *before* the row exists. Gated on
+      `MANAGE_CAMERAS` and refused for reserved ranges; see
+      `app.domain.connectivity` for why that is sufficient.
+
+    Never returns a credential, and never resolves one: the test is a TCP
+    connect, so there is no authentication step for a secret to be needed by.
+    """
+    from app.domain import connectivity
+
+    camera_key = str(payload.get("camera_key", "") or "").strip()
+    if camera_key:
+        camera = await camera_domain.CameraService(session).get(
+            organization_id=access.tenant_id, camera_key=camera_key
+        )
+        host, port = camera.host, camera.rtsp_port
+        if not host:
+            raise ValidationError(
+                "this camera has no address, so there is nothing to test. A "
+                "camera without a host is skipped by the runtime and will "
+                "never connect."
+            )
+    else:
+        host = str(payload.get("host", "") or "").strip()
+        port = int(payload.get("rtsp_port", 554))
+
+    result = await connectivity.probe(host, port)
+    body = result.as_dict()
+    # Echoed so a wizard can show what it tested. The host is something the
+    # caller either supplied or is already entitled to read.
+    body["host"] = host
+    body["rtsp_port"] = port
+    return body
+
+
 @router.delete(
     "/cameras/{camera_key}",
-    dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
+    dependencies=[Depends(requires(Permission.RETIRE_CAMERAS))],
 )
 async def delete_camera(
     camera_key: str,
@@ -178,6 +323,13 @@ async def delete_camera(
     session: DbSession,
 ) -> dict[str, Any]:
     """Remove a camera and destroy its observation partition.
+
+    ### Its own permission, not `MANAGE_CAMERAS`
+
+    Gated on `RETIRE_CAMERAS`. Everything this docstring goes on to say about
+    destroying records is the argument for the separation: an account that may
+    add a camera and correct its name has not thereby been trusted to close an
+    observation partition, and no amount of renaming undoes this.
 
     ### Two audit rows, always
 

@@ -33,7 +33,7 @@ three-state decision made explicitly here:
 from __future__ import annotations
 
 import enum
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from app.errors import ScopeError
@@ -79,9 +79,30 @@ class Permission(enum.Enum):
     """
 
     # identity and administration
+    #: Organisation *settings and lifecycle* — the organisation's own name,
+    #: timezone policy and status. Deliberately **not** a blanket write
+    #: permission over the physical estate: sites and zones have their own keys
+    #: below. It held that job historically, which made "may edit one zone's
+    #: name" and "may reconfigure the whole organisation" the same grant.
     MANAGE_ORGANIZATION = "manage_organization"
     MANAGE_USERS = "manage_users"
+    #: The user roster, and nothing else. It historically also gated reading
+    #: sites and zones, so holding it meant "may read every site" as a side
+    #: effect of "may see who works here" — two unrelated questions.
     VIEW_USERS = "view_users"
+
+    # the physical estate: sites and the zones inside them
+    #
+    # Read and manage are separate keys per domain because that is the
+    # distinction the product actually needs to express: two managers on the
+    # same role where one may edit the estate and the other may only look at
+    # it. Neither is implied by the other, and neither is implied by
+    # MANAGE_ORGANIZATION.
+
+    VIEW_SITES = "view_sites"
+    MANAGE_SITES = "manage_sites"
+    VIEW_ZONES = "view_zones"
+    MANAGE_ZONES = "manage_zones"
 
     # observation surfaces
     VIEW_LIVE = "view_live"
@@ -90,9 +111,15 @@ class Permission(enum.Enum):
     VIEW_EVIDENCE = "view_evidence"
     VIEW_CAMERA_HEALTH = "view_camera_health"
 
-    # sites and cameras
+    # cameras
     MANAGE_CAMERAS = "manage_cameras"
     VIEW_CAMERAS = "view_cameras"
+    #: Retiring a camera is not a heavier edit. It closes an observation
+    #: partition — the historical record a finding may later need to be
+    #: defended with — and it cannot be undone by renaming the camera back.
+    #: This is the same separation the enum already draws between
+    #: VIEW_EVIDENCE and DELETE_EVIDENCE, for the same reason.
+    RETIRE_CAMERAS = "retire_cameras"
 
     # incidents — the work queue
     VIEW_INCIDENTS = "view_incidents"
@@ -223,6 +250,19 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.REGISTER_DEMAND,
             Permission.MANAGE_CAMERAS,
             Permission.VIEW_CAMERAS,
+            # Retirement, unlike the rest of camera administration, is held
+            # here and by SUPER_ADMIN alone. A restaurant manager who may add
+            # and rename cameras should not thereby be able to close an
+            # observation partition.
+            Permission.RETIRE_CAMERAS,
+            # The estate. These are new keys, and this role held their reach
+            # before they existed — it gated sites and zones through
+            # MANAGE_ORGANIZATION and VIEW_USERS. Listing them here preserves
+            # exactly what this role could already do.
+            Permission.VIEW_SITES,
+            Permission.MANAGE_SITES,
+            Permission.VIEW_ZONES,
+            Permission.MANAGE_ZONES,
             Permission.VIEW_INCIDENTS,
             Permission.ACKNOWLEDGE_INCIDENTS,
             Permission.RESOLVE_INCIDENTS,
@@ -277,6 +317,14 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_EVIDENCE,
             Permission.VIEW_CAMERA_HEALTH,
             Permission.VIEW_CAMERAS,
+            # Read the estate, do not change it. This is exactly what the role
+            # could do before these keys existed — it held VIEW_USERS, which
+            # gated site and zone reads — and deliberately no more. A manager
+            # who should be able to edit sites gets MANAGE_SITES as a
+            # per-user GRANT override; that difference between two managers on
+            # one role is the whole point of the override engine.
+            Permission.VIEW_SITES,
+            Permission.VIEW_ZONES,
             Permission.VIEW_INCIDENTS,
             Permission.ACKNOWLEDGE_INCIDENTS,
             Permission.RESOLVE_INCIDENTS,
@@ -374,6 +422,60 @@ def permissions_for(roles: frozenset[Role]) -> frozenset[Permission]:
     return frozenset(granted)
 
 
+class OverrideState(enum.Enum):
+    """A per-user, per-permission exception to what their roles would give them.
+
+    Three logical states, two of which are ever stored: no row means INHERIT —
+    the role's own answer stands, and that is deliberately not a row at all, so
+    that "this user has no exceptions" is the empty case rather than a table
+    full of no-op rows. A stored row is always ``GRANT`` (add a permission the
+    role doesn't carry) or ``REVOKE`` (remove one it does).
+
+    This is the mechanism `Role` being a closed, code-defined enum requires: a
+    "read-only manager" cannot be expressed by inventing a narrower role without
+    causing role explosion, so the difference is carried per user instead. Pure
+    union (grants only) was considered and rejected — it cannot express REVOKE,
+    and REVOKE is exactly the case a closed role set cannot solve any other way.
+    """
+
+    GRANT = "grant"
+    REVOKE = "revoke"
+
+
+class OrganizationStatus(enum.Enum):
+    """The tenant's own lifecycle state, independent of any one user's.
+
+    Three states, never a bare boolean, for the same reason `Role` is a closed
+    set and `ScopeBreadth` is three-valued rather than two: "suspended" and
+    "archived" are different acts with different remedies, and collapsing them
+    into a single `is_active` flag would make a billing hold and a permanent
+    shutdown look identical to every caller downstream.
+    """
+
+    #: Unchanged behavior — every existing organization is here today.
+    ACTIVE = "active"
+    #: Login and reads continue; `MANAGE_*` writes are refused. Reversible.
+    SUSPENDED = "suspended"
+    #: Login and all API access refused. Data is retained, nothing is deleted.
+    ARCHIVED = "archived"
+
+
+def effective_permissions(
+    roles: frozenset[Role],
+    *,
+    granted: frozenset[Permission] = frozenset(),
+    revoked: frozenset[Permission] = frozenset(),
+) -> frozenset[Permission]:
+    """``(role permissions ∪ explicit GRANTs) − explicit REVOKEs``.
+
+    REVOKE is applied last and always wins over both the role and any GRANT, so
+    a revoked permission cannot be reinstated by also holding a role that
+    carries it — the override is the more specific statement about this one
+    user and takes precedence for exactly that reason.
+    """
+    return (permissions_for(roles) | granted) - revoked
+
+
 class ScopeBreadth(enum.Enum):
     """How wide a camera or site grant reaches. Three states, never two.
 
@@ -439,7 +541,12 @@ class AccessDecision:
     cameras: CameraScope
     site_ids: tuple[str, ...] = ()
     display_name: str = ""
-    permissions: frozenset[Permission] = field(default_factory=frozenset)
+    #: ``None`` means "not stated; derive from roles" — the historical, still
+    #: most common path. An explicit ``frozenset()`` is different from that and
+    #: must survive as-is: a user whose every role permission has been REVOKEd
+    #: has *zero* effective permissions, and re-deriving from roles here would
+    #: silently undo the revocation this dataclass exists to carry.
+    permissions: frozenset[Permission] | None = None
 
     def __post_init__(self) -> None:
         if not self.subject:
@@ -449,7 +556,7 @@ class AccessDecision:
                 "an access decision must name a tenant; tenancy is part of "
                 "identity rather than a filter applied afterwards"
             )
-        if not self.permissions:
+        if self.permissions is None:
             object.__setattr__(self, "permissions", permissions_for(self.roles))
 
     def has(self, permission: Permission) -> bool:
@@ -494,7 +601,7 @@ class AccessDecision:
         return Scope(
             tenant_id=self._tenant(),
             site_ids=tuple(SiteId(s) for s in self.site_ids),
-            camera_ids=tuple(CameraId(c) for c in self.cameras.camera_ids),
+            camera_ids=self._camera_ids(),
         )
 
     def to_grant(self) -> Grant:
@@ -521,13 +628,34 @@ class AccessDecision:
 
         cameras: tuple[CameraId, ...] = ()
         if self.cameras.breadth is ScopeBreadth.LISTED:
-            cameras = tuple(CameraId(c) for c in self.cameras.camera_ids)
+            cameras = self._camera_ids()
 
         return Grant(
             subject=self.subject,
             tenant_id=self._tenant(),
             actions=self._actions(),
             cameras=cameras,
+        )
+
+    def _camera_ids(self):
+        """The stored camera keys, as the ids the platform actually knows them by.
+
+        `AccessGrant.camera_ids` holds bare `camera_key` values, which is right
+        for a tenant-scoped table. The platform is not tenant-scoped in its
+        partitioning — an observation is filed under the `CameraId` it was
+        published with, and the pipeline publishes runtime ids
+        (`app.domain.runtime_identity`). Translating here is what keeps the two
+        halves agreeing: a grant that named bare keys would match nothing
+        written since, and a grant naming another tenant's key would be a
+        cross-tenant read waiting for a collision.
+        """
+        from vision_os.core.model.ids import CameraId
+
+        from app.domain.runtime_identity import runtime_camera_id
+
+        return tuple(
+            CameraId(runtime_camera_id(self.tenant_id, key))
+            for key in self.cameras.camera_ids
         )
 
     def _tenant(self):
@@ -568,9 +696,12 @@ class AccessDecision:
 __all__ = [
     "AccessDecision",
     "CameraScope",
+    "OrganizationStatus",
+    "OverrideState",
     "Permission",
     "ROLE_PERMISSIONS",
     "Role",
     "ScopeBreadth",
+    "effective_permissions",
     "permissions_for",
 ]

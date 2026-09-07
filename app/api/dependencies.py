@@ -13,8 +13,9 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.service import AuthService, decision_for_claims
+from app.auth.service import AuthService, decision_for_claims, user_for_claims
 from app.authorization.model import AccessDecision, Permission
+from app.authorization.platform import PlatformOperator, resolve_operator
 from app.configuration.settings import Settings
 from app.errors import AuthenticationError
 from app.infrastructure.cache import Cache
@@ -114,17 +115,57 @@ def requires(permission: Permission):
     return _guard
 
 
+async def current_operator(
+    request: Request,
+    token: Annotated[str, Depends(bearer_token)],
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> PlatformOperator:
+    """The caller as a **platform operator**, or a refusal.
+
+    A separate door from `current_access`, resolving a separate type, and
+    deliberately not built on top of it — see `app.authorization.platform`.
+    Managing organizations reaches across the tenant boundary that
+    `AccessDecision` exists to make unbreakable, so it cannot be authorized by
+    anything an `AccessDecision` carries. No role produces this, no permission
+    implies it, and nothing here reads `Permission`.
+
+    The account still has to authenticate normally: an operator is a person
+    with a login, and the grant is checked on every request from the database
+    rather than carried in the token, exactly as roles are.
+    """
+    from app.infrastructure.observability import AUTH_FAILURES
+
+    auth: AuthService = request.app.state.auth
+    try:
+        claims = auth.verify_access(token)
+    except AuthenticationError:
+        AUTH_FAILURES.labels("invalid_token").inc()
+        raise
+
+    user = await user_for_claims(session, claims)
+    operator = await resolve_operator(session, user)
+    request.state.subject = operator.subject
+    # Deliberately no `request.state.tenant_id`. An operator is acting on
+    # organizations rather than inside one, and stamping a tenant here would
+    # put a misleading value into every log line and audit row this request
+    # produces.
+    return operator
+
+
 CurrentAccess = Annotated[AccessDecision, Depends(current_access)]
+CurrentOperator = Annotated[PlatformOperator, Depends(current_operator)]
 DbSession = Annotated[AsyncSession, Depends(db_session)]
 
 
 __all__ = [
     "CurrentAccess",
+    "CurrentOperator",
     "DbSession",
     "auth_of",
     "bearer_token",
     "cache_of",
     "current_access",
+    "current_operator",
     "database_of",
     "db_session",
     "requires",

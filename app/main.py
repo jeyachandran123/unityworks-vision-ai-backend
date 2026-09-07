@@ -32,6 +32,7 @@ from fastapi.responses import JSONResponse, Response
 from loguru import logger
 
 from app.api.administration import router as administration_router
+from app.api.platform import router as platform_router
 from app.api.analytics import router as analytics_router
 from app.api.evaluation import router as evaluation_router
 from app.api.integrations import router as integrations_router
@@ -39,6 +40,7 @@ from app.api.patron import router as patron_router
 from app.api.product import router as product_router
 from app.api.reports import router as reports_router
 from app.api.routes import build_router, devtools_router
+from app.api.user_administration import router as user_administration_router
 from app.api.wall import router as wall_router
 from app.api.websocket import router as websocket_router
 from app.auth.service import AuthService
@@ -118,6 +120,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(build_router())
     app.include_router(product_router)
     app.include_router(administration_router)
+    # User management, role assignment, permission-override and camera-scope
+    # administration. An HTTP layer over the domain model
+    # (`app.authorization.overrides`, `app.authorization.camera_scope`,
+    # `app.authorization.resolver`); reads gated on `VIEW_USERS`, writes on
+    # `MANAGE_USERS`, per route.
+    app.include_router(user_administration_router)
+    # The platform-operator surface: organizations and their lifecycle. Gated
+    # on `current_operator`, which resolves a `PlatformOperator` — a different
+    # principal type from the tenant-scoped `AccessDecision` every other router
+    # here uses, and one no role can produce. See `app.authorization.platform`.
+    app.include_router(platform_router)
     # The seven modules that have a schema and a permission but no data source.
     # Registered unconditionally: a route that answers "not configured, and here
     # is what is missing" is more useful than one that 404s, and hiding it
@@ -329,6 +342,40 @@ async def _sweep_retention(app: FastAPI) -> None:
         )
 
 
+async def _runnable_organizations(session) -> list[str]:
+    """Every organization whose cameras this process may run.
+
+    ACTIVE only. SUSPENDED and ARCHIVED both stop cameras, for different
+    reasons that reach the same conclusion here: an archived deployment has
+    ended and must not keep recording identifiable people, and a suspended one
+    is a customer whose service is withheld — a suspension that left the
+    cameras running would withhold nothing, since the cameras are the product.
+
+    This replaces `DEFAULT_TENANT_ID` as the answer to "whose cameras". That
+    setting could name exactly one organization, which meant a second customer
+    was not merely unsupported but silently invisible: the wall logged an error
+    telling the operator their `DEFAULT_TENANT_ID` must be wrong, because a
+    single-tenant runtime had no other way to describe what it was seeing.
+    """
+    from sqlalchemy import select
+
+    from app.authorization.model import OrganizationStatus
+    from app.users.models import Organization
+
+    rows = (
+        (
+            await session.execute(
+                select(Organization.id).where(
+                    Organization.status == OrganizationStatus.ACTIVE.value
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return sorted(rows)
+
+
 async def _start_cameras_from_database(app: FastAPI) -> int | None:
     """Read the enabled cameras and start them. **This is the recovery path.**
 
@@ -350,19 +397,25 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
 
     try:
         async with database.session_scope() as session:
-            rows = await CameraService(session).enabled_for_runtime(
-                organization_id=cfg.default_tenant_id
-            )
+            service = CameraService(session)
+            organizations = await _runnable_organizations(session)
+
+            rows: list = []
+            for organization_id in organizations:
+                rows.extend(
+                    await service.enabled_for_runtime(organization_id=organization_id)
+                )
+
             # Only cameras marked for analysis get a perception session.
             # `enabled_for_runtime` returns the enabled rows and the camera wall
             # starts every one of them; this narrows the far more expensive
             # half. A site with sixteen channels and four kitchens should pay
             # detection, tracking, cropping and model calls for four.
-            configs = [
-                to_rtsp_config(row) for row in rows if row.host and row.analysis_enabled
-            ]
+            configs = [to_rtsp_config(row) for row in rows if row.host and row.analysis_enabled]
             watched_only = sorted(
-                row.camera_key for row in rows if row.host and not row.analysis_enabled
+                to_rtsp_config(row).camera_id
+                for row in rows
+                if row.host and not row.analysis_enabled
             )
             if watched_only:
                 # Said out loud, because a camera that streams without being
@@ -490,11 +543,11 @@ async def _start_camera_wall(app: FastAPI) -> int | None:
     try:
         async with database.session_scope() as session:
             service = CameraService(session)
-            cameras = await service.list(organization_id=cfg.default_tenant_id)
+            organizations = await _runnable_organizations(session)
+            for organization_id in organizations:
+                cameras.extend(await service.list(organization_id=organization_id))
             if not cameras:
-                elsewhere = await _cameras_in_other_tenants(
-                    session, cfg.default_tenant_id
-                )
+                elsewhere = await _cameras_in_other_tenants(session, organizations)
     except Exception as exc:  # noqa: BLE001 - reported, never fatal
         logger.error(
             "camera wall could not read its camera list: {}: {}. "
@@ -506,15 +559,14 @@ async def _start_camera_wall(app: FastAPI) -> int | None:
 
     if not cameras:
         if elsewhere:
-            # The failure that produced "0 channels, 16 connecting": cameras
-            # exist, but in a tenant this deployment does not serve. Silence
-            # here reads as "no cameras configured", which sends somebody to
-            # look at the DVR instead of at DEFAULT_TENANT_ID.
-            logger.error(
-                "camera wall found no cameras for tenant '{}', but {} camera "
-                "row(s) exist in tenant(s) {}. DEFAULT_TENANT_ID does not match "
-                "the tenant that owns the cameras.",
-                cfg.default_tenant_id,
+            # Cameras exist, and every organization that owns one is suspended
+            # or archived. This used to be a `DEFAULT_TENANT_ID` mismatch and
+            # is now a lifecycle fact — which is a far more useful thing to
+            # read, because it names something an operator can actually act on.
+            logger.warning(
+                "camera wall started nothing: {} camera row(s) exist in "
+                "organization(s) {}, none of which is ACTIVE. Suspended and "
+                "archived organizations do not run cameras.",
                 sum(elsewhere.values()),
                 sorted(elsewhere),
             )
@@ -564,9 +616,7 @@ async def _bootstrap_cameras_once(
         live_result = await _start_cameras_from_database(app)
         live_read = live_result is not None
         if live_result:
-            logger.warning(
-                "live CCTV runtime started {} camera session(s)", live_result
-            )
+            logger.warning("live CCTV runtime started {} camera session(s)", live_result)
 
     # `0` is a real answer ("no enabled cameras"); only `None` means nobody
     # answered, and only a read that happened counts as done.
@@ -644,21 +694,25 @@ async def _camera_bootstrap_supervisor(
             )
 
     logger.warning(
-        "camera bootstrap completed on retry {} — the database became "
-        "available after start-up",
+        "camera bootstrap completed on retry {} — the database became " "available after start-up",
         attempt,
     )
 
 
-async def _cameras_in_other_tenants(session, tenant_id: str) -> dict[str, int]:
-    """Camera counts per tenant, excluding this one. For diagnosing a mismatch."""
+async def _cameras_in_other_tenants(session, tenant_ids) -> dict[str, int]:
+    """Camera counts for organizations the runtime is **not** serving.
+
+    Used only to explain a wall that started nothing. With a multi-tenant
+    bootstrap the excluded set is exactly the non-ACTIVE organizations, so this
+    answers "whose cameras are we deliberately not running".
+    """
     from sqlalchemy import func, select
 
     from app.domain.models import Camera
 
     result = await session.execute(
         select(Camera.organization_id, func.count())
-        .where(Camera.organization_id != tenant_id)
+        .where(Camera.organization_id.notin_(list(tenant_ids) or [""]))
         .group_by(Camera.organization_id)
     )
     return {row[0]: int(row[1]) for row in result.all()}
@@ -704,6 +758,7 @@ def _install_error_handlers(app: FastAPI) -> None:
                     "request_id": _request_id(request),
                 },
             )
+
     except Exception:  # noqa: BLE001 - platform absent; the generic handler covers it
         logger.warning("Vision OS error types unavailable; generic handling applies")
 

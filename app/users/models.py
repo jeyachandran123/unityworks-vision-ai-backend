@@ -58,6 +58,25 @@ class Organization(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    #: `app.authorization.model.OrganizationStatus` — "active" | "suspended" |
+    #: "archived". Stored as text for the same reason `RoleAssignment.role` is:
+    #: adding a state is a migration of data, not of type definitions shared
+    #: across two systems. Defaults to "active" so every row that predates this
+    #: column — including `org-unityworks` — reads as unchanged behavior with no
+    #: manual backfill step; see the migration's `server_default`.
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    #: When the status last changed, and why. Nullable and empty by default
+    #: rather than backfilled: an organization that has never changed status
+    #: has no status change to describe, and answering with `created_at` would
+    #: be a fabricated entry in a field people will read as history.
+    #:
+    #: The reason exists because "why have our cameras stopped" is the first
+    #: question a suspension produces, and an operator console that cannot
+    #: answer it sends somebody to read the audit log instead.
+    status_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    status_reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
@@ -101,6 +120,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     access_grants: Mapped[list[AccessGrant]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    permission_overrides: Mapped[list[PermissionOverride]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -162,4 +184,94 @@ class AccessGrant(Base):
     user: Mapped[User] = relationship(back_populates="access_grants")
 
 
-__all__ = ["AccessGrant", "Organization", "RoleAssignment", "User"]
+class PermissionOverride(Base):
+    """One user's explicit exception to what their roles would give them.
+
+    A row per (user, permission), and its *presence* is the whole signal: no
+    row means INHERIT — the role's own answer stands, and INHERIT is
+    deliberately never written as a row. A stored row is always GRANT (add a
+    permission no held role carries) or REVOKE (remove one that a held role
+    does carry) — see `app.authorization.model.OverrideState`.
+
+    Tenant scope is inherited rather than stated: there is no
+    `organization_id` column here on purpose, because one would be redundant
+    with `user_id` and redundant tenant fields are exactly the kind of drift
+    that lets a row quietly stop matching its owner. The override reaches
+    only as far as `user_id` does, and `user_id` already resolves to exactly
+    one organization through the `users` table — so a cross-tenant override
+    cannot be constructed without first constructing a cross-tenant user,
+    which the schema already forbids.
+    """
+
+    __tablename__ = "permission_overrides"
+    __table_args__ = (
+        UniqueConstraint("user_id", "permission", name="uq_permission_override_user_permission"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    #: The string value of `app.authorization.model.Permission`. Stored as text
+    #: for the same reason `RoleAssignment.role` is: adding a permission is a
+    #: migration of data, not of type definitions shared across two systems.
+    permission: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: `app.authorization.model.OverrideState` — "grant" | "revoke". Never
+    #: "inherit": that state is the absence of a row, not a value in one.
+    state: Mapped[str] = mapped_column(String(16), nullable=False)
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+    #: The acting user's id. Nullable because a migration-seeded or
+    #: system-issued override has no human grantor; a human-issued one always
+    #: has one, enforced at the domain layer in `app.authorization.overrides`.
+    granted_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="permission_overrides")
+
+
+class PlatformOperatorGrant(Base):
+    """This account administers organizations, rather than working inside one.
+
+    A table rather than a column on `User` or a value in `Role`, and the
+    distinction is the point — see `app.authorization.platform`. A role lives
+    inside an organization and is granted by that organization's own
+    administrators; if platform authority were a role, every organization
+    admin could mint one and the tenant boundary would be decorative.
+
+    There is no `organization_id` here, and its absence is meaningful rather
+    than an omission: an operator is not scoped to a tenant. `user_id` still
+    resolves to one through `users`, which is where the operator's own login
+    lives, but that organization confers nothing on them and restricts nothing.
+
+    Nothing in the HTTP API writes to this table. `scripts/manage.py
+    grant-operator` does, deliberately out of band.
+    """
+
+    __tablename__ = "platform_operator_grants"
+    __table_args__ = (UniqueConstraint("user_id", name="uq_platform_operator_user"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    #: Who granted it. Nullable only because the first operator in a deployment
+    #: is granted from the command line by a human with database access, and
+    #: there is no earlier operator to name.
+    granted_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    #: Why. Free text, required by the CLI rather than by the column, because a
+    #: privilege that reaches every customer should not be granted silently.
+    reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+
+__all__ = [
+    "AccessGrant",
+    "Organization",
+    "PermissionOverride",
+    "PlatformOperatorGrant",
+    "RoleAssignment",
+    "User",
+]

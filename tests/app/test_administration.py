@@ -44,7 +44,12 @@ async def test_listing_restaurants_is_empty_before_any_exist(
     response = await client.get("/api/v1/restaurants", headers=headers)
 
     assert response.status_code == 200
-    assert response.json() == {"restaurants": [], "count": 0}
+    body = response.json()
+    assert body["restaurants"] == []
+    assert body["count"] == 0
+    # The list is paginated, so it says how many there are in total as well as
+    # how many this page holds. Zero and zero, here.
+    assert body["total"] == 0
 
 
 async def test_a_manager_may_read_structure_but_not_change_it(

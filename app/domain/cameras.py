@@ -29,6 +29,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import Camera, CameraZoneAssignment, FrameRecord
+from app.domain.runtime_identity import for_camera, runtime_camera_id, validate_camera_key
 from app.domain.zone_attribution import record_assignment
 from app.errors import ConfigurationInvalidError, ConflictError, NotFoundError, ValidationError
 
@@ -259,7 +260,10 @@ class CameraService:
             # it exists "for retention alone"; this is a retention act.
             removed = int(
                 observation_log.truncate(
-                    CameraId(camera_key),
+                    # The tenant-qualified partition, never the bare key. A bare
+                    # key here would truncate whichever organization's partition
+                    # happened to be named that.
+                    CameraId(runtime_camera_id(organization_id, camera_key)),
                     Instant(int(now.timestamp() * 1_000_000_000)),
                 )
             )
@@ -339,8 +343,10 @@ def _validate(
     analysis_fps: float,
     credential_ref: str,
 ) -> None:
-    if not camera_key.strip():
-        raise ValidationError("a camera must have a key; identity is never inferred")
+    # Charset, not merely non-emptiness. The key is one half of the camera's
+    # runtime identity, and `app.domain.runtime_identity` depends on this
+    # charset to guarantee that identity parses back unambiguously.
+    validate_camera_key(camera_key)
     if channel < 1:
         raise ValidationError("channel numbering starts at 1")
     if stream_type not in VALID_STREAM_TYPES:
@@ -348,14 +354,33 @@ def _validate(
     if analysis_fps <= 0:
         raise ValidationError("analysis_fps must be positive")
 
+    if credential_ref.startswith("literal:"):
+        # `literal:` is the one scheme whose value *is* the secret, and it was
+        # accepted here while `to_wire` returned `credential_ref` verbatim — so
+        # a camera saved with one would hand its password back to every caller
+        # of the camera list. Closing only the response would leave the
+        # database holding plaintext passwords; closing only the write would
+        # leave existing ones readable. Both are closed.
+        #
+        # Deliberately refused at the write boundary rather than deleted from
+        # the resolver: `app.vision.secrets` still resolves an existing
+        # `literal:` row so no deployment that has one stops connecting, and
+        # `to_wire` no longer returns the reference at all so none can leak
+        # while it is migrated away. New ones cannot be created.
+        raise ValidationError(
+            "credential_ref may no longer be 'literal:'; that scheme stores the "
+            "password itself in the database. Use 'env:' or 'file:', which "
+            "store a pointer the secret provider resolves at connect time",
+            details={"hint": "env:CCTV_PASSWORD"},
+        )
     if credential_ref and not any(
-        credential_ref.startswith(scheme) for scheme in ("env:", "file:", "literal:")
+        credential_ref.startswith(scheme) for scheme in ("env:", "file:")
     ):
         # A bare value here is a password in the database. Refused at the
         # boundary rather than discovered in a backup.
         raise ValidationError(
-            "credential_ref must be a reference (env:, file: or literal:), never "
-            "a password; the secret provider resolves it at connect time",
+            "credential_ref must be a reference (env: or file:), never a "
+            "password; the secret provider resolves it at connect time",
             details={"hint": "env:CCTV_PASSWORD"},
         )
 
@@ -363,12 +388,20 @@ def _validate(
 def to_wire(camera: Camera) -> dict[str, Any]:
     """A camera for the API.
 
-    Carries `credential_ref` — which is a *pointer*, not a secret — but never a
-    username-and-password URL, and never a resolved value. `credential_configured`
-    answers "is this camera able to authenticate" without revealing anything.
+    Never carries `credential_ref`. It is nominally a pointer rather than a
+    secret, but `literal:` made it a channel that could carry the value itself,
+    and a field whose safety depends on every writer having chosen the right
+    scheme is not a safe field to return. `credential_configured` answers "is
+    this camera able to authenticate" — which is the only thing any caller
+    needed from it — and `credential_scheme` says how the secret is stored, so
+    an administrator can still see that a camera points at an environment
+    variable rather than a file without learning which variable.
     """
     return {
         "camera_key": camera.camera_key,
+        # Globally unique. The key alone is not, and a client that keys its own
+        # state on the bare key inherits the collision this exists to close.
+        "runtime_id": for_camera(camera),
         "name": camera.name,
         "purpose": camera.purpose,
         "restaurant_id": camera.restaurant_id,
@@ -378,8 +411,8 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "host": camera.host,
         "rtsp_port": camera.rtsp_port,
         "username": camera.username,
-        "credential_ref": camera.credential_ref,
         "credential_configured": bool(camera.credential_ref),
+        "credential_scheme": _credential_scheme(camera.credential_ref),
         "analysis_fps": camera.analysis_fps,
         "enabled": camera.enabled,
         # Two decisions, not one. `enabled` is "this camera streams"; this is
@@ -391,6 +424,17 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "created_at": _iso(camera.created_at),
         "updated_at": _iso(camera.updated_at),
     }
+
+
+def _credential_scheme(credential_ref: str) -> str:
+    """`env` or `file` — how the secret is stored, never where or what.
+
+    Deliberately not the reference itself. `env:CCTV_PASSWORD` names a
+    variable that anyone who reaches the process can then go and read, and the
+    scheme alone is what an administration screen actually needs to show.
+    """
+    scheme, separator, _ = (credential_ref or "").partition(":")
+    return scheme if separator else ""
 
 
 def _redacted_uri(camera: Camera) -> str:
@@ -500,7 +544,10 @@ def to_rtsp_config(camera: Camera) -> RtspCameraConfig:
     from app.vision.sources.rtsp import RtspCameraConfig
 
     return RtspCameraConfig(
-        camera_id=camera.camera_key,
+        # The runtime identity, not the tenant-scoped key: this id names the
+        # session in every process-wide registry it reaches, and two tenants
+        # may legitimately both call a camera `cam-01`.
+        camera_id=for_camera(camera),
         host=camera.host,
         channel=camera.channel,
         port=camera.rtsp_port,

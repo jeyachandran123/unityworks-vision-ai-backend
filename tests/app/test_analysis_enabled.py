@@ -33,6 +33,7 @@ from app.domain.cameras import CameraService
 from app.domain.cameras import to_wire as camera_to_wire
 from app.domain.models import Camera
 from app.errors import ValidationError
+from app.users.models import Organization
 from tests.app.conftest import bearer, make_user
 
 ORG = "org-test"
@@ -185,6 +186,7 @@ class _Live:
         self.started: list[str] = []
 
     async def start_from_records(self, configs) -> int:
+        # Runtime ids: what `to_rtsp_config` now hands the live runtime.
         self.started = [str(c.camera_id) for c in configs]
         return len(self.started)
 
@@ -197,8 +199,17 @@ class TestAnalysisScheduling:
     @pytest_asyncio.fixture
     async def estate(self, app):
         """Four enabled cameras; two of them analysed. The shape of a site with
-        kitchens and corridors."""
+        kitchens and corridors.
+
+        The organization row is created explicitly. The bootstrap now asks
+        which organizations are ACTIVE rather than trusting a configured
+        `DEFAULT_TENANT_ID`, so cameras whose tenant does not exist start
+        nothing — which is correct, and which this fixture previously relied
+        on not being checked.
+        """
         async with app.state.database.session_scope() as active:
+            active.add(Organization(id=ORG, name="Test Org", slug=f"{ORG}-slug"))
+            await active.flush()
             await _camera(active, "cam-61", channel=61, enabled=True, analysed=True)
             await _camera(active, "cam-62", channel=62, enabled=True, analysed=True)
             await _camera(active, "cam-63", channel=63, enabled=True, analysed=False)
@@ -219,7 +230,7 @@ class TestAnalysisScheduling:
 
         started = await app_main._start_cameras_from_database(holder)
 
-        assert sorted(live.started) == ["cam-61", "cam-62"]
+        assert sorted(live.started) == [f"{ORG}:cam-61", f"{ORG}:cam-62"]
         assert started == 2
 
     @pytest.mark.asyncio
@@ -240,8 +251,8 @@ class TestAnalysisScheduling:
 
         await app_main._start_cameras_from_database(holder)
 
-        assert "cam-63" not in live.started
-        assert "cam-64" not in live.started
+        assert f"{ORG}:cam-63" not in live.started
+        assert f"{ORG}:cam-64" not in live.started
         # …and they are still enabled rows, so the wall will start them.
         async with estate.state.database.session_scope() as active:
             rows = await CameraService(active).enabled_for_runtime(organization_id=ORG)
@@ -271,7 +282,7 @@ class TestAnalysisScheduling:
 
         await app_main._start_cameras_from_database(holder)
 
-        assert live.started == ["cam-62"]
+        assert live.started == [f"{ORG}:cam-62"]
 
     @pytest.mark.asyncio
     async def test_no_analysed_camera_is_reported_as_zero_not_as_a_read_failure(

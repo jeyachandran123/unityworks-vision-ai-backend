@@ -90,6 +90,8 @@ def query_observations(
     from vision_os.core.model.ids import CameraId, TenantId
     from vision_os.core.model.timebase import Instant
 
+    from app.domain.runtime_identity import runtime_camera_id
+
     tenant = TenantId(access.tenant_id)
     principal = Principal(
         subject=access.subject,
@@ -97,7 +99,14 @@ def query_observations(
         scopes=tuple(sorted(p.value for p in access.permissions)),
         display_name=access.display_name,
     )
-    scope = Scope(tenant_id=tenant, camera_ids=tuple(CameraId(c) for c in cameras))
+    # Runtime ids, not bare keys: observations are filed under the id the
+    # pipeline published them with, and that id carries the tenant.
+    scope = Scope(
+        tenant_id=tenant,
+        camera_ids=tuple(
+            CameraId(runtime_camera_id(access.tenant_id, key)) for key in cameras
+        ),
+    )
     window = TimeWindow(
         start=Instant(int(start.timestamp() * 1_000_000_000)),
         end=Instant(int(end.timestamp() * 1_000_000_000)),

@@ -183,7 +183,7 @@ async def test_confidence_carries_its_semantics() -> None:
 async def test_the_scope_handed_to_the_platform_is_the_callers_cameras() -> None:
     api, _, _, _ = _fold([])
     _principal, scope, _window, _kwargs = api.calls[0]
-    assert [str(c) for c in scope.camera_ids] == ["cam-01"]
+    assert [str(c) for c in scope.camera_ids] == ["org-test:cam-01"]
     assert str(scope.tenant_id) == "org-test"
 
 

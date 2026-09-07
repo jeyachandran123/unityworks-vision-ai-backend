@@ -29,8 +29,8 @@ from sqlalchemy.orm import selectinload
 
 from app.auth.passwords import hash_password, verify_password
 from app.auth.tokens import TokenClaims, TokenService, TokenType
-from app.authorization.model import AccessDecision, Permission
-from app.authorization.resolver import decide
+from app.authorization.model import AccessDecision, OrganizationStatus, Permission
+from app.authorization.resolver import decide, parse_organization_status
 from app.errors import AuthenticationError, InvalidCredentialsError, ScopeError
 from app.users.models import User
 
@@ -76,6 +76,12 @@ class AuthService:
         if not user.is_active or not user.organization.is_active:
             raise InvalidCredentialsError("email or password is incorrect")
 
+        # ARCHIVED refuses login entirely, mirroring `is_active=False` above.
+        # SUSPENDED does not reach here — it narrows what the session can do,
+        # not whether one can be issued at all.
+        if parse_organization_status(user.organization.status) is OrganizationStatus.ARCHIVED:
+            raise InvalidCredentialsError("email or password is incorrect")
+
         user.last_login_at = datetime.now(UTC)
         return decide(user)
 
@@ -113,10 +119,35 @@ async def load_user_by_email(session: AsyncSession, email: str) -> User | None:
         .options(
             selectinload(User.role_assignments),
             selectinload(User.access_grants),
+            selectinload(User.permission_overrides),
             selectinload(User.organization),
         )
     )
     return result.scalar_one_or_none()
+
+
+async def user_for_claims(session: AsyncSession, claims: TokenClaims) -> User:
+    """The authenticated user behind a token, with the account checks applied.
+
+    Split out of `decision_for_claims` so the platform-operator door
+    (`app.api.dependencies.current_operator`) can reuse exactly these checks
+    without building an `AccessDecision` it has no use for — an operator is not
+    scoped to a tenant, and manufacturing a tenant-scoped decision just to
+    throw it away would put a misleading identity into the request.
+
+    The ARCHIVED refusal deliberately applies to operators too. An operator's
+    login lives in some organization like anyone else's, and if that
+    organization has been archived their account is closed; platform authority
+    does not exempt the account it is attached to from its own lifecycle.
+    """
+    user = await load_user_by_email(session, claims.subject)
+    if user is None or not user.is_active:
+        raise AuthenticationError("the account is no longer active")
+    if parse_organization_status(user.organization.status) is OrganizationStatus.ARCHIVED:
+        raise AuthenticationError("the organization is archived")
+    if user.organization_id != claims.tenant_id:
+        raise AuthenticationError("the token's tenant no longer matches the account")
+    return user
 
 
 async def decision_for_claims(session: AsyncSession, claims: TokenClaims) -> AccessDecision:
@@ -130,6 +161,14 @@ async def decision_for_claims(session: AsyncSession, claims: TokenClaims) -> Acc
     user = await load_user_by_email(session, claims.subject)
     if user is None or not user.is_active:
         raise AuthenticationError("the account is no longer active")
+
+    # ARCHIVED refuses every API call, not only login: a caller who was issued
+    # a token before archival must not keep working until it expires. SUSPENDED
+    # is not checked here — it narrows `decide()`'s permissions instead, so the
+    # existing per-permission checks refuse writes with no change at the call
+    # site, while reads and this call itself keep working.
+    if parse_organization_status(user.organization.status) is OrganizationStatus.ARCHIVED:
+        raise AuthenticationError("the organization is archived")
 
     decision = decide(user)
     if decision.tenant_id != claims.tenant_id:
@@ -163,4 +202,5 @@ __all__ = [
     "decision_for_claims",
     "load_user_by_email",
     "require",
+    "user_for_claims",
 ]

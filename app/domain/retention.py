@@ -322,6 +322,8 @@ class RetentionService:
         from vision_os.core.model.ids import CameraId
         from vision_os.core.model.timebase import Instant
 
+        from app.domain.runtime_identity import runtime_camera_id
+
         cutoff = datetime.now(UTC) - timedelta(days=self._observation_days)
         before = Instant(int(cutoff.timestamp() * 1_000_000_000))
 
@@ -335,7 +337,15 @@ class RetentionService:
 
         for organization_id, camera_key in rows:
             try:
-                count = int(self._observation_log.truncate(CameraId(camera_key), before))
+                # The tenant-qualified partition. This loop already had both
+                # halves in hand and used only one of them, so a sweep for
+                # one organization's `cam-01` would have reached whichever
+                # organization's partition happened to be named that.
+                count = int(
+                    self._observation_log.truncate(
+                        CameraId(runtime_camera_id(organization_id, camera_key)), before
+                    )
+                )
             except Exception as exc:  # noqa: BLE001 - one bad partition must not stop the rest
                 logger.error(
                     "observation retention could not truncate {}: {}: {}",

@@ -585,7 +585,7 @@ async def test_the_retention_sweep_truncates_the_observation_log(admin) -> None:
         erased = await service.sweep(erase=True)
 
     assert erased.observations_truncated == 3
-    assert truncated and truncated[0][0] == "cam-sweep"
+    assert truncated and truncated[0][0] == "org-test:cam-sweep"
     cutoff_ns = truncated[0][1]
     assert cutoff_ns < int(datetime.now(UTC).timestamp() * 1_000_000_000)
 
