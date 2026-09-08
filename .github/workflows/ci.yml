@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  quality:
+    name: lint, tests, contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 3.11 exactly: pyproject declares requires-python >=3.11 and the
+      # platform's adapters are pinned against this runtime.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # The suite runs on SQLite in memory (tests/app/conftest.py), so no
+      # database service is provisioned. [inference] is required because
+      # VISION_DETECTOR_PROVIDER=yolo binds onnxruntime.
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[inference,test,lint]"
+
+      # vision_os/, compliance/ and tools/ are migrated verbatim and excluded
+      # from lint by pyproject. Only app/ and tests/ are checked.
+      - name: Ruff
+        run: ruff check app tests
+
+      - name: Black
+        run: black --check app tests
+
+      # No --cov. tests/vision_os/conftest.py skips its timing-budget tests when
+      # sys.gettrace() is set, so coverage as a default silently deletes that
+      # coverage rather than measuring it.
+      - name: Tests
+        run: pytest
+
+      # The committed schema is the frontend's source of truth. A route changed
+      # without re-exporting is a frontend typed against an API that is gone.
+      - name: Contract is exported
+        run: python scripts/export_openapi.py --check
