@@ -59,9 +59,14 @@ async def set_permission_override(
     """
     _guard(actor, target)
 
+    # The target's home organization: the only one an administrator currently
+    # administers a user in, and what the row meant before the column existed.
+    organization = target.organization_id
+
     existing = await session.execute(
         select(PermissionOverride).where(
             PermissionOverride.user_id == target.id,
+            PermissionOverride.organization_id == organization,
             PermissionOverride.permission == permission.value,
         )
     )
@@ -69,6 +74,7 @@ async def set_permission_override(
     if row is None:
         row = PermissionOverride(
             user_id=target.id,
+            organization_id=organization,
             permission=permission.value,
             state=state.value,
             granted_by=actor.id,

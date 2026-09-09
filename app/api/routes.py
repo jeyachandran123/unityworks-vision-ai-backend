@@ -18,6 +18,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Request, Response
 from loguru import logger
+from sqlalchemy import select
 
 from app.api.dependencies import (
     CurrentAccess,
@@ -30,8 +31,11 @@ from app.api.dependencies import (
 )
 from app.api.devtools import router as devtools_router
 from app.auth.cookies import clear_refresh_cookie, read_refresh_cookie, set_refresh_cookie
+from app.auth.service import accessible_organizations, load_user_by_email, organization_of
+from app.authorization.model import OrganizationStatus
+from app.authorization.resolver import decide, membership_for, parse_organization_status
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
-from app.errors import AppError, NoSessionError
+from app.errors import AppError, AuthenticationError, NoSessionError, ScopeError
 
 # ── health ───────────────────────────────────────────────────────────────────
 #
@@ -97,7 +101,7 @@ async def login(
 
     trail = AuditTrail(session)
     try:
-        decision = await auth.authenticate(session, email=email, password=password)
+        authentication = await auth.authenticate(session, email=email, password=password)
     except AppError as exc:
         # A failed login is the row that shows a password-spraying attempt. It
         # records the email attempted — an identifier the caller already sent —
@@ -124,6 +128,7 @@ async def login(
         await session.commit()
         raise
 
+    decision = authentication.decision
     issued = auth.issue(decision)
 
     await trail.record(
@@ -143,6 +148,188 @@ async def login(
     # for fifteen minutes to whoever reads it there.
     logger.info("login succeeded for {}", email)
 
+    # A platform operator is always owed the choice, even when their own account
+    # belongs to exactly one organization: the organizations they administer are
+    # not the ones they are a member of, and sending them straight into their
+    # home tenant would land them in the one place their job is not.
+    is_operator = await _is_operator(session, authentication.user)
+
+    return {
+        "access_token": issued.access_token,
+        "token_type": "bearer",
+        "expires_at": issued.expires_at.isoformat(),
+        "user": _identity(decision),
+        "organizations": await _organization_summaries(
+            session, await accessible_organizations(session, authentication.user)
+        ),
+        # The whole of the routing decision, answered by the server. The
+        # frontend must not recompute it from the length of a list — the operator
+        # case is not derivable from that list at all.
+        "must_select": authentication.must_select or is_operator,
+        "is_platform_operator": is_operator,
+    }
+
+
+async def _is_operator(session: DbSession, user) -> bool:
+    """Whether this account holds a platform-operator grant.
+
+    A boolean rather than a raised refusal, because here the answer "no" is
+    ordinary — it is what almost every account is — and the caller is deciding
+    where to send somebody rather than whether to let them through.
+    """
+    from app.authorization.platform import resolve_operator
+    from app.errors import ScopeError
+
+    try:
+        await resolve_operator(session, user)
+    except ScopeError:
+        return False
+    return True
+
+
+async def _organization_summaries(session: DbSession, organizations: list) -> list[dict[str, Any]]:
+    """What the Platform page needs to tell one organization from another.
+
+    Name, status and two counts. Deliberately not an analytics payload: the
+    page's job is to let somebody recognise the customer they meant and go in,
+    and a chooser that reports incident rates is answering a question that
+    belongs on the Command Center behind it.
+
+    The counts are two grouped queries for the whole list rather than two per
+    row, because this list is drawn on every visit to the chooser.
+    """
+    from sqlalchemy import func
+
+    from app.domain.models import Camera, Restaurant
+
+    ids = [organization.id for organization in organizations]
+    if not ids:
+        return []
+
+    async def tally(column) -> dict[str, int]:
+        rows = await session.execute(
+            select(column, func.count()).where(column.in_(ids)).group_by(column)
+        )
+        return {organization_id: int(count) for organization_id, count in rows.all()}
+
+    sites = await tally(Restaurant.organization_id)
+    cameras = await tally(Camera.organization_id)
+
+    return [
+        {
+            "id": organization.id,
+            "name": organization.name,
+            "slug": organization.slug,
+            "status": str(organization.status or "").strip().lower(),
+            "site_count": sites.get(organization.id, 0),
+            "camera_count": cameras.get(organization.id, 0),
+        }
+        for organization in organizations
+    ]
+
+
+@auth_router.get("/organizations")
+async def my_organizations(
+    request: Request, access: CurrentAccess, session: DbSession
+) -> dict[str, Any]:
+    """The organizations this account may enter.
+
+    Membership, and nothing else. There is no widening branch here for an
+    administrator and none for a platform operator — an operator's cross-customer
+    list lives behind `GET /api/v1/platform/organizations`, which requires a
+    different principal, and answering both questions from one route would be
+    the second authorization system that eventually disagrees with the first.
+
+    `active` names the organization the caller is currently in, so the chooser
+    can mark it without inferring it from a token it cannot read.
+    """
+    user = await load_user_by_email(session, access.subject)
+    if user is None:
+        raise AuthenticationError("the account is no longer active")
+
+    organizations = await accessible_organizations(session, user)
+    return {
+        "organizations": await _organization_summaries(session, organizations),
+        "active": access.tenant_id,
+        "acting_as": access.acting_as,
+        # Reported here rather than left to a probe of `GET /platform/me`, whose
+        # answer for an ordinary account is a 403. A console error on every page
+        # load for every non-operator is a bad way to ask a yes/no question, and
+        # the frontend needs the answer on the same restore that needs this list.
+        "is_platform_operator": await _is_operator(session, user),
+    }
+
+
+@auth_router.post("/organizations/{organization_id}/select")
+async def select_organization(
+    organization_id: str,
+    request: Request,
+    response: Response,
+    access: CurrentAccess,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Move this session into another of the caller's organizations.
+
+    ### Why this mints a token rather than setting a header
+
+    The organization is the tenant, and the tenant has never been something a
+    request may state. Every route in the application reads
+    `AccessDecision.tenant_id`, which is built from the token and from the
+    database — so re-minting the token is what makes the switch *reach* all of
+    them, atomically, with no route needing to know this endpoint exists.
+
+    The alternative — an `X-Organization-Id` header validated per request —
+    would work exactly as well right up until one route forgot to validate it,
+    and would have made request input a contributor to the tenant, which is the
+    property `app.auth.service` was written to preserve.
+
+    ### The refusal
+
+    A 403 when there is no membership, and deliberately the same 403 whether the
+    organization exists or not: a member of one customer must not be able to
+    enumerate the others by watching which ids answer differently.
+    """
+    user = await load_user_by_email(session, access.subject)
+    if user is None or not user.is_active:
+        raise AuthenticationError("the account is no longer active")
+
+    if membership_for(user, organization_id) is None:
+        raise ScopeError(
+            "this account is not a member of that organization",
+            details={"organization_id": organization_id},
+        )
+
+    organization = await organization_of(session, user, organization_id)
+    if organization is None or not organization.is_active:
+        raise ScopeError(
+            "this account is not a member of that organization",
+            details={"organization_id": organization_id},
+        )
+    if parse_organization_status(organization.status) is OrganizationStatus.ARCHIVED:
+        raise ScopeError(
+            "that organization is archived",
+            details={"organization_id": organization_id},
+        )
+
+    decision = decide(user, organization_id=organization_id)
+    issued = auth_of(request).issue(decision)
+
+    await AuditTrail(session).record(
+        action=AuditAction.ORGANIZATION_SELECTED,
+        organization_id=organization_id,
+        actor=decision.subject,
+        actor_roles=tuple(sorted(r.value for r in decision.roles)),
+        resource_type="organization",
+        resource_id=organization_id,
+        request_id=getattr(request.state, "request_id", ""),
+        detail={"from": access.tenant_id},
+    )
+
+    # Rotated, like every other issuance. The previous organization's refresh
+    # cookie must not survive the switch — a client holding both would be one
+    # refresh away from silently returning to the tenant it just left.
+    set_refresh_cookie(response, issued.refresh_token, settings_of(request))
+
     return {
         "access_token": issued.access_token,
         "token_type": "bearer",
@@ -158,8 +345,6 @@ async def _tenant_for_email(session, email: str) -> str:
     login is filed where somebody will look for it, not to tell the client
     whether the account exists.
     """
-    from app.auth.service import load_user_by_email
-
     if not email:
         return ""
     try:
@@ -261,6 +446,11 @@ def _identity(decision) -> dict[str, Any]:
         "subject": decision.subject,
         "display_name": decision.display_name,
         "tenant_id": decision.tenant_id,
+        # Empty for an ordinary session; "platform_operator" for one reached by
+        # an audited entry. The shell reads it to mark the session on screen —
+        # somebody looking at a customer's kitchen has to be able to tell,
+        # without checking, whose authority they are doing it under.
+        "acting_as": decision.acting_as,
         "roles": sorted(r.value for r in decision.roles),
         "permissions": sorted(p.value for p in decision.permissions),
         "camera_scope": {

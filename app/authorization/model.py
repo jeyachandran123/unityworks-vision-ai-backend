@@ -541,6 +541,15 @@ class AccessDecision:
     cameras: CameraScope
     site_ids: tuple[str, ...] = ()
     display_name: str = ""
+    #: Non-empty only for a session that reached this tenant by an audited
+    #: platform-operator entry rather than by a membership
+    #: (`app.authorization.platform.ACTING_AS_PLATFORM_OPERATOR`). It grants
+    #: nothing and restricts nothing by itself — `permissions` already carries
+    #: the whole of the reach — but the application has to be able to *say* that
+    #: this is not an ordinary organization session, in the audit trail and on
+    #: the operator's screen. Defaults to empty, so every existing construction
+    #: keeps meaning exactly what it meant.
+    acting_as: str = ""
     #: ``None`` means "not stated; derive from roles" — the historical, still
     #: most common path. An explicit ``frozenset()`` is different from that and
     #: must survive as-is: a user whose every role permission has been REVOKEd

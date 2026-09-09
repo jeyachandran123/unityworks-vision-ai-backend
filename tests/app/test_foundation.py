@@ -379,7 +379,7 @@ class TestRolesAndPermissions:
 
         _, user = make_user()
         user.is_active = False
-        decision = decide(user)
+        decision = decide(user, organization_id=user.organization_id)
         assert decision.roles == frozenset()
         assert not decision.cameras.grants_anything
 

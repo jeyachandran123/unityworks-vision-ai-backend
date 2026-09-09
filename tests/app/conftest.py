@@ -15,7 +15,13 @@ from app.auth.passwords import hash_password
 from app.configuration.settings import Settings
 from app.infrastructure.database import create_all_for_tests
 from app.main import create_app
-from app.users.models import AccessGrant, Organization, RoleAssignment, User
+from app.users.models import (
+    AccessGrant,
+    Organization,
+    OrganizationMembership,
+    RoleAssignment,
+    User,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -104,19 +110,75 @@ def make_user(
         display_name="Test User",
         password_hash=hash_password(password),
     )
+    # The membership is what lets this account sign in at all: `login` binds a
+    # session to an organization the user is a *member* of, and a fixture with
+    # role rows and no membership would be an account whose roles describe an
+    # organization it cannot enter.
+    user.memberships = [
+        OrganizationMembership(id=f"mem-{email}-{org_id}", user_id=user.id, organization_id=org_id)
+    ]
     user.role_assignments = [
-        RoleAssignment(id=f"ra-{email}-{r}", user_id=user.id, role=r) for r in roles
+        RoleAssignment(id=f"ra-{email}-{r}", user_id=user.id, organization_id=org_id, role=r)
+        for r in roles
     ]
     user.access_grants = [
         AccessGrant(
             id=f"ag-{email}",
             user_id=user.id,
+            organization_id=org_id,
             camera_breadth=camera_breadth,
             camera_ids=camera_ids,
             site_ids=site_ids,
         )
     ]
     return org, user
+
+
+def admit(
+    user: User,
+    organization_id: str,
+    *,
+    roles: tuple[str, ...] = (),
+    camera_breadth: str = "all_in_tenant",
+    camera_ids: str = "",
+    site_ids: str = "",
+) -> User:
+    """Admit an existing user to a second organization, with reach there.
+
+    The fixture-level equivalent of `manage.py grant-membership`. Roles and the
+    camera grant are per-organization, so this writes rows naming
+    `organization_id` — passing none produces somebody who may enter and can
+    see nothing, which is the correct default and a state worth being able to
+    construct in a test.
+    """
+    user.memberships.append(
+        OrganizationMembership(
+            id=f"mem-{user.email}-{organization_id}",
+            user_id=user.id,
+            organization_id=organization_id,
+        )
+    )
+    for role in roles:
+        user.role_assignments.append(
+            RoleAssignment(
+                id=f"ra-{user.email}-{organization_id}-{role}",
+                user_id=user.id,
+                organization_id=organization_id,
+                role=role,
+            )
+        )
+    if roles:
+        user.access_grants.append(
+            AccessGrant(
+                id=f"ag-{user.email}-{organization_id}",
+                user_id=user.id,
+                organization_id=organization_id,
+                camera_breadth=camera_breadth,
+                camera_ids=camera_ids,
+                site_ids=site_ids,
+            )
+        )
+    return user
 
 
 @pytest_asyncio.fixture

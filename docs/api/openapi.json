@@ -56,6 +56,720 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/users": {
+      "get": {
+        "description": "Users in the caller's organisation, searchable and filterable.\n\nThe role filter is a subquery rather than a join, deliberately: a user may\nhold several roles, and joining would return them once per matching role\nand make `total` wrong in a way that only shows up for exactly the accounts\nan administrator is most likely to be looking at.",
+        "operationId": "list_users_api_v1_admin_users_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Users Api V1 Admin Users Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "user-administration"
+        ]
+      },
+      "post": {
+        "description": "Create a user in the caller's organisation.\n\nDuplicate email within the organisation is a clean `ConflictError` (409),\nnever a 500 \u2014 the unique constraint is `(organization_id, email)`\n(`app/users/models.py:uq_users_org_email`), so this checks the same pair\nbefore insert rather than letting the database raise.\n\nEvery role in `roles` must be grantable by the actor (rule 2 in the module\ndocstring, `_require_grantable_role`); an unknown role name is a\n`ValidationError` (422).\n\n### `camera_scope` is required, and that is the fix for a real bug\n\nThis route used to create a `User` and its `RoleAssignment` rows and stop.\nNo `AccessGrant` was written, and a missing grant reads as\n`CameraScope.none()` \u2014 correctly, since that is the only safe reading of an\nabsent row. The result was an account that logged in, held every permission\nits role carried, and could reach no cameras at all. Nothing reported it.\n`admin1@unityworks.local` is in exactly that state in production today.\n\nThe fix is not a default. Both candidate defaults are wrong: `none`\nsilently recreates the unusable account, and `all_in_tenant` silently\ncreates an over-privileged one. So the caller states which of the three\nscopes they mean, and `none` remains a legitimate answer \u2014 for an account\nthat will be scoped later, or one that never needs video.",
+        "operationId": "create_user_api_v1_admin_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create User Api V1 Admin Users Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create User",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}": {
+      "get": {
+        "operationId": "get_user_api_v1_admin_users__user_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get User Api V1 Admin Users  User Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User",
+        "tags": [
+          "user-administration"
+        ]
+      },
+      "patch": {
+        "description": "Update the allowed mutable fields. Today, only `display_name`.\n\nEmail, password, and activation state each have their own, more specific\npath \u2014 email identity and credentials are not casually PATCHable fields,\nand activation is audited as its own event (`activate`/`deactivate`\nbelow), not folded into a generic update.",
+        "operationId": "update_user_api_v1_admin_users__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update User Api V1 Admin Users  User Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update User",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/activate": {
+      "post": {
+        "operationId": "activate_user_api_v1_admin_users__user_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Activate User Api V1 Admin Users  User Id  Activate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate User",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/camera-scope": {
+      "get": {
+        "description": "Which cameras this account reaches.\n\nIts own route rather than a field alone, so an administration screen can\nrefresh camera access without re-reading the whole user \u2014 and so the\nabsent-grant case has one authoritative answer instead of each caller\ninventing its own reading of a missing row.",
+        "operationId": "get_camera_scope_api_v1_admin_users__user_id__camera_scope_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Camera Scope Api V1 Admin Users  User Id  Camera Scope Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Camera Scope",
+        "tags": [
+          "user-administration"
+        ]
+      },
+      "put": {
+        "description": "Replace this account's camera access.\n\nGoes straight through `app.authorization.camera_scope.set_camera_scope`,\nwhich owns the self-modification and cross-tenant refusals, exactly as the\npermission-override routes go through `overrides.set_permission_override`.\nThe one check that belongs here and not there is the anti-escalation rule,\nbecause it needs the caller's own request-scoped `AccessDecision`.",
+        "operationId": "set_camera_scope_route_api_v1_admin_users__user_id__camera_scope_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Camera Scope Route Api V1 Admin Users  User Id  Camera Scope Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Camera Scope Route",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/deactivate": {
+      "post": {
+        "description": "Deactivate an account. `decide()` already treats an inactive user as\nhaving no roles and no cameras (`app/authorization/resolver.py`), and\n`AuthService.authenticate`/`decision_for_claims` already refuse an\ninactive user at login and on every subsequent request \u2014 this route only\nflips the flag those chokepoints already read.\n\nAn actor may not deactivate their own account: unlike a permission\noverride or a role, there is no \"undo\" available to a user who has just\nlocked themselves out, and if they were the organisation's only\n`MANAGE_USERS` holder nobody else could undo it either.",
+        "operationId": "deactivate_user_api_v1_admin_users__user_id__deactivate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Deactivate User Api V1 Admin Users  User Id  Deactivate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate User",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/permissions": {
+      "get": {
+        "description": "Every permission, its stored state (inherit/grant/revoke), and its\ncomputed effective result \u2014 one response, not something the caller\nreconstructs from separate role and override reads.",
+        "operationId": "list_permission_overrides_api_v1_admin_users__user_id__permissions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Permission Overrides Api V1 Admin Users  User Id  Permissions Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Permission Overrides",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/permissions/{permission_value}": {
+      "delete": {
+        "description": "Reset an override back to INHERIT by deleting its row.",
+        "operationId": "reset_override_api_v1_admin_users__user_id__permissions__permission_value__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "permission_value",
+            "required": true,
+            "schema": {
+              "title": "Permission Value",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Reset Override Api V1 Admin Users  User Id  Permissions  Permission Value  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Override",
+        "tags": [
+          "user-administration"
+        ]
+      },
+      "put": {
+        "description": "Set a GRANT or REVOKE override for one (user, permission) pair.\n\nCalls straight into `app.authorization.overrides.set_permission_override`\n\u2014 no reimplementation of INHERIT/GRANT/REVOKE semantics here. Self-\nmodification and cross-tenant reach are refused there (structurally, and\na second time by that function's own `_guard`); the one check that\nbelongs at this layer and not that one is rule 2 (a grantor may only\nGRANT a permission they themselves currently hold), because it needs the\ncaller's own request-scoped `AccessDecision`, which does not exist below\nthe HTTP layer.",
+        "operationId": "set_override_api_v1_admin_users__user_id__permissions__permission_value__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "permission_value",
+            "required": true,
+            "schema": {
+              "title": "Permission Value",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Override Api V1 Admin Users  User Id  Permissions  Permission Value  Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Override",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/roles": {
+      "post": {
+        "description": "Assign an existing `Role` to a user. No custom roles.\n\nIdempotent: assigning a role the user already holds is a no-op, matching\n`uq_role_assignment`'s own shape rather than raising a conflict for a\nrequest that already describes the desired end state.",
+        "operationId": "assign_role_api_v1_admin_users__user_id__roles_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Assign Role Api V1 Admin Users  User Id  Roles Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assign Role",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/roles/{role_value}": {
+      "delete": {
+        "description": "Remove a role from a user.\n\nNo requirement that the actor hold the role being removed: removing a\nrole only narrows the target's access, which is not the direction rule 2\nin the module docstring exists to block. Removing a role the user does\nnot hold is a no-op, mirroring `clear_permission_override`'s own\nidempotent shape.",
+        "operationId": "remove_role_api_v1_admin_users__user_id__roles__role_value__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "role_value",
+            "required": true,
+            "schema": {
+              "title": "Role Value",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Remove Role Api V1 Admin Users  User Id  Roles  Role Value  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Role",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
     "/api/v1/audit": {
       "get": {
         "description": "The audit trail, tenant-scoped.\n\nIts own permission. Not implied by administration \u2014 knowing who looked at\nimagery of a named employee is its own kind of access.",
@@ -248,6 +962,75 @@
         ]
       }
     },
+    "/api/v1/auth/organizations": {
+      "get": {
+        "description": "The organizations this account may enter.\n\nMembership, and nothing else. There is no widening branch here for an\nadministrator and none for a platform operator \u2014 an operator's cross-customer\nlist lives behind `GET /api/v1/platform/organizations`, which requires a\ndifferent principal, and answering both questions from one route would be\nthe second authorization system that eventually disagrees with the first.\n\n`active` names the organization the caller is currently in, so the chooser\ncan mark it without inferring it from a token it cannot read.",
+        "operationId": "my_organizations_api_v1_auth_organizations_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response My Organizations Api V1 Auth Organizations Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "My Organizations",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/organizations/{organization_id}/select": {
+      "post": {
+        "description": "Move this session into another of the caller's organizations.\n\n### Why this mints a token rather than setting a header\n\nThe organization is the tenant, and the tenant has never been something a\nrequest may state. Every route in the application reads\n`AccessDecision.tenant_id`, which is built from the token and from the\ndatabase \u2014 so re-minting the token is what makes the switch *reach* all of\nthem, atomically, with no route needing to know this endpoint exists.\n\nThe alternative \u2014 an `X-Organization-Id` header validated per request \u2014\nwould work exactly as well right up until one route forgot to validate it,\nand would have made request input a contributor to the tenant, which is the\nproperty `app.auth.service` was written to preserve.\n\n### The refusal\n\nA 403 when there is no membership, and deliberately the same 403 whether the\norganization exists or not: a member of one customer must not be able to\nenumerate the others by watching which ids answer differently.",
+        "operationId": "select_organization_api_v1_auth_organizations__organization_id__select_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Select Organization Api V1 Auth Organizations  Organization Id  Select Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Select Organization",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/refresh": {
       "post": {
         "description": "Trade the refresh cookie for a new access token, and rotate the cookie.\n\nTwo properties:\n\n**The decision is rebuilt from the database**, not read from the refresh\ntoken \u2014 so a role revoked five minutes ago is not reissued for another\nfifteen.\n\n**The refresh token is rotated on every use.** A token that has been\nexchanged is no longer held by the client, which turns a stolen-and-replayed\ntoken into a visible anomaly rather than a silent second session.",
@@ -339,7 +1122,95 @@
         ]
       }
     },
+    "/api/v1/cameras/test-connection": {
+      "post": {
+        "description": "Is anything listening at this address?\n\nTwo ways to ask, and the first is the one to prefer:\n\n* `{\"camera_key\": \"cam-01\"}` \u2014 the address comes from the database, is\n  already tenant-scoped, and the caller cannot choose it. No part of the\n  request influences where the socket goes.\n* `{\"host\": ..., \"rtsp_port\": ...}` \u2014 for the onboarding wizard, which\n  needs to check an address *before* the row exists. Gated on\n  `MANAGE_CAMERAS` and refused for reserved ranges; see\n  `app.domain.connectivity` for why that is sufficient.\n\nNever returns a credential, and never resolves one: the test is a TCP\nconnect, so there is no authentication step for a secret to be needed by.",
+        "operationId": "test_camera_connection_api_v1_cameras_test_connection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Test Camera Connection Api V1 Cameras Test Connection Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Camera Connection",
+        "tags": [
+          "product"
+        ]
+      }
+    },
     "/api/v1/cameras/{camera_key}": {
+      "delete": {
+        "description": "Remove a camera and destroy its observation partition.\n\n### Its own permission, not `MANAGE_CAMERAS`\n\nGated on `RETIRE_CAMERAS`. Everything this docstring goes on to say about\ndestroying records is the argument for the separation: an account that may\nadd a camera and correct its name has not thereby been trusted to close an\nobservation partition, and no amount of renaming undoes this.\n\n### Two audit rows, always\n\nDeleting a camera is a configuration change *and* a destruction of records\nabout people at work, so it writes both `camera.deleted` and\n`observation.truncated`. A deletion that left only the first would be a\nrecord of the change with no record of the data it destroyed \u2014 and the\nobservation sweep's own discipline is that every truncation is provable.\n\n### The refusal is the point\n\nIf this process cannot reach a durable observation log, the camera is not\ndeleted and the caller is told why. Deleting it there would orphan the\npartition: retention enumerates partitions from the camera table, so a\ndeleted row means nothing ever sweeps those observations again.",
+        "operationId": "delete_camera_api_v1_cameras__camera_key__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_key",
+            "required": true,
+            "schema": {
+              "title": "Camera Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Camera Api V1 Cameras  Camera Key  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Camera",
+        "tags": [
+          "product"
+        ]
+      },
       "patch": {
         "operationId": "update_camera_api_v1_cameras__camera_key__patch",
         "parameters": [
@@ -705,6 +1576,121 @@
         ]
       }
     },
+    "/api/v1/evaluation": {
+      "get": {
+        "description": "Every artifact family, dataset coverage, configuration and comparison set.\n\nAssembled from files on disk rather than from the database, so it is the same\nanswer for every tenant in this deployment \u2014 these are properties of the\nbuild, not of an organisation's data. The tenant is echoed so a reader can\nsee which deployment they are looking at.",
+        "operationId": "evaluation_summary_api_v1_evaluation_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Evaluation Summary Api V1 Evaluation Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Evaluation Summary",
+        "tags": [
+          "evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluation/artifacts": {
+      "get": {
+        "description": "Which artifact files each family expects, and whether each was read.\n\nAn operator asking \"why is this family empty\" needs to know what was looked\nfor. Repository-relative paths only \u2014 enough to find the file in the tree,\nand nothing about where the tree lives.",
+        "operationId": "evaluation_artifacts_api_v1_evaluation_artifacts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "family",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Family",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Evaluation Artifacts Api V1 Evaluation Artifacts Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluation Artifacts",
+        "tags": [
+          "evaluation"
+        ]
+      }
+    },
+    "/api/v1/evaluation/runs/{run_id}": {
+      "get": {
+        "description": "One run in full, including every metric's provenance.\n\nServes the detail panel. The summary already carries these, so this exists\nfor a caller that wants one run without the rest \u2014 and it 404s on an unknown\nid rather than returning an empty run, which would read as a run that found\nnothing.",
+        "operationId": "evaluation_run_api_v1_evaluation_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Evaluation Run Api V1 Evaluation Runs  Run Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evaluation Run",
+        "tags": [
+          "evaluation"
+        ]
+      }
+    },
     "/api/v1/evidence/{evidence_ref}": {
       "delete": {
         "description": "Erase the bytes, keep the tombstone.\n\nA reason is required. Deletion without one cannot be evidenced afterwards,\nand an erasure request that cannot be evidenced has not been answered.",
@@ -1052,6 +2038,1499 @@
         ]
       }
     },
+    "/api/v1/modules/cutting-board": {
+      "get": {
+        "description": "Board compliance capability, and the real (empty) policy set.",
+        "operationId": "cutting_board_api_v1_modules_cutting_board_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Cutting Board Api V1 Modules Cutting Board Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cutting Board",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/demography": {
+      "get": {
+        "description": "Aggregate demography capability. Never per-person, by schema.",
+        "operationId": "demography_api_v1_modules_demography_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Demography Api V1 Modules Demography Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Demography",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/meal-detection": {
+      "get": {
+        "description": "Dish recognition capability, and the reconciliation states it would use.",
+        "operationId": "meal_detection_api_v1_modules_meal_detection_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Meal Detection Api V1 Modules Meal Detection Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Meal Detection",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/patron-id": {
+      "get": {
+        "description": "Whether patron identification is enabled. It is not, and it says why.\n\nThe row count is real and is zero. It is reported for one reason: an\noperator asking \"are we doing this\" deserves an answer read from the table\nrather than from a claim in a document.",
+        "operationId": "patron_id_api_v1_modules_patron_id_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Patron Id Api V1 Modules Patron Id Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Patron Id",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/patron-id/gate": {
+      "get": {
+        "description": "The gate in detail, for whoever would be responsible for opening it.\n\nGated on `MANAGE_PATRON_ID`, which `SUPER_ADMIN` alone holds. Reading the\ndetail of what would unlock biometric re-identification is itself a\nprivilege, and an organisation administrator is the wrong altitude for it.\n\nRead-only and side-effect free. Asking changes nothing, and there is no\ncorresponding write route \u2014 this reports the state of a decision, it does\nnot make one.",
+        "operationId": "patron_id_gate_api_v1_modules_patron_id_gate_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Patron Id Gate Api V1 Modules Patron Id Gate Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Patron Id Gate",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/people-counting": {
+      "get": {
+        "description": "Footfall capability. Reports no count, because none can be produced.",
+        "operationId": "people_counting_api_v1_modules_people_counting_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response People Counting Api V1 Modules People Counting Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "People Counting",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/modules/pos-integration": {
+      "get": {
+        "description": "POS capability, including what the bound adapter says about itself.",
+        "operationId": "pos_integration_api_v1_modules_pos_integration_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Pos Integration Api V1 Modules Pos Integration Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Pos Integration",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/api/v1/modules/table-occupancy": {
+      "get": {
+        "description": "Table state capability, plus the real (empty) floor plan.",
+        "operationId": "table_occupancy_api_v1_modules_table_occupancy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Table Occupancy Api V1 Modules Table Occupancy Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Table Occupancy",
+        "tags": [
+          "modules"
+        ]
+      }
+    },
+    "/api/v1/observations": {
+      "get": {
+        "description": "PPE observation history for the caller's cameras, grouped by subject.\n\nThe fold itself lives in `app/domain/observations.py` \u2014 one implementation,\nshared with the reporting engine, because it is the single place where\n`not_visible` could be collapsed into `none` and two copies would mean two\nplaces to get that wrong.\n\n### Why grouped by subject rather than returned as a flat stream\n\nThe log holds one observation per attribute per capture. A screen asking\n\"who was observed, and what were they wearing\" wants those assembled back\ninto a subject, with the **most recent** value for each attribute \u2014 which is\nwhat `latest` means here and why each attribute carries its own timestamp\nrather than the group's.\n\n### Availability is not emptiness\n\nA platform that is not assembled returns `available: false` with a reason,\nnever an empty list. \"No subject was observed\" and \"nothing was watching\"\nare different facts, and a hygiene screen that renders them identically is\nthe failure this product is built to avoid.",
+        "operationId": "list_observations_api_v1_observations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "camera_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Camera Key"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Observations Api V1 Observations Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Observations",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/platform/me": {
+      "get": {
+        "description": "Who this operator is. No tenant, because an operator has none.\n\nExists so the frontend can decide whether to show the platform surface at\nall without probing a real route and reading the 403.",
+        "operationId": "whoami_api_v1_platform_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Whoami Api V1 Platform Me Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Whoami",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/operators": {
+      "get": {
+        "description": "Who holds platform authority, since when, and why.\n\nRead-only, and that is a deliberate boundary rather than an unfinished\nfeature. Granting platform authority stays a command-line act \u2014 an operator\nwho could mint another operator would make the privilege self-propagating,\nand the one control on a grant that reaches every customer's data is that\nmaking one is awkward and leaves a human trail outside this application.\n\nVisibility is the half that genuinely belongs in a console: \"who can reach\nall of our customers\" is a question somebody should be able to answer\nwithout database access, even when the answer is not editable here.",
+        "operationId": "list_operators_api_v1_platform_operators_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Operators Api V1 Platform Operators Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Operators",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations": {
+      "get": {
+        "description": "Every organization on the platform.\n\nPaginated and searchable from the start rather than when it becomes a\nproblem: this list grows with the customer base, and a console that fetches\nall of them works perfectly until the day it does not.",
+        "operationId": "list_organizations_api_v1_platform_organizations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Organizations Api V1 Platform Organizations Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Organizations",
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "description": "Create a tenant.\n\nThe id is the slug, not a UUID, and that is deliberate. It becomes the\ntenant half of every camera's runtime identity\n(`app.domain.runtime_identity`), it appears in observation partition\nfilenames, and it is what an engineer reads in a log line at three in the\nmorning. `org-acme:cam-01` says something; a hex id does not.\n\nIt is therefore also validated against that module's charset here, at the\nonly place an organization id is ever minted \u2014 so an id that would break\nthe runtime identity round trip cannot enter the database at all.",
+        "operationId": "create_organization_api_v1_platform_organizations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Organization Api V1 Platform Organizations Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Organization",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}": {
+      "get": {
+        "operationId": "get_organization_api_v1_platform_organizations__organization_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Organization Api V1 Platform Organizations  Organization Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Organization",
+        "tags": [
+          "platform"
+        ]
+      },
+      "patch": {
+        "description": "Rename an organization. Not its slug, and not its status.\n\n`slug` is immutable for the same reason a restaurant's is, only more so:\nit is the organization id, it is half of every camera's runtime identity,\nand it names observation partitions on disk. Changing it would orphan\nevery one of them.\n\nStatus has its own route below, because a lifecycle change is a different\nkind of act from a rename and must not be reachable by a client that meant\nto correct a typo.",
+        "operationId": "update_organization_api_v1_platform_organizations__organization_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Organization Api V1 Platform Organizations  Organization Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Organization",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}/enter": {
+      "post": {
+        "description": "Take a read-only session inside one organization.\n\n### This is a widening, and it is meant to look like one\n\nEverything else in this module operates on organizations *as objects* \u2014\ntheir existence, their names, their lifecycle. None of it reads a customer's\ndata, and `PlatformOperator` carries nothing that could. This route is the\nsingle deliberate exception, and the shape of it is the argument:\n\n* it is a **POST**, because it is an act rather than a view;\n* it **writes an audit row before it returns**, filed against the customer,\n  so the record exists in the tenant whose data is about to be read;\n* it mints a **separate token** carrying `act: platform_operator`, so every\n  subsequent request is identifiable as part of this entry rather than\n  indistinguishable from the customer's own staff;\n* the reach it grants is **stated, not resolved** \u2014 see\n  `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS` \u2014 and contains no\n  write, no evidence, no patron identity and no audit read.\n\nThe property the previous design had, and which is kept: an operator cannot\nread a tenant's data *through the operator door*. `GET /platform/...` still\nreturns counts and never contents. What has changed is that there is now a\nsecond door, it is locked differently, and going through it is recorded.\n\n### Archived organizations are refused\n\nLogin is refused inside an archived organization, and entry is a login by\nanother name. An operator who needs to look at an archived customer's data\nis describing a restore, which is a decision rather than a click.",
+        "operationId": "enter_organization_api_v1_platform_organizations__organization_id__enter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Enter Organization Api V1 Platform Organizations  Organization Id  Enter Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enter Organization",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}/members": {
+      "get": {
+        "description": "Who may enter this organization, and what they hold once inside.",
+        "operationId": "list_members_api_v1_platform_organizations__organization_id__members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Members Api V1 Platform Organizations  Organization Id  Members Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Members",
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "description": "Admit an existing account to an organization.\n\n### Membership is the entry ticket, and only the entry ticket\n\nThis writes one `organization_memberships` row and nothing else. It grants\nno role, no camera scope and no permission \u2014 which means the person can now\nsign into this organization and, until somebody grants them a role *there*,\nsee nothing. That is the correct default and it is deliberate: admitting\nsomebody and deciding what they may do are two decisions, made by different\npeople at different times, and collapsing them is how an account acquires\nauthority nobody consciously granted.\n\nRoles inside the organization are granted through the organization's own\nuser administration, by somebody who holds `MANAGE_USERS` there.\n\n### It admits, it does not create\n\nThere is no user creation here. An operator who could mint accounts into any\ncustomer could mint one for themselves, and the audited read-only entry\nroute would become an unnecessary formality.",
+        "operationId": "add_member_api_v1_platform_organizations__organization_id__members_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Add Member Api V1 Platform Organizations  Organization Id  Members Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Member",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}/members/{user_id}": {
+      "delete": {
+        "description": "Revoke somebody's access to an organization.\n\nTakes effect on their **next request**, not at their next login: the\nmembership is re-read from the database on every call\n(`app.auth.service.user_for_claims`), so a token already naming this\norganization stops working immediately.\n\n### The role rows are deliberately left behind\n\nRemoving a membership does not delete that person's roles in the\norganization. They cannot enter, so the roles grant nothing \u2014 and if the\nrevocation was a mistake, re-admitting them restores exactly what they had.\nDeleting the roles here would make an undo silently lossy, and \"restore\ntheir access\" would quietly mean \"restore their access to nothing\".\n\n### Two consequences are reported rather than refused\n\nRemoving somebody's *home* organization membership leaves the account filed\nwhere it can no longer sign in, and removing their *last* membership leaves\nit unable to sign in anywhere. Both are legitimate \u2014 offboarding looks\nexactly like this \u2014 so neither is blocked, and both are named in the\nresponse so the console can say so plainly.",
+        "operationId": "remove_member_api_v1_platform_organizations__organization_id__members__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Remove Member Api V1 Platform Organizations  Organization Id  Members  User Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Member",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}/status": {
+      "put": {
+        "description": "Move an organization through its lifecycle, and make the runtime obey.\n\n### The reason is required for the two narrowing states\n\nSuspension and archival stop a paying customer's product working. \"Why\"\nis the first question that produces, and requiring it at the moment of\nthe act is the only time anyone actually knows the answer.\n\n### The runtime consequence is synchronous\n\nCameras are stopped in this request, not at the next restart. An archived\norganization whose cameras kept running would keep costing money and keep\nrecording identifiable people after the deployment had formally ended \u2014\nwhich is a data-protection failure, not a billing one.\n\nRestoring to ACTIVE deliberately does **not** restart cameras here. The\nbootstrap supervisor owns starting sessions and knows how to do it safely;\nduplicating that inside a status route would be a second, subtly different\nimplementation of the most failure-prone operation in the application.\nThe response says so rather than leaving the operator to wonder.",
+        "operationId": "set_organization_status_api_v1_platform_organizations__organization_id__status_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Organization Status Api V1 Platform Organizations  Organization Id  Status Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Organization Status",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/overview": {
+      "get": {
+        "description": "The platform at a glance.\n\n### Every figure here is counted, none is scored\n\nThere is no health percentage, no compliance rate and no trend. Each number\nbelow is a `COUNT(*)` over a table that exists, and each one answers a\nquestion that genuinely spans organizations. A figure that could only be\ncomputed by inventing a weighting would be a figure nobody could act on, and\nthe first person to act on it would be acting on our arithmetic rather than\non their estate.\n\nDeliberately absent: incident counts, violation rates, compliance scores.\nThose are organization judgements \u2014 \"that is a hygiene violation\" is an\nopinion a consumer forms, and aggregating opinions across unrelated\ncustomers produces a number with no referent. They belong on a Command\nCenter, which is one organization's own reading of its own kitchen.",
+        "operationId": "overview_api_v1_platform_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Overview Api V1 Platform Overview Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/people": {
+      "get": {
+        "description": "Everyone on the platform, and which organizations they may enter.\n\n### Home organization and memberships are reported separately, always\n\n`User.organization_id` is where the account *lives* \u2014 it owns email\nuniqueness, it is where a failed login is filed, and it is not by itself\npermission to enter anywhere. `memberships` is what they may actually enter.\nFor almost every account today the two agree, and the moment they stop\nagreeing is exactly when somebody needs to see both. Collapsing them into\none \"organization\" field would destroy the distinction this whole layer\nexists to express.",
+        "operationId": "list_people_api_v1_platform_people_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "organization_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Organization Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List People Api V1 Platform People Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List People",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/people/{user_id}": {
+      "get": {
+        "operationId": "get_person_api_v1_platform_people__user_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Person Api V1 Platform People  User Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Person",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/roles": {
+      "get": {
+        "description": "What each role means, as the server actually enforces it.\n\n### This is a read, and it will stay a read until the model changes\n\n`ROLE_PERMISSIONS` is a Python constant and `Role` is a closed enum\n(`app.authorization.model`). There is no table behind either, no write path,\nand no runtime by which anybody \u2014 platform operator included \u2014 can change\nwhat a role means. `editable: false` says so in the payload rather than\nleaving a console to discover it by getting a 405.\n\nThe mechanism that *does* exist for making two holders of the same role\ndiffer is `permission_overrides`, per user and per organization, applied\nthrough that organization's own user administration. It is reported here as\nthe answer to the question this endpoint will otherwise be asked.",
+        "operationId": "role_policy_api_v1_platform_roles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Role Policy Api V1 Platform Roles Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Role Policy",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/pos-connectors": {
+      "get": {
+        "description": "Configured connectors for this organisation. Real, and currently none.\n\n`credential_ref` is deliberately absent from every row. The database holds a\nreference rather than a secret, and an administration screen has no use even\nfor the reference.",
+        "operationId": "list_pos_connectors_api_v1_pos_connectors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Pos Connectors Api V1 Pos Connectors Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Pos Connectors",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/api/v1/reports/types": {
+      "get": {
+        "description": "The catalogue, with what this caller may actually run.\n\nEvery report is listed, including the ones this account cannot run and the\nseven modules that have no data source. A menu that silently omitted them\nwould leave an operator unable to tell \"this report does not exist\" from\n\"you may not run it\" from \"that module is not connected yet\" \u2014 three\ndifferent answers, and the whole point of this phase is that they stay\nthree.",
+        "operationId": "list_report_types_api_v1_reports_types_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Report Types Api V1 Reports Types Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Report Types",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{report_id}": {
+      "get": {
+        "description": "Run a report and return it as JSON. **Audited.**",
+        "operationId": "generate_report_api_v1_reports__report_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "granularity",
+            "required": false,
+            "schema": {
+              "default": "total",
+              "title": "Granularity",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "restaurant_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Restaurant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Generate Report Api V1 Reports  Report Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{report_id}/export": {
+      "get": {
+        "description": "Produce a file. **Audited separately from generation.**\n\n`GET` rather than `POST` so the browser's own download path can carry the\nAuthorization header through `authorizedFetch`, matching how evidence\nimagery is already retrieved. The response is `no-store`, so a report about\na named shift team is not left in a shared cache.",
+        "operationId": "export_report_api_v1_reports__report_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "pdf",
+              "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "granularity",
+            "required": false,
+            "schema": {
+              "default": "total",
+              "title": "Granularity",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "restaurant_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Restaurant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/restaurants": {
+      "get": {
+        "description": "Sites in the caller's organisation.\n\nGated on `VIEW_SITES`: a restaurant manager needs to read the structure\ntheir incidents are attributed to, and reading it grants no ability to\nchange it. Writing is `MANAGE_SITES`, a permission this role does not hold\nby default.\n\nSearchable and paginated. A chain with four restaurants does not need it;\nthe same code with four hundred does, and the version that fetches all of\nthem works perfectly right up until the day it does not.",
+        "operationId": "list_restaurants_api_v1_restaurants_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "is_active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Restaurants Api V1 Restaurants Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Restaurants",
+        "tags": [
+          "administration"
+        ]
+      },
+      "post": {
+        "operationId": "create_restaurant_api_v1_restaurants_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Restaurant Api V1 Restaurants Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Restaurant",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/restaurants/{restaurant_id}": {
+      "get": {
+        "description": "One site, for its own page.\n\nA detail route rather than \"find it in the list\": a site page is now a real\nsurface with zones and cameras of its own, and asking a client to fetch\nevery site to render one is how a list becomes a hidden dependency of a\ndetail view.",
+        "operationId": "get_restaurant_api_v1_restaurants__restaurant_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Restaurant Api V1 Restaurants  Restaurant Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Restaurant",
+        "tags": [
+          "administration"
+        ]
+      },
+      "patch": {
+        "operationId": "update_restaurant_api_v1_restaurants__restaurant_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurant_id",
+            "required": true,
+            "schema": {
+              "title": "Restaurant Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Restaurant Api V1 Restaurants  Restaurant Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Restaurant",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
     "/api/v1/status": {
       "get": {
         "description": "Operator-facing status, in terms an operator can act on.\n\nCamera health and camera configuration are real. Coverage is not, and is\nnamed in `not_yet_reported` rather than zeroed \u2014 reporting a hardcoded zero\nwould be the exact failure this product must never commit: an empty answer\nthat reads as a clean result.",
@@ -1073,6 +3552,30 @@
         "summary": "Status",
         "tags": [
           "status"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "description": "Who holds which role in this organisation.\n\n**Read-only, and no credential material of any kind.** `password_hash` is\nnever selected, never rendered, and is not part of this response shape \u2014 a\nhash is not a password but it is still the thing an offline attack is run\nagainst, and an administration screen has no use for one.\n\n`write_available` is `false` and says why. The frontend shows the same\nsentence rather than a disabled button with no explanation.",
+        "operationId": "list_users_api_v1_users_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Users Api V1 Users Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "administration"
         ]
       }
     },
@@ -1278,6 +3781,157 @@
         "summary": "Issue Ticket",
         "tags": [
           "camera-wall"
+        ]
+      }
+    },
+    "/api/v1/zones": {
+      "get": {
+        "description": "Zones, optionally for one site. Always narrowed to the caller's tenant.\n\nThe join onto `Restaurant` is what enforces tenancy: `zones` carries no\norganization column of its own, so filtering on the parent is the only\nconstruction that cannot leak another organisation's areas.",
+        "operationId": "list_zones_api_v1_zones_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "restaurant_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Restaurant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Zones Api V1 Zones Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Zones",
+        "tags": [
+          "administration"
+        ]
+      },
+      "post": {
+        "operationId": "create_zone_api_v1_zones_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Zone Api V1 Zones Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Zone",
+        "tags": [
+          "administration"
+        ]
+      }
+    },
+    "/api/v1/zones/{zone_id}": {
+      "patch": {
+        "operationId": "update_zone_api_v1_zones__zone_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "zone_id",
+            "required": true,
+            "schema": {
+              "title": "Zone Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Zone Api V1 Zones  Zone Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Zone",
+        "tags": [
+          "administration"
         ]
       }
     },

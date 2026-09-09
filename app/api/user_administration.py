@@ -109,7 +109,7 @@ from app.authorization.overrides import clear_permission_override, set_permissio
 from app.authorization.resolver import decide, parse_overrides
 from app.domain.audit import AuditAction, AuditTrail
 from app.errors import ConflictError, NotFoundError, ScopeError, ValidationError
-from app.users.models import RoleAssignment, User
+from app.users.models import OrganizationMembership, RoleAssignment, User
 
 #: Reads are `VIEW_USERS`; writes are `MANAGE_USERS`. Declared per route rather
 #: than once on the router, because gating the whole surface on `MANAGE_USERS`
@@ -150,6 +150,13 @@ async def _user_in_tenant(session: AsyncSession, tenant_id: str, user_id: str) -
                 selectinload(User.access_grants),
                 selectinload(User.permission_overrides),
                 selectinload(User.organization),
+                # `decide()` reads the memberships to find which organization's
+                # status applies. Lazily loading a relationship inside an async
+                # request raises `MissingGreenlet` rather than doing the IO, so
+                # every path that reaches `decide()` has to bring them along.
+                selectinload(User.memberships).selectinload(
+                    OrganizationMembership.organization
+                ),
             )
         )
     ).scalar_one_or_none()
@@ -248,7 +255,7 @@ def _grant_of(user: User):
     return grants[0] if grants else None
 
 
-async def _permission_rows(target: User) -> list[dict[str, Any]]:
+async def _permission_rows(target: User, organization_id: str) -> list[dict[str, Any]]:
     """Every `Permission`, its stored state, and its computed effective result.
 
     One authoritative response rather than something the caller reconstructs
@@ -258,8 +265,14 @@ async def _permission_rows(target: User) -> list[dict[str, Any]]:
     would be given on their next authenticated request, not a re-derivation
     that could drift from it.
     """
-    granted, revoked = parse_overrides(list(target.permission_overrides or ()))
-    decision = decide(target)
+    granted, revoked = parse_overrides(
+        [
+            override
+            for override in (target.permission_overrides or ())
+            if override.organization_id == organization_id
+        ]
+    )
+    decision = decide(target, organization_id=organization_id)
     # Reuses the exact `permissions_for(roles)` call `decide()` itself makes
     # internally (via `effective_permissions`) — not a re-derivation, just the
     # same role->permission union, called again here so the response can show
@@ -333,6 +346,7 @@ async def list_users(
                 statement.options(
                     selectinload(User.role_assignments),
                     selectinload(User.access_grants),
+                    selectinload(User.memberships),
                 )
                 .order_by(User.email)
                 .limit(limit)
@@ -439,8 +453,28 @@ async def create_user(
     session.add(user)
     await session.flush()
 
+    # The membership *before* the roles, and both before anything reads them.
+    # A user with role rows and no membership is an account that cannot sign
+    # into the organization those roles are for — the exact shape of bug the
+    # entry-ticket rule exists to make impossible, so it must not be creatable
+    # by the one route that makes users.
+    session.add(
+        OrganizationMembership(
+            user_id=user.id,
+            organization_id=access.tenant_id,
+            granted_by=access.subject,
+        )
+    )
+
     for role in roles:
-        session.add(RoleAssignment(user_id=user.id, role=role.value, granted_by=access.subject))
+        session.add(
+            RoleAssignment(
+                user_id=user.id,
+                organization_id=access.tenant_id,
+                role=role.value,
+                granted_by=access.subject,
+            )
+        )
 
     actor = await _actor(session, access)
     await set_camera_scope(session, actor=actor, target=user, scope=scope)
@@ -597,9 +631,19 @@ async def assign_role(
         raise ScopeError("you may not change your own roles")
     _require_grantable_role(access, role)
 
-    already = any(a.role == role.value for a in user.role_assignments)
+    already = any(
+        a.role == role.value and a.organization_id == access.tenant_id
+        for a in user.role_assignments
+    )
     if not already:
-        session.add(RoleAssignment(user_id=user.id, role=role.value, granted_by=access.subject))
+        session.add(
+            RoleAssignment(
+                user_id=user.id,
+                organization_id=access.tenant_id,
+                role=role.value,
+                granted_by=access.subject,
+            )
+        )
         await session.flush()
         await session.refresh(user, attribute_names=["role_assignments"])
 
@@ -668,7 +712,10 @@ async def list_permission_overrides(
     computed effective result — one response, not something the caller
     reconstructs from separate role and override reads."""
     user = await _user_in_tenant(session, access.tenant_id, user_id)
-    return {"user_id": user.id, "permissions": await _permission_rows(user)}
+    return {
+        "user_id": user.id,
+        "permissions": await _permission_rows(user, access.tenant_id),
+    }
 
 
 @router.put("/{user_id}/permissions/{permission_value}", dependencies=_WRITES)
@@ -730,7 +777,7 @@ async def set_override(
         detail={"permission": permission.value},
     )
 
-    decision = decide(target)
+    decision = decide(target, organization_id=access.tenant_id)
     return {
         "permission": permission.value,
         "state": state.value,
@@ -767,7 +814,7 @@ async def reset_override(
         detail={"permission": permission.value},
     )
 
-    decision = decide(target)
+    decision = decide(target, organization_id=access.tenant_id)
     return {
         "permission": permission.value,
         "state": "inherit",

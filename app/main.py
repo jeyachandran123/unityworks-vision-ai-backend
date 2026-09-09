@@ -33,6 +33,7 @@ from loguru import logger
 
 from app.api.administration import router as administration_router
 from app.api.platform import router as platform_router
+from app.api.platform_administration import router as platform_administration_router
 from app.api.analytics import router as analytics_router
 from app.api.evaluation import router as evaluation_router
 from app.api.integrations import router as integrations_router
@@ -131,6 +132,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # principal type from the tenant-scoped `AccessDecision` every other router
     # here uses, and one no role can produce. See `app.authorization.platform`.
     app.include_router(platform_router)
+    # The control plane: the same principal and prefix as `platform_router`,
+    # split by what it administers. See `app.api.platform_administration`.
+    app.include_router(platform_administration_router)
     # The seven modules that have a schema and a permission but no data source.
     # Registered unconditionally: a route that answers "not configured, and here
     # is what is missing" is more useful than one that 404s, and hiding it
@@ -402,9 +406,7 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
 
             rows: list = []
             for organization_id in organizations:
-                rows.extend(
-                    await service.enabled_for_runtime(organization_id=organization_id)
-                )
+                rows.extend(await service.enabled_for_runtime(organization_id=organization_id))
 
             # Only cameras marked for analysis get a perception session.
             # `enabled_for_runtime` returns the enabled rows and the camera wall

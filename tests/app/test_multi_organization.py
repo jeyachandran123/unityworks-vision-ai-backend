@@ -444,11 +444,31 @@ async def test_archiving_an_organization_refuses_every_request(
     assert (await client.get("/api/v1/restaurants", headers=admin)).status_code == 401
 
 
-async def test_an_operator_cannot_read_a_tenants_data(operator, client: AsyncClient):
+async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
+    operator, client: AsyncClient
+):
     """An operator manages the existence and lifecycle of organizations. Being
     able to create a customer is not being able to watch their kitchen, and the
     `PlatformOperator` type carries nothing that could be mistaken for tenant
-    authority."""
+    authority.
+
+    ### What changed, and what did not
+
+    There is now a way for an operator to reach a customer's data:
+    `POST /platform/organizations/{id}/enter`. This test was *not* deleted when
+    that arrived, because the property it asserts is still true and is still
+    the one that matters — an operator token, by itself, reads counts and never
+    contents.
+
+    Entry is a different act with a different credential: it is a POST, it
+    writes an audit row against the customer before it returns, and it hands
+    back a *separate* token whose reach is an explicitly enumerated read-only
+    set. The distinction this file has always drawn is preserved by making
+    crossing the boundary visible, rather than by pretending it never happens —
+    which is what an operator quietly acquiring tenant reads would have been.
+
+    `tests/app/test_organization_access.py` covers the other side.
+    """
     headers = await bearer(client, "operator@example.com")
     # The operator's own account holds `org_admin` in org-test, so this route
     # answers for *that* tenant through the ordinary tenant door — never
@@ -456,11 +476,18 @@ async def test_an_operator_cannot_read_a_tenants_data(operator, client: AsyncCli
     listed = await client.get(f"{PLATFORM}/organizations", headers=headers)
     assert listed.status_code == 200
     for organization in listed.json()["organizations"]:
-        # Counts, not contents. There is no route here that returns another
+        # Counts, not contents. No route on this router returns another
         # organization's incidents, evidence, users or camera list.
         assert set(organization) >= {"site_count", "camera_count", "user_count"}
         assert "users" not in organization
         assert "cameras" not in organization
+
+    # And the operator's *own* token still reaches only their own tenant. It
+    # names org-test, so it reads org-test — entering another organization
+    # requires the other endpoint, and issues another token to do it with.
+    identity = await client.get("/api/v1/auth/me", headers=headers)
+    assert identity.json()["tenant_id"] == "org-test"
+    assert identity.json()["acting_as"] == ""
 
 
 # ── Pillar 2: camera placement cannot cross a boundary ───────────────────────

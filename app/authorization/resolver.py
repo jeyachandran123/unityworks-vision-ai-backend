@@ -12,6 +12,12 @@ something an older one cannot reason about.
 passed onward — no access, expressed by ``ScopeBreadth.NONE``, which
 ``AccessDecision.to_grant()`` then refuses to convert into a Vision OS grant at
 all.
+
+**Access is resolved *in* an organization, never merely *for* a user.**
+``decide()`` takes the active organization and reads only the rows that name it.
+Somebody who is ``org_admin`` at one customer and an auditor at another gets
+exactly one of those two answers per request — chosen by the tenant on the
+token, and by nothing the caller sent.
 """
 
 from __future__ import annotations
@@ -26,7 +32,12 @@ from app.authorization.model import (
     ScopeBreadth,
     effective_permissions,
 )
-from app.users.models import AccessGrant, PermissionOverride, User
+from app.users.models import (
+    AccessGrant,
+    OrganizationMembership,
+    PermissionOverride,
+    User,
+)
 
 
 def parse_roles(values: list[str] | tuple[str, ...]) -> frozenset[Role]:
@@ -161,8 +172,64 @@ def _suspend(permissions: frozenset[Permission]) -> frozenset[Permission]:
     return permissions - SUSPENDED_FORBIDDEN
 
 
-def decide(user: User, *, grant: AccessGrant | None = None) -> AccessDecision:
-    """Build the request-scoped access decision for an authenticated user.
+def membership_for(user: User, organization_id: str) -> OrganizationMembership | None:
+    """This user's membership in one organization, or ``None``.
+
+    The question every organization-scoped decision starts from. It reads the
+    loaded relationship rather than issuing its own query, so that a caller
+    which already holds the user cannot accidentally answer it against a
+    different snapshot of the database than the one it is deciding on.
+    """
+    for membership in user.memberships or ():
+        if membership.organization_id == organization_id:
+            return membership
+    return None
+
+
+def accessible_organization_ids(user: User) -> tuple[str, ...]:
+    """Every organization this user may enter. Sorted, so it is comparable.
+
+    Derived from memberships alone. ``User.organization_id`` is deliberately not
+    added as a special case: the migration writes an explicit membership for it,
+    which means "may enter" has exactly one source — and a home organization
+    whose membership was deliberately revoked stays revoked.
+    """
+    return tuple(sorted({m.organization_id for m in (user.memberships or ())}))
+
+
+def _organization_status(user: User, organization_id: str) -> OrganizationStatus:
+    """The *active* organization's status, not the home organization's.
+
+    Reading ``user.organization.status`` here would suspend the wrong customer
+    in both directions: a user whose home organization is suspended would keep
+    full write access everywhere else they are a member, and a user working
+    inside a suspended organization would keep theirs because their own account
+    lives somewhere healthy.
+    """
+    membership = membership_for(user, organization_id)
+    if membership is not None and membership.organization is not None:
+        return parse_organization_status(membership.organization.status)
+    if user.organization is not None and user.organization_id == organization_id:
+        return parse_organization_status(user.organization.status)
+    # No organization row to read. The narrower reading, for the same reason
+    # `parse_organization_status` prefers SUSPENDED to a guess.
+    return OrganizationStatus.SUSPENDED
+
+
+def decide(user: User, *, organization_id: str, grant: AccessGrant | None = None) -> AccessDecision:
+    """Build the request-scoped access decision for an authenticated user, in one
+    organization.
+
+    ``organization_id`` is required rather than defaulted to the user's home
+    organization. A default here would be the single line that reintroduces the
+    bug this change exists to prevent: a caller that forgot to say which
+    organization it meant would silently get the home one, which for a
+    multi-organization user is a different customer's data than the token asked
+    for.
+
+    Only rows naming that organization are read — roles, overrides and the
+    camera grant alike. Holding ``org_admin`` somewhere else contributes nothing
+    here.
 
     The grant may be passed explicitly (when the caller has already loaded it) or
     read from the relationship. Both paths agree.
@@ -175,36 +242,67 @@ def decide(user: User, *, grant: AccessGrant | None = None) -> AccessDecision:
     overrides are applied, so a REVOKE and a suspension compose rather than
     one hiding the other.
     """
+    if not organization_id:
+        raise ValueError("an access decision must name the organization it is being made in")
+
     if not user.is_active:
         # An inactive user reaches nothing. Represented as a real decision with
         # no roles and no cameras rather than as an exception, so that callers
         # handle it through the same deny path as everything else.
         return AccessDecision(
             subject=user.email,
-            tenant_id=user.organization_id,
+            tenant_id=organization_id,
             roles=frozenset(),
             cameras=CameraScope.none(),
             display_name=user.display_name,
         )
 
-    roles = parse_roles([a.role for a in (user.role_assignments or ())])
-    granted, revoked = parse_overrides(list(user.permission_overrides or ()))
+    if membership_for(user, organization_id) is None:
+        # A backstop, not the control. `decision_for_claims` refuses a token
+        # naming an organization the user is not a member of before reaching
+        # here, and refusing *there* is what makes a revoked membership take
+        # effect on the very next request. This exists so that a future caller
+        # which skips that door still cannot manufacture reach out of nothing.
+        return AccessDecision(
+            subject=user.email,
+            tenant_id=organization_id,
+            roles=frozenset(),
+            cameras=CameraScope.none(),
+            display_name=user.display_name,
+            permissions=frozenset(),
+        )
+
+    roles = parse_roles(
+        [
+            assignment.role
+            for assignment in (user.role_assignments or ())
+            if assignment.organization_id == organization_id
+        ]
+    )
+    granted, revoked = parse_overrides(
+        [
+            override
+            for override in (user.permission_overrides or ())
+            if override.organization_id == organization_id
+        ]
+    )
     permissions = effective_permissions(roles, granted=granted, revoked=revoked)
 
-    org_status = parse_organization_status(
-        user.organization.status if user.organization is not None else None
-    )
-    if org_status is OrganizationStatus.SUSPENDED:
+    if _organization_status(user, organization_id) is OrganizationStatus.SUSPENDED:
         permissions = _suspend(permissions)
 
     effective = grant
     if effective is None:
-        grants = list(user.access_grants or ())
+        grants = [
+            candidate
+            for candidate in (user.access_grants or ())
+            if candidate.organization_id == organization_id
+        ]
         effective = grants[0] if grants else None
 
     return AccessDecision(
         subject=user.email,
-        tenant_id=user.organization_id,
+        tenant_id=organization_id,
         roles=roles,
         cameras=parse_camera_scope(effective),
         site_ids=_split(effective.site_ids) if effective is not None else (),
@@ -221,7 +319,9 @@ def _split(raw: str | None) -> tuple[str, ...]:
 
 __all__ = [
     "SUSPENDED_FORBIDDEN",
+    "accessible_organization_ids",
     "decide",
+    "membership_for",
     "parse_camera_scope",
     "parse_organization_status",
     "parse_overrides",

@@ -164,14 +164,23 @@ async def set_camera_scope(
     target: User,
     scope: CameraScope,
     site_ids: tuple[str, ...] | None = None,
+    organization_id: str = "",
 ) -> AccessGrant:
-    """Create or replace the target's single `AccessGrant` row.
+    """Create or replace the target's `AccessGrant` row in one organization.
 
-    One row per user (`uq_access_grant_user`), so this updates in place rather
-    than accumulating history — the audit trail is where the history of a
-    change lives, not a pile of superseded grant rows whose precedence nobody
-    would be able to state.
+    One row per user *per organization* (`uq_access_grant_user`), so this
+    updates in place rather than accumulating history — the audit trail is
+    where the history of a change lives, not a pile of superseded grant rows
+    whose precedence nobody would be able to state.
+
+    `organization_id` defaults to the target's home organization, which is the
+    only organization any caller currently administers a user in, and which is
+    what the row meant before the column existed. A caller that means a
+    different one has to say so — a camera id is unique only within an
+    organization, so a grant written into the wrong one would name whatever
+    cameras happened to share those keys.
     """
+    organization = organization_id or target.organization_id
     if actor.id == target.id:
         raise ScopeError(
             "you may not change your own camera access; an actor who can widen "
@@ -181,10 +190,15 @@ async def set_camera_scope(
         raise ScopeError("a camera grant may not cross an organization boundary")
 
     grant = (
-        await session.execute(select(AccessGrant).where(AccessGrant.user_id == target.id))
+        await session.execute(
+            select(AccessGrant).where(
+                AccessGrant.user_id == target.id,
+                AccessGrant.organization_id == organization,
+            )
+        )
     ).scalar_one_or_none()
     if grant is None:
-        grant = AccessGrant(user_id=target.id)
+        grant = AccessGrant(user_id=target.id, organization_id=organization)
         session.add(grant)
 
     grant.camera_breadth = scope.breadth.value

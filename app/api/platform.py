@@ -13,6 +13,12 @@ sees a `PlatformOperator`. Nothing translates between them. An organization
 administrator cannot reach these routes by acquiring any role, because no role
 produces the type they require.
 
+`POST /organizations/{id}/enter` is the one deliberate crossing, and it does
+not weaken the rule — it *is* the rule made explicit. It reads no permission
+either; it mints a separate, audited, read-only tenant session and hands it
+back, so that reaching a customer's data is a recorded act with its own
+credential rather than something an operator token could do quietly.
+
 ### Lifecycle is not a UI state
 
 `status` reaches authentication, authorization and the camera runtime:
@@ -34,13 +40,14 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Query, Request
+from fastapi import APIRouter, Body, Query, Request, Response
 from loguru import logger
 from sqlalchemy import func, select
 
-from app.api.dependencies import CurrentOperator, DbSession
+from app.api.dependencies import CurrentOperator, DbSession, auth_of, settings_of
+from app.auth.cookies import set_refresh_cookie
 from app.authorization.model import OrganizationStatus
-from app.authorization.platform import PlatformOperator
+from app.authorization.platform import PlatformOperator, entry_decision
 from app.domain.audit import AuditAction, AuditTrail
 from app.domain.models import Camera, Restaurant
 from app.domain.runtime_identity import validate_organization_id
@@ -454,6 +461,93 @@ async def _organization(session: DbSession, organization_id: str) -> Organizatio
     if found is None:
         raise NotFoundError(f"no organization '{organization_id}'")
     return found
+
+
+@router.post("/organizations/{organization_id}/enter")
+async def enter_organization(
+    organization_id: str,
+    request: Request,
+    response: Response,
+    operator: CurrentOperator,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Take a read-only session inside one organization.
+
+    ### This is a widening, and it is meant to look like one
+
+    Everything else in this module operates on organizations *as objects* —
+    their existence, their names, their lifecycle. None of it reads a customer's
+    data, and `PlatformOperator` carries nothing that could. This route is the
+    single deliberate exception, and the shape of it is the argument:
+
+    * it is a **POST**, because it is an act rather than a view;
+    * it **writes an audit row before it returns**, filed against the customer,
+      so the record exists in the tenant whose data is about to be read;
+    * it mints a **separate token** carrying `act: platform_operator`, so every
+      subsequent request is identifiable as part of this entry rather than
+      indistinguishable from the customer's own staff;
+    * the reach it grants is **stated, not resolved** — see
+      `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS` — and contains no
+      write, no evidence, no patron identity and no audit read.
+
+    The property the previous design had, and which is kept: an operator cannot
+    read a tenant's data *through the operator door*. `GET /platform/...` still
+    returns counts and never contents. What has changed is that there is now a
+    second door, it is locked differently, and going through it is recorded.
+
+    ### Archived organizations are refused
+
+    Login is refused inside an archived organization, and entry is a login by
+    another name. An operator who needs to look at an archived customer's data
+    is describing a restore, which is a decision rather than a click.
+    """
+    organization = await _organization(session, organization_id)
+
+    if not organization.is_active or (
+        str(organization.status or "").strip().lower() == OrganizationStatus.ARCHIVED.value
+    ):
+        raise ValidationError(
+            "an archived organization cannot be entered: nobody may sign in to "
+            "one, and platform authority does not exempt this session from that",
+            details={"organization_id": organization_id, "status": organization.status},
+        )
+
+    decision = entry_decision(operator, organization.id)
+    issued = auth_of(request).issue(decision)
+
+    await AuditTrail(session).record(
+        action=AuditAction.PLATFORM_OPERATOR_ENTERED,
+        organization_id=organization.id,
+        actor=operator.subject,
+        actor_roles=("platform_operator",),
+        resource_type="organization",
+        resource_id=organization.id,
+        request_id=_request_id(request),
+        detail={
+            "home_organization_id": operator.home_organization_id,
+            # The reach, written into the row rather than left to be inferred
+            # from the code that was deployed at the time. A permission set that
+            # changes later must not silently rewrite what an old entry meant.
+            "permissions": sorted(p.value for p in decision.permissions),
+            "read_only": True,
+        },
+    )
+
+    set_refresh_cookie(response, issued.refresh_token, settings_of(request))
+
+    return {
+        "access_token": issued.access_token,
+        "token_type": "bearer",
+        "expires_at": issued.expires_at.isoformat(),
+        "organization": organization_to_wire(
+            organization,
+            running_cameras=_running(request, organization.id),
+            **(await _counts(session)).get(organization.id, {}),
+        ),
+        "acting_as": decision.acting_as,
+        "read_only": True,
+        "permissions": sorted(p.value for p in decision.permissions),
+    }
 
 
 @router.get("/me")

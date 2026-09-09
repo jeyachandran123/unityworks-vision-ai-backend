@@ -36,6 +36,7 @@ from app.infrastructure.database import Database
 from app.users.models import (
     AccessGrant,
     Organization,
+    OrganizationMembership,
     PlatformOperatorGrant,
     RoleAssignment,
     User,
@@ -127,8 +128,22 @@ async def create_user(settings: Settings, args) -> int:
             password_hash=hash_password(password, min_length=settings.password_min_length),
         )
         session.add(user)
-        session.add(RoleAssignment(id=uuid.uuid4().hex, user_id=user.id, role=args.role))
-        session.add(_grant_for(user.id, args.cameras))
+        # The entry ticket. Without it the account exists, holds a role, and
+        # cannot sign in to the organization that role is for.
+        session.add(
+            OrganizationMembership(
+                id=uuid.uuid4().hex, user_id=user.id, organization_id=args.org
+            )
+        )
+        session.add(
+            RoleAssignment(
+                id=uuid.uuid4().hex,
+                user_id=user.id,
+                organization_id=args.org,
+                role=args.role,
+            )
+        )
+        session.add(_grant_for(user.id, args.org, args.cameras))
 
     await database.disconnect()
     print(f"created {email} with role {args.role}")
@@ -218,16 +233,18 @@ async def grant(settings: Settings, args) -> int:
             await database.disconnect()
             return 1
 
+        organization_id = (getattr(args, "org", "") or user.organization_id).strip()
         for existing in user.access_grants:
-            await session.delete(existing)
-        session.add(_grant_for(user.id, args.cameras))
+            if existing.organization_id == organization_id:
+                await session.delete(existing)
+        session.add(_grant_for(user.id, organization_id, args.cameras))
 
     await database.disconnect()
     print(f"camera access for {email}: {args.cameras}")
     return 0
 
 
-def _grant_for(user_id: str, cameras: str) -> AccessGrant:
+def _grant_for(user_id: str, organization_id: str, cameras: str) -> AccessGrant:
     """Build an access grant from a CLI argument.
 
     `all` is spelled out rather than implied by an empty list, because to Vision
@@ -249,6 +266,7 @@ def _grant_for(user_id: str, cameras: str) -> AccessGrant:
     return AccessGrant(
         id=uuid.uuid4().hex,
         user_id=user_id,
+        organization_id=organization_id,
         # Stored lower-case, matching what the resolver parses. The seeded row
         # this script was written to fix held "ALL_IN_TENANT"; the resolver
         # lower-cases before comparing, so both work — but writing the canonical
@@ -320,6 +338,99 @@ async def grant_operator(settings: Settings, args) -> int:
         await database.disconnect()
 
 
+async def grant_membership(settings: Settings, args) -> int:
+    """Add or remove an account's membership in an organization.
+
+    The only way a person comes to work for a second customer. Deliberately a
+    command-line act rather than an HTTP one, for a narrower version of the
+    reason `grant-operator` is: an organization administrator who could add
+    their own staff to *another* organization would be deciding who reaches a
+    customer that is not theirs, and the membership table is the one fact the
+    whole access flow trusts.
+
+    Idempotent in both directions — granting an existing membership and
+    revoking an absent one both succeed and say what they found, because a
+    provisioning script that fails the second time it runs is a script people
+    stop running.
+    """
+    database = await _session(settings)
+    email = args.email.strip().lower()
+    organization_id = args.org.strip()
+
+    async with database.session_scope() as session:
+        user = (
+            await session.execute(
+                select(User).where(User.email == email).options(selectinload(User.memberships))
+            )
+        ).scalar_one_or_none()
+        if user is None:
+            print(f"no such user: {email}", file=sys.stderr)
+            await database.disconnect()
+            return 1
+
+        organization = (
+            await session.execute(
+                select(Organization).where(Organization.id == organization_id)
+            )
+        ).scalar_one_or_none()
+        if organization is None:
+            print(f"no such organization: {organization_id}", file=sys.stderr)
+            await database.disconnect()
+            return 1
+
+        existing = next(
+            (m for m in user.memberships if m.organization_id == organization_id), None
+        )
+
+        if args.revoke:
+            if existing is None:
+                print(f"{email} was not a member of {organization_id}")
+            else:
+                if user.organization_id == organization_id:
+                    # Allowed, and worth saying out loud. The home organization
+                    # owns email uniqueness and audit ownership, so the account
+                    # keeps existing there — it simply can no longer sign in to
+                    # it, which is a coherent state and rarely the intent.
+                    print(
+                        f"note: {organization_id} is {email}'s home organization; "
+                        f"the account remains filed there but can no longer enter it"
+                    )
+                await session.delete(existing)
+                print(f"revoked {email} from {organization_id}")
+            await database.disconnect()
+            return 0
+
+        if existing is not None:
+            print(f"{email} is already a member of {organization_id}")
+            await database.disconnect()
+            return 0
+
+        session.add(
+            OrganizationMembership(
+                id=uuid.uuid4().hex,
+                user_id=user.id,
+                organization_id=organization_id,
+                granted_by=args.by or None,
+            )
+        )
+        if args.role:
+            session.add(
+                RoleAssignment(
+                    id=uuid.uuid4().hex,
+                    user_id=user.id,
+                    organization_id=organization_id,
+                    role=args.role,
+                )
+            )
+            session.add(_grant_for(user.id, organization_id, args.cameras))
+
+    await database.disconnect()
+    print(f"{email} may now enter {organization_id}")
+    if not args.role:
+        print("no role granted there — they can enter and will see nothing")
+    return 0
+
+
 async def list_operators(settings: Settings) -> int:
     database = await _session(settings)
     try:
@@ -367,6 +478,25 @@ def main() -> int:
     access = sub.add_parser("grant", help="set camera access")
     access.add_argument("--email", required=True)
     access.add_argument("--cameras", required=True, help="all | none | cam-01,cam-02")
+    access.add_argument(
+        "--org", default="", help="which organization's cameras (default: their home)"
+    )
+
+    membership = sub.add_parser(
+        "grant-membership",
+        help="let an account enter another organization",
+    )
+    membership.add_argument("--email", required=True)
+    membership.add_argument("--org", required=True, help="the organization id to admit them to")
+    membership.add_argument(
+        "--role",
+        default="",
+        choices=["", *[r.value for r in Role]],
+        help="the role to give them there; omit and they enter with nothing",
+    )
+    membership.add_argument("--cameras", default="all", help="all | none | cam-01,cam-02")
+    membership.add_argument("--by", default="", help="who is granting it")
+    membership.add_argument("--revoke", action="store_true")
 
     operator = sub.add_parser(
         "grant-operator",
@@ -392,6 +522,7 @@ def main() -> int:
         "reset-password": lambda: reset_password(settings, args),
         "check-password": lambda: check_password(settings, args),
         "grant": lambda: grant(settings, args),
+        "grant-membership": lambda: grant_membership(settings, args),
         "grant-operator": lambda: grant_operator(settings, args),
         "list-operators": lambda: list_operators(settings),
     }

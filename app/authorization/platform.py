@@ -49,6 +49,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.authorization.model import AccessDecision, CameraScope, Permission
 from app.errors import ScopeError
 from app.users.models import PlatformOperatorGrant, User
 
@@ -109,4 +110,108 @@ async def resolve_operator(session: AsyncSession, user: User) -> PlatformOperato
     )
 
 
-__all__ = ["PlatformOperator", "resolve_operator"]
+#: The claim that marks a token minted by `POST /platform/organizations/{id}/enter`.
+#:
+#: Its presence is what tells `decision_for_claims` that the tenant on this
+#: token was reached by an audited platform entry rather than by a membership,
+#: and that the reach to build is `OPERATOR_ENTRY_PERMISSIONS` rather than
+#: whatever roles the account happens to hold in that organization. A token
+#: without it is an ordinary tenant token and is resolved the ordinary way.
+ACTING_AS_PLATFORM_OPERATOR = "platform_operator"
+
+
+#: What a platform operator may read inside an organization they have entered.
+#:
+#: ### Why this is a list and not a rule
+#:
+#: The obvious implementation is `p.value.startswith("view_")`. It is wrong for
+#: the reason `resolver.SUSPENDED_FORBIDDEN` records at length: a rule that
+#: depends on how a permission was *spelled* is not a rule about what it does.
+#: `EXPORT_REPORTS` does not begin with `view_` and is excluded here anyway;
+#: `VIEW_EVIDENCE` does begin with it and is excluded too. Spelling would have
+#: got both wrong, in opposite directions.
+#:
+#: ### What is deliberately absent
+#:
+#: * **`VIEW_EVIDENCE`, `VIEW_PATRON_ID`** — retained imagery of identifiable
+#:   people, and the biometric surface. Support work does not require looking
+#:   at a named employee's face, and an operator grant reaches every customer.
+#: * **`VIEW_AUDIT`** — who looked at imagery of whom. A privacy record in its
+#:   own right, and not an administrative by-product.
+#: * **`EXPORT_REPORTS`** — a copy that leaves the system and outlives every
+#:   retention policy this application enforces. Reading a report on screen is
+#:   a read; taking one away is not.
+#: * **`REGISTER_DEMAND`** — spends the customer's money and causes computation.
+#: * **`ACCESS_DEVTOOLS`** — a separate engineering surface with its own gate.
+#: * **every `MANAGE_*`, `RETIRE_CAMERAS`, `DELETE_EVIDENCE`, and the incident
+#:   queue** — entry is read-only, and the write path must refuse rather than
+#:   merely be hidden.
+#:
+#: ### What is present, and the tension in it
+#:
+#: `VIEW_LIVE` is here. It is the least comfortable entry in the set, because
+#: live imagery of people at work is not obviously less sensitive than the
+#: retained kind that `VIEW_EVIDENCE` gates. It is included because an operator
+#: who cannot see whether a customer's cameras are actually producing pictures
+#: cannot answer the support question that entry exists for. Recording the
+#: tension here so that removing it later is a decision someone makes on
+#: purpose rather than a gap somebody notices.
+OPERATOR_ENTRY_PERMISSIONS: frozenset[Permission] = frozenset(
+    {
+        Permission.VIEW_USERS,
+        Permission.VIEW_SITES,
+        Permission.VIEW_ZONES,
+        Permission.VIEW_LIVE,
+        Permission.VIEW_OBSERVATIONS,
+        Permission.VIEW_CAMERA_HEALTH,
+        Permission.VIEW_CAMERAS,
+        Permission.VIEW_INCIDENTS,
+        Permission.VIEW_REPORTS,
+        Permission.VIEW_MODEL_EVALUATION,
+        Permission.VIEW_PEOPLE_COUNT,
+        Permission.VIEW_DEMOGRAPHY,
+        Permission.VIEW_TABLE_OCCUPANCY,
+        Permission.VIEW_CUTTING_BOARD,
+        Permission.VIEW_MEAL_DETECTION,
+        Permission.VIEW_POS_INTEGRATION,
+    }
+)
+
+
+def entry_decision(operator: PlatformOperator, organization_id: str) -> AccessDecision:
+    """The tenant-scoped reach of an operator who has entered an organization.
+
+    An `AccessDecision`, because every route in the application already speaks
+    that language and inventing a second authorization type for this would be
+    the parallel tenant-context mechanism the architecture exists to avoid. It
+    is built here rather than by the resolver because it is not resolved from
+    anything stored about the user *in that organization* — there is nothing
+    stored, which is the entire point.
+
+    **No roles.** `roles=frozenset()` and `permissions` stated explicitly, so
+    the decision cannot be mistaken for one produced by a role and cannot pick
+    up a permission by having a role redefined under it later.
+
+    **Every camera, no sites.** `all_in_tenant` because a console showing an
+    operator an empty wall would be indistinguishable from a customer whose
+    cameras are all down, which is precisely the question entry is for. No site
+    ids for the same reason a tenant-wide camera scope needs none.
+    """
+    return AccessDecision(
+        subject=operator.subject,
+        tenant_id=organization_id,
+        roles=frozenset(),
+        cameras=CameraScope.all_in_tenant(),
+        display_name=operator.display_name,
+        permissions=OPERATOR_ENTRY_PERMISSIONS,
+        acting_as=ACTING_AS_PLATFORM_OPERATOR,
+    )
+
+
+__all__ = [
+    "ACTING_AS_PLATFORM_OPERATOR",
+    "OPERATOR_ENTRY_PERMISSIONS",
+    "PlatformOperator",
+    "entry_decision",
+    "resolve_operator",
+]

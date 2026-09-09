@@ -16,6 +16,15 @@ The split exists so that a stolen access token expires on its own, and a stolen
 refresh token is hard to steal in the first place. Both properties are lost if
 the access token is given a long life "for convenience".
 
+### The `act` claim
+
+An ordinary token names a tenant the account is a member of. A token minted by
+a platform-operator entry names one it is deliberately *not* a member of, and
+``act`` is how the two are told apart on the way back in. It grants nothing:
+`user_for_claims` re-reads the operator grant from the database on every
+request that carries it, so the claim decides which check applies, never
+whether the check passes.
+
 ### Why the token type is inside the payload
 
 ``typ`` is checked on every verification. Without it, a refresh token is a
@@ -54,6 +63,17 @@ class TokenClaims:
     token_id: str
     issued_at: datetime
     expires_at: datetime
+    #: Empty for an ordinary session. ``"platform_operator"`` for one minted by
+    #: an audited entry into an organization the account is not a member of
+    #: (`app.authorization.platform.ACTING_AS_PLATFORM_OPERATOR`).
+    #:
+    #: It is a *statement of how this tenant was reached*, never a grant. The
+    #: grant is re-read from the database on every request, exactly as roles
+    #: are — a claim that authorised anything by its own presence would be a
+    #: cross-customer privilege forgeable by anyone who could mint a token, and
+    #: the point of putting it here is that it makes the session's provenance
+    #: undeniable rather than that it makes it powerful.
+    acting_as: str = ""
 
     @property
     def is_access(self) -> bool:
@@ -77,7 +97,12 @@ class TokenService:
     # ── issuing ──────────────────────────────────────────────────────────────
 
     def issue_access(
-        self, *, subject: str, tenant_id: str, roles: tuple[str, ...] = ()
+        self,
+        *,
+        subject: str,
+        tenant_id: str,
+        roles: tuple[str, ...] = (),
+        acting_as: str = "",
     ) -> tuple[str, datetime]:
         return self._issue(
             subject=subject,
@@ -85,18 +110,28 @@ class TokenService:
             roles=roles,
             token_type=TokenType.ACCESS,
             lifetime=timedelta(minutes=self._settings.jwt_access_token_expire_minutes),
+            acting_as=acting_as,
         )
 
-    def issue_refresh(self, *, subject: str, tenant_id: str) -> tuple[str, datetime]:
+    def issue_refresh(
+        self, *, subject: str, tenant_id: str, acting_as: str = ""
+    ) -> tuple[str, datetime]:
         # No roles in a refresh token. It authorises nothing; it only proves the
         # session is still alive. Carrying roles would let a role revocation take
         # up to seven days to bite.
+        #
+        # `acting_as` is the exception, and it is not a role. It records how the
+        # tenant on this token was reached, so that refreshing an operator entry
+        # yields another operator entry. Dropping it here would turn a read-only
+        # audited session into an ordinary one at the next refresh — silently,
+        # and in the direction of more access.
         return self._issue(
             subject=subject,
             tenant_id=tenant_id,
             roles=(),
             token_type=TokenType.REFRESH,
             lifetime=timedelta(days=self._settings.jwt_refresh_token_expire_days),
+            acting_as=acting_as,
         )
 
     def _issue(
@@ -107,6 +142,7 @@ class TokenService:
         roles: tuple[str, ...],
         token_type: TokenType,
         lifetime: timedelta,
+        acting_as: str = "",
     ) -> tuple[str, datetime]:
         if not subject or not tenant_id:
             raise ValueError("a token must name a subject and a tenant")
@@ -124,6 +160,8 @@ class TokenService:
         }
         if roles:
             payload["rol"] = list(roles)
+        if acting_as:
+            payload["act"] = acting_as
 
         token = jwt.encode(payload, self._signing_key, algorithm=self._settings.jwt_algorithm)
         return token, expires
@@ -173,6 +211,7 @@ class TokenService:
             token_id=str(payload.get("jti", "")),
             issued_at=datetime.fromtimestamp(int(payload["iat"]), tz=UTC),
             expires_at=datetime.fromtimestamp(int(payload["exp"]), tz=UTC),
+            acting_as=str(payload.get("act", "")),
         )
 
 

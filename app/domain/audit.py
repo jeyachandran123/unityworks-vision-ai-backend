@@ -123,6 +123,36 @@ class AuditAction(enum.Enum):
     ORGANIZATION_UPDATED = "organization.updated"
     ORGANIZATION_STATUS_CHANGED = "organization.status_changed"
 
+    # ── organization access ──────────────────────────────────────────
+    #
+    #: A member moved their session from one of their organizations to another.
+    #: Filed against the organization being entered, because that is the trail
+    #: somebody investigating *that* customer's data will read.
+    #:
+    #: Low-value on its own and load-bearing in aggregate: it is what turns "an
+    #: account read this data" into "an account that also works for a competitor
+    #: read this data", which is the question a multi-organization deployment
+    #: eventually gets asked.
+    ORGANIZATION_SELECTED = "organization.selected"
+    #: A platform operator entered an organization they are not a member of.
+    #:
+    #: The most consequential row in this table after a status change, and the
+    #: reason entry is a POST rather than a query parameter. A cross-customer
+    #: principal reaching into one customer's data must leave a record at the
+    #: moment it happens — reconstructing it afterwards from which routes were
+    #: called is not the same thing, and is not available to the customer.
+    PLATFORM_OPERATOR_ENTERED = "organization.operator_entered"
+    #: Somebody was admitted to, or removed from, an organization.
+    #:
+    #: Filed against the organization whose membership changed rather than
+    #: against the actor's own, because "who may enter this customer" is a
+    #: question asked of that customer's record. Membership is the entry ticket
+    #: — see `app.users.models.OrganizationMembership` — so these two rows are
+    #: the complete history of who could reach this organization and when, which
+    #: is exactly what an access review needs and what nothing else records.
+    ORGANIZATION_MEMBER_ADDED = "organization.member_added"
+    ORGANIZATION_MEMBER_REMOVED = "organization.member_removed"
+
 
 class AuditOutcome(enum.Enum):
     SUCCESS = "success"

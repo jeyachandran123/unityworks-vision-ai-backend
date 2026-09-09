@@ -125,22 +125,39 @@ class User(Base):
     permission_overrides: Mapped[list[PermissionOverride]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    memberships: Mapped[list[OrganizationMembership]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class RoleAssignment(Base):
-    """One role held by one user. A user may hold several.
+    """One role held by one user, **in one organization**. A user may hold several.
 
     A row rather than a column on ``User`` so that a role can be added or revoked
     without rewriting the user, and so the grant is individually auditable — who
     made someone a hygiene officer, and when.
+
+    ``organization_id`` is what makes "org_admin at Acme" a different fact from
+    "org_admin at Borden". Without it, granting somebody a second organization
+    would carry every role they already hold across with them, and a membership
+    row would become an entry ticket to authority nobody granted.
     """
 
     __tablename__ = "role_assignments"
-    __table_args__ = (UniqueConstraint("user_id", "role", name="uq_role_assignment"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "organization_id", "role", name="uq_role_assignment"),
+    )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    #: The organization this role is held *in*. Not derived from the user's home
+    #: organization: a user may hold different roles in each organization they
+    #: belong to, and collapsing the two would make that difference
+    #: inexpressible.
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: The string value of `app.authorization.model.Role`. Stored as text rather
     #: than a database enum so that adding a role is a migration of data, not of
@@ -164,11 +181,18 @@ class AccessGrant(Base):
     """
 
     __tablename__ = "access_grants"
-    __table_args__ = (UniqueConstraint("user_id", name="uq_access_grant_user"),)
+    __table_args__ = (UniqueConstraint("user_id", "organization_id", name="uq_access_grant_user"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    #: Which organization's cameras and sites this grant names. A camera id is
+    #: unique only within an organization (`app.domain.runtime_identity`), so a
+    #: grant without one would name cameras in whichever tenant happened to be
+    #: active — exactly the cross-tenant read this column exists to prevent.
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: `app.authorization.model.ScopeBreadth` — "none" | "listed" | "all_in_tenant".
     #: Explicit, so that "no cameras" and "every camera" can never be represented
@@ -193,24 +217,33 @@ class PermissionOverride(Base):
     permission no held role carries) or REVOKE (remove one that a held role
     does carry) — see `app.authorization.model.OverrideState`.
 
-    Tenant scope is inherited rather than stated: there is no
-    `organization_id` column here on purpose, because one would be redundant
-    with `user_id` and redundant tenant fields are exactly the kind of drift
-    that lets a row quietly stop matching its owner. The override reaches
-    only as far as `user_id` does, and `user_id` already resolves to exactly
-    one organization through the `users` table — so a cross-tenant override
-    cannot be constructed without first constructing a cross-tenant user,
-    which the schema already forbids.
+    Tenant scope is **stated**, not inherited. It was inherited once, and the
+    argument was good: `user_id` already resolved to exactly one organization
+    through the `users` table, so a column here would have been redundant, and
+    redundant tenant fields are exactly the kind of drift that lets a row
+    quietly stop matching its owner. That argument is now void.
+    `organization_memberships` means `user_id` resolves to *several*
+    organizations, and an override carrying no organization of its own would
+    follow its holder into every one of them.
     """
 
     __tablename__ = "permission_overrides"
     __table_args__ = (
-        UniqueConstraint("user_id", "permission", name="uq_permission_override_user_permission"),
+        UniqueConstraint(
+            "user_id",
+            "organization_id",
+            "permission",
+            name="uq_permission_override_user_permission",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    #: The organization the exception applies in.
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: The string value of `app.authorization.model.Permission`. Stored as text
     #: for the same reason `RoleAssignment.role` is: adding a permission is a
@@ -228,6 +261,70 @@ class PermissionOverride(Base):
     granted_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="permission_overrides")
+
+
+class OrganizationMembership(Base):
+    """This user may enter this organization. The whole of the authorization.
+
+    ### Why a row, and why only a row
+
+    A membership is the *entry ticket*, and it is deliberately the only thing
+    that is. Knowing an organization id is not access. Holding `org_admin`
+    somewhere else is not access. Having entered an organization yesterday is
+    not access. A token naming an organization is not access either — it is
+    checked against this table on every request, so revoking a membership takes
+    effect on the next call rather than at the next token expiry.
+
+    That is the same discipline `decision_for_claims` already applies to roles,
+    extended to the tenant itself. Before this table the tenant was carried
+    solely by `User.organization_id` and a token could not name anything else;
+    now that a token *can*, the claim needs a server-side fact to be checked
+    against, and this is it.
+
+    ### What it deliberately does not carry
+
+    No roles, no permissions, no camera scope. Entering an organization and
+    being able to do anything in it are separate questions, answered by
+    `role_assignments`, `permission_overrides` and `access_grants` — each of
+    which now names its own organization. A membership with no role rows means
+    somebody who may enter and can see nothing, which is a coherent state and
+    the correct default for a grant that has just been made.
+
+    ### Its relationship to `User.organization_id`
+
+    None, structurally. `User.organization_id` remains the *home* organization:
+    it owns email uniqueness, it is where a failed login is filed, and it is
+    the tenant an operator's own account lives in. It confers no entry by
+    itself — the migration that creates this table writes an explicit
+    membership for every existing user in their home organization precisely so
+    that "may enter" has exactly one answer everywhere, with no special case
+    for the organization a user happens to have been created in.
+    """
+
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint("user_id", "organization_id", name="uq_membership_user_org"),
+        Index("ix_memberships_user", "user_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    #: Who granted it. Nullable because the memberships the migration writes for
+    #: existing users were granted by nobody — they are a restatement of access
+    #: that already existed, and naming an actor for them would be a fabricated
+    #: row in a table people will read as history.
+    granted_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="memberships")
+    organization: Mapped[Organization] = relationship()
 
 
 class PlatformOperatorGrant(Base):
@@ -270,6 +367,7 @@ class PlatformOperatorGrant(Base):
 __all__ = [
     "AccessGrant",
     "Organization",
+    "OrganizationMembership",
     "PermissionOverride",
     "PlatformOperatorGrant",
     "RoleAssignment",
