@@ -36,7 +36,7 @@ Re-verified this pass:
 - `Camera.camera_key` unique per organization (`UniqueConstraint("organization_id", "camera_key")`, `models.py:118`, **CONFIRMED**). `Restaurant.slug` unique per organization (`models.py:60`, **CONFIRMED**).
 - `CameraZoneAssignment` is an append-only interval table keyed by `organization_id` + `camera_key` as plain strings, deliberately not FK'd to `Camera`/`Zone` so history survives rename/delete (`models.py:181-260`, **CONFIRMED** by direct read of the docstring and table definition this pass).
 - `Camera.organization_id` is redundant with `Restaurant.organization_id` (derivable via the FK join) but stored directly for query performance — no CHECK constraint enforces agreement between the two (**CONFIRMED absence** — no such constraint appears in the `Camera.__table_args__` read this pass, `models.py:117-121`). This is exactly the condition that made the camera-ownership gap possible (§19).
-- Zone creation already guards this: `_restaurant_in_tenant(session, access.tenant_id, restaurant_id)` is called before insert (`app/api/administration.py:325`, **CONFIRMED** by direct read this pass — the comment at line 323-324 reads "Checked before insert so a zone can never be attached to another organisation's restaurant by naming its id"). Camera creation, before this fix, did not call it (§19).
+- Zone creation already guards this: `_restaurant_in_tenant(session, access.tenant_id, restaurant_id)` is called before insert (`app/api/administration.py:325`, **CONFIRMED** by direct read this pass — the comment at line 323-324 reads "Checked before insert so a zone can never be attached to another organization's restaurant by naming its id"). Camera creation, before this fix, did not call it (§19).
 
 ## 5. DVR/NVR architecture analysis
 
@@ -104,7 +104,7 @@ No lifecycle state exists on `Organization` today beyond its bare row (**INFERRE
 
 ## 10. Site provisioning use cases
 
-**Today, fully implemented (CONFIRMED):** `POST /api/v1/restaurants`, gated `MANAGE_ORGANIZATION`. Required: `name`. Optional: `slug` (derived from name), `timezone` (default UTC), `is_active` (default true). `organization_id` in the request body is ignored — tenancy comes from `access.tenant_id` (re-verified by this pass's read of `app/api/administration.py` and by the existing test `test_a_restaurant_cannot_be_created_into_another_organisation`, `tests/app/test_administration.py:85-101`, **CONFIRMED** by direct read this pass). No delete route; `is_active` does not cascade to child `Zone`/`Camera` rows (§8). This needs no Stage 2+ change beyond whatever cross-tenant provisioning wraps around it.
+**Today, fully implemented (CONFIRMED):** `POST /api/v1/restaurants`, gated `MANAGE_ORGANIZATION`. Required: `name`. Optional: `slug` (derived from name), `timezone` (default UTC), `is_active` (default true). `organization_id` in the request body is ignored — tenancy comes from `access.tenant_id` (re-verified by this pass's read of `app/api/administration.py` and by the existing test `test_a_restaurant_cannot_be_created_into_another_organization`, `tests/app/test_administration.py:85-101`, **CONFIRMED** by direct read this pass). No delete route; `is_active` does not cascade to child `Zone`/`Camera` rows (§8). This needs no Stage 2+ change beyond whatever cross-tenant provisioning wraps around it.
 
 ## 11. DVR/NVR provisioning use cases
 
@@ -200,7 +200,7 @@ Re-verified this pass by tracing actual queries, not endpoint decorators. Classi
 
 - `app/api/product.py` (`create_camera`, originally lines 75-117) passed `restaurant_id=str(payload.get("restaurant_id", ""))` straight to `CameraService.create` with no check that the restaurant belongs to `access.tenant_id`.
 - `app/domain/cameras.py` (`CameraService.create`, lines 49-117, re-read this pass in full) never queries `Restaurant` at all — it only checks `camera_key` uniqueness within the given `organization_id` (line 82-84) and then inserts, trusting `restaurant_id` unconditionally.
-- By contrast, zone creation already guards this: `app/api/administration.py:322-325` calls `_restaurant_in_tenant(session, access.tenant_id, restaurant_id)` before insert, with the comment "Checked before insert so a zone can never be attached to another organisation's restaurant by naming its id."
+- By contrast, zone creation already guards this: `app/api/administration.py:322-325` calls `_restaurant_in_tenant(session, access.tenant_id, restaurant_id)` before insert, with the comment "Checked before insert so a zone can never be attached to another organization's restaurant by naming its id."
 - **Attack scenario confirmed:** an `org_admin` of Organization A, holding `MANAGE_CAMERAS`, could submit `POST /api/v1/cameras` with a `restaurant_id` belonging to Organization B. The resulting `Camera` row would have `organization_id = A` (from `access.tenant_id`, never trusted from the client) but `restaurant_id` pointing into B's `restaurants` table — no FK violation occurs because the FK only validates the row's existence, not its owning organization.
 
 **Fix applied (the one permitted code change):**
@@ -215,7 +215,7 @@ Re-verified this pass by tracing actual queries, not endpoint decorators. Classi
 
   +    restaurant_id = str(payload.get("restaurant_id", ""))
   +    # Checked before insert so a camera can never be attached to another
-  +    # organisation's restaurant by naming its id — the same guard zone
+  +    # organization's restaurant by naming its id — the same guard zone
   +    # creation already applies (`app/api/administration.py:325`).
   +    await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
   +
@@ -226,7 +226,7 @@ Re-verified this pass by tracing actual queries, not endpoint decorators. Classi
   ```
 
 - `unityworks-vision-ai-backend/tests/app/test_persistence.py` — updated the two existing camera-creation-through-the-API tests (`test_a_camera_created_through_the_api_starts_disabled`, `test_enabling_a_camera_gets_its_own_audit_action`) to create a real `Restaurant` via `POST /api/v1/restaurants` first, since they previously posted a `restaurant_id` (`"rest-01"`) that never corresponded to an actual row — a gap the fix now correctly rejects. Added two new tests:
-  - `test_a_camera_cannot_be_attached_to_another_organisations_restaurant` — an `org-other` caller attempts to create a camera against `org-test`'s restaurant; asserts `404` and asserts no `camera.created` audit event was written for `org-other`.
+  - `test_a_camera_cannot_be_attached_to_another_organizations_restaurant` — an `org-other` caller attempts to create a camera against `org-test`'s restaurant; asserts `404` and asserts no `camera.created` audit event was written for `org-other`.
   - `test_a_camera_created_into_a_nonexistent_restaurant_is_rejected` — asserts `404` for a `restaurant_id` that doesn't exist at all (this was previously silently accepted).
   - No privileged/platform-level bypass test was added, because none exists in the current codebase (§3, §15) — inventing one would violate the task's explicit instruction not to invent a bypass that isn't there.
 

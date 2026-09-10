@@ -487,7 +487,7 @@ async def test_the_evaluation_route_is_permission_gated(
     assert (await client.get("/api/v1/evaluation", headers=developer)).status_code == 200
 
 
-async def test_an_organisation_administrator_no_longer_reads_evaluation(
+async def test_an_organization_administrator_no_longer_reads_evaluation(
     client: AsyncClient, admin
 ) -> None:
     """The Phase 4 role correction, asserted at the route rather than the map.
@@ -558,7 +558,7 @@ def test_the_evaluation_permission_is_not_granted_broadly() -> None:
     """Two roles, and no operational or administrative one is among them.
 
     ORG_ADMIN was removed deliberately. The reasoning that put it there —
-    an organisation administrator answers for what the system claims — is
+    an organization administrator answers for what the system claims — is
     served by VIEW_REPORTS, which that role still holds and which carries
     coverage, completeness and the ruleset version behind every figure.
     What this permission actually opens is attribute agreement on a

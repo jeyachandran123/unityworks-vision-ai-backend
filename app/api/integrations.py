@@ -97,7 +97,7 @@ async def pos_integration(access: CurrentAccess, session: DbSession) -> dict[str
     dependencies=[Depends(requires(Permission.VIEW_POS_INTEGRATION))],
 )
 async def list_pos_connectors(access: CurrentAccess, session: DbSession) -> dict[str, Any]:
-    """Configured connectors for this organisation. Real, and currently none.
+    """Configured connectors for this organization. Real, and currently none.
 
     `credential_ref` is deliberately absent from every row. The database holds a
     reference rather than a secret, and an administration screen has no use even

@@ -79,11 +79,11 @@ class Permission(enum.Enum):
     """
 
     # identity and administration
-    #: Organisation *settings and lifecycle* — the organisation's own name,
+    #: organization *settings and lifecycle* — the organization's own name,
     #: timezone policy and status. Deliberately **not** a blanket write
     #: permission over the physical estate: sites and zones have their own keys
     #: below. It held that job historically, which made "may edit one zone's
-    #: name" and "may reconfigure the whole organisation" the same grant.
+    #: name" and "may reconfigure the whole organization" the same grant.
     MANAGE_ORGANIZATION = "manage_organization"
     MANAGE_USERS = "manage_users"
     #: The user roster, and nothing else. It historically also gated reading
@@ -283,7 +283,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.EXPORT_REPORTS,
             # No VIEW_MODEL_EVALUATION.
             #
-            # It was held here on the reasoning that an organisation
+            # It was held here on the reasoning that an organization
             # administrator answers for what the system claims, so they may see
             # how well it scores. That reasoning is sound about accountability
             # and wrong about this permission. What the dashboard actually shows
@@ -303,7 +303,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             # Holders are now SUPER_ADMIN and DEVELOPER.
             #
             # Reads that patron identification exists and is blocked. Does NOT
-            # hold MANAGE_PATRON_ID: an organisation administrator is the wrong
+            # hold MANAGE_PATRON_ID: an organization administrator is the wrong
             # altitude for a decision that needs a DPIA behind it, and the
             # separation means turning it on is visibly not routine.
             Permission.VIEW_PATRON_ID,

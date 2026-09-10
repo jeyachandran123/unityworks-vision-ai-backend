@@ -815,7 +815,7 @@ class TestProductApi:
         assert [e.resource_id for e in events] == ["cam-22"]
 
     @pytest.mark.asyncio
-    async def test_a_camera_cannot_be_attached_to_another_organisations_restaurant(
+    async def test_a_camera_cannot_be_attached_to_another_organizations_restaurant(
         self, seeded, client, admin_headers
     ):
         """The same ownership guard zone creation already applies (`app/api/administration.py:325`)."""

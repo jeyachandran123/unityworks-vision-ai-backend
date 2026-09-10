@@ -4,7 +4,7 @@ Three groups, and a deliberate asymmetry between them.
 
 ### Restaurants and zones are fully writable
 
-They are organisational structure: a name, a timezone, an area of a kitchen.
+They are organizational structure: a name, a timezone, an area of a kitchen.
 Getting one wrong is an inconvenience, and the blast radius of a mistake is a
 mislabelled row.
 
@@ -16,7 +16,7 @@ incident reads six months later.
 These were once gated on `VIEW_USERS` for reads and `MANAGE_ORGANIZATION` for
 writes, which made two unrelated questions the same grant: "may see who works
 here" also meant "may read every site", and "may rename a zone" also meant "may
-reconfigure the organisation". The product needs those separated — two managers
+reconfigure the organization". The product needs those separated — two managers
 holding one role, where one may edit the estate and the other may only read
 it — and no arrangement of a blanket permission expresses that.
 
@@ -80,7 +80,7 @@ def _slugify(name: str) -> str:
 
     A collision raises through the table's own unique constraint rather than
     being silently suffixed: two restaurants called the same thing in one
-    organisation is a question for a person, not something to paper over with
+    organization is a question for a person, not something to paper over with
     `-2`.
     """
     kept = [c.lower() if c.isalnum() else "-" for c in name.strip()]
@@ -142,7 +142,7 @@ async def list_restaurants(
     limit: Annotated[int, Query(ge=1, le=200)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    """Sites in the caller's organisation.
+    """Sites in the caller's organization.
 
     Gated on `VIEW_SITES`: a restaurant manager needs to read the structure
     their incidents are attributed to, and reading it grants no ability to
@@ -338,7 +338,7 @@ async def list_zones(
 
     The join onto `Restaurant` is what enforces tenancy: `zones` carries no
     organization column of its own, so filtering on the parent is the only
-    construction that cannot leak another organisation's areas.
+    construction that cannot leak another organization's areas.
     """
     statement = (
         select(Zone)
@@ -376,7 +376,7 @@ async def create_zone(
 ) -> dict[str, Any]:
     restaurant_id = _text(payload, "restaurant_id", required=True)
     # Checked before insert so a zone can never be attached to another
-    # organisation's restaurant by naming its id.
+    # organization's restaurant by naming its id.
     await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
 
     zone = Zone(restaurant_id=restaurant_id, name=_text(payload, "name", required=True))
@@ -436,7 +436,7 @@ async def update_zone(
 
 @router.get("/users", dependencies=[Depends(requires(Permission.VIEW_USERS))])
 async def list_users(access: CurrentAccess, session: DbSession) -> dict[str, Any]:
-    """Who holds which role in this organisation.
+    """Who holds which role in this organization.
 
     **Read-only, and no credential material of any kind.** `password_hash` is
     never selected, never rendered, and is not part of this response shape — a

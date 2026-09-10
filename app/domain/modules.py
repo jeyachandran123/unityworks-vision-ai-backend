@@ -380,7 +380,7 @@ class CuttingBoardPolicy(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    #: `None` is the organisation-wide default; a row with a restaurant overrides
+    #: `None` is the organization-wide default; a row with a restaurant overrides
     #: it for that site. Sites genuinely differ, and forcing one scheme would
     #: mean a site silently evaluated against somebody else's kitchen.
     restaurant_id: Mapped[str | None] = mapped_column(
@@ -665,7 +665,7 @@ class PosConnector(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    #: `None` when one connector serves the whole organisation.
+    #: `None` when one connector serves the whole organization.
     restaurant_id: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
     )

@@ -59,7 +59,7 @@ async def collect_incidents(
 ) -> tuple[tuple[Section, ...], SourceCoverage]:
     """Incidents raised in the window, by period, severity, zone and rule.
 
-    Bucketed on `created_at` — when the organisation was told — rather than on
+    Bucketed on `created_at` — when the organization was told — rather than on
     `observed_at`. They differ by seconds normally and by much more after an
     outage, and "how much did we raise this month" is a question about the work
     queue, not about the camera. Stated in the section note so a reader is never
@@ -461,7 +461,7 @@ async def collect_cameras(
             "assignment history below. A camera that is not processing creates "
             "no session, no decode and no model call."
         ),
-        empty_note="No camera is configured for this organisation.",
+        empty_note="No camera is configured for this organization.",
     )
 
     assignments = (

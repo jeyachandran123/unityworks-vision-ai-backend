@@ -4,7 +4,7 @@ The interesting assertions are the boundaries rather than the CRUD:
 
 * reading structure and changing it are different permissions
 * tenancy comes from the session, never from the request body
-* another organisation's rows are invisible, and asking for one by id is a 404
+* another organization's rows are invisible, and asking for one by id is a 404
   rather than a 403 — "it exists but is not yours" is itself a disclosure
 * the user list carries no credential material, and says why it cannot write
 """
@@ -87,7 +87,7 @@ async def test_an_admin_creates_a_restaurant_and_it_is_audited(
     assert "restaurant.created" in actions
 
 
-async def test_a_restaurant_cannot_be_created_into_another_organisation(
+async def test_a_restaurant_cannot_be_created_into_another_organization(
     client: AsyncClient, admin
 ) -> None:
     """`organization_id` in the body is ignored; tenancy comes from the session."""
@@ -132,7 +132,7 @@ async def test_updating_a_restaurant_records_which_fields_changed(
     assert updated.json()["slug"] == "old"
 
 
-async def test_another_organisations_restaurant_is_not_found(
+async def test_another_organizations_restaurant_is_not_found(
     client: AsyncClient, admin
 ) -> None:
     headers = await bearer(client, "admin@example.com")
@@ -174,7 +174,7 @@ async def test_a_zone_belongs_to_a_restaurant_in_the_callers_tenant(
     assert restaurants.json()["restaurants"][0]["zone_count"] == 1
 
 
-async def test_a_zone_cannot_be_attached_to_another_organisations_restaurant(
+async def test_a_zone_cannot_be_attached_to_another_organizations_restaurant(
     client: AsyncClient, admin
 ) -> None:
     headers = await bearer(client, "admin@example.com")
@@ -250,7 +250,7 @@ async def test_the_user_list_names_roles_and_never_a_credential(
 
     assert "manager@example.com" in listed
     assert listed["manager@example.com"]["roles"] == ["restaurant_manager"]
-    # The organisation boundary holds here as everywhere else.
+    # The organization boundary holds here as everywhere else.
     assert "outsider@example.com" not in listed
 
     # Checked against the user records rather than the whole payload: the

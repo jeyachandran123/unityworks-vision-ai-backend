@@ -200,7 +200,7 @@ class CameraZoneAssignment(Base):
     The natural fix is a `zone_id` written onto each observation at the moment
     it is produced. The application cannot do that: observations are produced by
     Vision OS, whose `Observation` envelope carries `site_id` and no zone, and
-    which this phase may not modify. Nor should it — a zone is an organisational
+    which this phase may not modify. Nor should it — a zone is an organizational
     idea the platform deliberately does not hold.
 
     So the attribution is recorded once per *assignment* instead of once per

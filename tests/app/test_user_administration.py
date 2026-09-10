@@ -684,7 +684,7 @@ async def test_suspended_organization_blocks_manage_users_writes(
 
     # Reads survive a suspension. That is the whole shape of SUSPENDED: login
     # and reads continue, writes are refused. `VIEW_USERS` is not a `manage_*`
-    # permission, so the chokepoint leaves it alone — and an organisation on a
+    # permission, so the chokepoint leaves it alone — and an organization on a
     # billing hold can still see its own staff list, which it could not when
     # `MANAGE_USERS` gated the reads too.
     listed = await client.get(BASE, headers=headers)

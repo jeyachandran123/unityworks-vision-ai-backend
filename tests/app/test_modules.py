@@ -145,7 +145,7 @@ async def test_demography_is_not_implied_by_people_counting(
 async def test_module_counts_are_scoped_to_the_caller_tenant(
     client: AsyncClient, admin
 ) -> None:
-    """The count is a real query, narrowed to the caller's organisation.
+    """The count is a real query, narrowed to the caller's organization.
 
     A row planted in another tenant must not appear in this one's total — and
     the count must be a query rather than a hardcoded zero, which is what this

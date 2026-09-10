@@ -61,7 +61,7 @@ async def evaluation_summary(access: CurrentAccess) -> dict[str, Any]:
 
     Assembled from files on disk rather than from the database, so it is the same
     answer for every tenant in this deployment — these are properties of the
-    build, not of an organisation's data. The tenant is echoed so a reader can
+    build, not of an organization's data. The tenant is echoed so a reader can
     see which deployment they are looking at.
     """
     payload = catalogue.summary()

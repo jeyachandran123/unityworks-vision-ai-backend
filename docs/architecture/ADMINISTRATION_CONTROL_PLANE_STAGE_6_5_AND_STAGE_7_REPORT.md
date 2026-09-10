@@ -179,7 +179,7 @@ the discovery report's proposal, recorded as a known limitation (§27).
 Activate: single click, no confirmation (matches the backend's own idempotent,
 reversible framing). Deactivate: **always** confirms via the existing `Modal`
 primitive, stating the account will be signed out and refused login immediately, and
-that it is reversible via Activate but may strand the organisation if this is its only
+that it is reversible via Activate but may strand the organization if this is its only
 administrator — the frontend cannot know whether that is true (it has no
 cross-account visibility beyond this list), so the copy is a general caution rather
 than a claim it cannot verify, per the discovery report's own instruction (§19).

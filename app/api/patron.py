@@ -133,7 +133,7 @@ async def patron_id_gate(request: Request, access: CurrentAccess) -> dict[str, A
 
     Gated on `MANAGE_PATRON_ID`, which `SUPER_ADMIN` alone holds. Reading the
     detail of what would unlock biometric re-identification is itself a
-    privilege, and an organisation administrator is the wrong altitude for it.
+    privilege, and an organization administrator is the wrong altitude for it.
 
     Read-only and side-effect free. Asking changes nothing, and there is no
     corresponding write route — this reports the state of a decision, it does

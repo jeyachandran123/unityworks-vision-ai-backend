@@ -61,7 +61,7 @@ class TestPermissionVocabulary:
         Before this existed, reading sites required `VIEW_USERS` and writing
         them required `MANAGE_ORGANIZATION` — so "may see who works here" and
         "may read every site" were one grant, and "may rename a zone" and "may
-        reconfigure the organisation" were another.
+        reconfigure the organization" were another.
         """
         for permission in (
             Permission.VIEW_SITES,
@@ -163,7 +163,7 @@ class TestSuspendedForbidden:
 
 @pytest_asyncio.fixture
 async def estate(admin, client: AsyncClient):
-    """One organisation, one site, and three managers on one role."""
+    """One organization, one site, and three managers on one role."""
     headers = await bearer(client, "admin@example.com")
 
     site = await client.post(

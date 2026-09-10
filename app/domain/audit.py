@@ -67,7 +67,7 @@ class AuditAction(enum.Enum):
     #: is their picture" as separate authorisations. Separate rows, too.
     OBSERVATIONS_READ = "observation.read"
     #: A retention sweep removed a time-bounded prefix of the observation log.
-    #: Written per organisation so the deletion is provable, the same way an
+    #: Written per organization so the deletion is provable, the same way an
     #: evidence erasure is.
     OBSERVATIONS_TRUNCATED = "observation.truncated"
 

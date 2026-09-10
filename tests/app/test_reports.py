@@ -506,7 +506,7 @@ async def test_export_is_a_separate_permission_from_reading(
 async def test_a_report_is_scoped_to_the_caller_tenant(
     client: AsyncClient, with_incidents
 ) -> None:
-    """Another organisation's incidents are invisible, not merely filtered out."""
+    """Another organization's incidents are invisible, not merely filtered out."""
     outsider = await bearer(client, "outsider@example.com")
     body = (
         await client.get(

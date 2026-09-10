@@ -296,7 +296,7 @@ class RetentionService:
         The log partitions by `CameraId`, and asking the store which partitions
         exist would sweep whatever happens to be on disk — including a directory
         left behind by a camera that was deleted, which nothing would then
-        attribute to an organisation. Reading the roster instead means every
+        attribute to an organization. Reading the roster instead means every
         truncation belongs to a tenant and can be audited to one.
 
         A camera removed from the table therefore stops being swept, and its

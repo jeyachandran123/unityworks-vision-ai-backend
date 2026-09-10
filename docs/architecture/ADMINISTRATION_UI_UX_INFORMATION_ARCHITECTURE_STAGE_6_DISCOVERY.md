@@ -393,7 +393,7 @@ PROPOSED, using the existing `Modal` primitive
   refused login immediately (`decide()` already treats an inactive user as holding no
   roles, backend docstring `:426-430`) — the UI must not imply this is reversible-free;
   it is reversible (Activate undoes it) but the modal should say so, since the backend
-  doc explicitly worries about an admin locking out their organisation's only
+  doc explicitly worries about an admin locking out their organization's only
   `MANAGE_USERS` holder (`:432-435`) — the frontend cannot detect that case (it doesn't
   know if the target is the *only* holder), so the copy should be a general caution,
   not a specific claim the UI can't verify.

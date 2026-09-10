@@ -85,7 +85,7 @@ the file is covered without repeating the guard per-route):
 
 | Method & path | Purpose |
 |---|---|
-| `GET /api/v1/admin/users` | List users in the caller's organisation |
+| `GET /api/v1/admin/users` | List users in the caller's organization |
 | `GET /api/v1/admin/users/{user_id}` | Get one user |
 | `POST /api/v1/admin/users` | Create a user |
 | `PATCH /api/v1/admin/users/{user_id}` | Update `display_name` |
@@ -250,7 +250,7 @@ just at next login — `test_a_deactivated_users_existing_token_is_refused_immed
 (`GET /api/v1/auth/me` with the pre-deactivation token returns 401) — this reuses
 Stage 1-4's `decision_for_claims` rebuild-every-request guarantee, not a new
 mechanism. Self-deactivation is refused (§12) so a `MANAGE_USERS` holder cannot lock
-themselves, and potentially the organisation's only such holder, out.
+themselves, and potentially the organization's only such holder, out.
 
 ## 14. Credential handling
 
@@ -271,9 +271,9 @@ asserts on a user record (`assert "password_hash" not in body`, etc., throughout
 
 Every route resolves the target user through `_user_in_tenant()`
 (`app/api/user_administration.py:118-139`), which filters on `User.organization_id ==
-access.tenant_id` — never a client-supplied organisation id — mirroring
+access.tenant_id` — never a client-supplied organization id — mirroring
 `app/api/administration.py:_restaurant_in_tenant`'s exact pattern (not a new one). A
-user id that resolves to another organisation is a 404, not a 403 — PROVEN:
+user id that resolves to another organization is a 404, not a 403 — PROVEN:
 `test_getting_another_organizations_user_is_404_not_403`,
 `test_cross_tenant_target_is_404_not_403_and_does_not_leak_existence`. List queries
 (`GET /api/v1/admin/users`) are filtered in the query itself, PROVEN:
@@ -289,9 +289,9 @@ permission), Stage 1-4's existing SUSPENDED-strips-`manage_*` behaviour
 behaviour (`app/auth/service.py:decision_for_claims`) apply automatically through the
 same `requires()` dependency every other route uses. **Verified by testing, not
 assumed**: `test_suspended_organization_blocks_manage_users_writes` (a SUSPENDED
-organisation's `org_admin` gets 403 on both `GET` and `POST` against this router) and
+organization's `org_admin` gets 403 on both `GET` and `POST` against this router) and
 `test_archived_organization_blocks_everything_including_this_router` (login itself is
-refused for an ARCHIVED organisation, so the router is unreachable at all). Both
+refused for an ARCHIVED organization, so the router is unreachable at all). Both
 PROVEN passing.
 
 ## 17. Audit events

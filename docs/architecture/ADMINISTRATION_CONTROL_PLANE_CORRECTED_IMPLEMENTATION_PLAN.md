@@ -511,7 +511,7 @@ how to do this — sites and zones were simply never given the same treatment.
 (`GET ""` :257, `GET /{user_id}` :275, `GET /{user_id}/permissions` :551) — is
 gated on `MANAGE_USERS` alone. A user who should be able to *see* the roster but
 not modify it cannot be expressed, and (per §G) `MANAGE_USERS` is stripped under
-`SUSPENDED`, so a suspended organisation loses the ability to *read* its own user
+`SUSPENDED`, so a suspended organization loses the ability to *read* its own user
 list, not merely to change it.
 
 #### Remaining routers — all CORRECT
@@ -551,7 +551,7 @@ is already right. Four domains need work; everything else is confirmed keep.
 | Permission | Guards | Why it must exist |
 |---|---|---|
 | `VIEW_SITES` | `GET /restaurants` | Reading the site list must not require authority over accounts |
-| `MANAGE_SITES` | `POST`/`PATCH /restaurants` | Editing a site must not require authority over the whole organisation |
+| `MANAGE_SITES` | `POST`/`PATCH /restaurants` | Editing a site must not require authority over the whole organization |
 | `VIEW_ZONES` | `GET /zones` | Same, for zones |
 | `MANAGE_ZONES` | `POST`/`PATCH /zones` | Same, for zones |
 | `RETIRE_CAMERAS` | `DELETE /cameras/{key}` | Retirement destroys an observation partition. It is not a heavier PATCH; it is irreversible and belongs behind its own gate |
@@ -560,7 +560,7 @@ is already right. Four domains need work; everything else is confirmed keep.
 
 | Permission | Today | Corrected |
 |---|---|---|
-| `MANAGE_ORGANIZATION` | Gates sites **and** zones **and** (nominally) the organisation | **Organisation settings and lifecycle only.** Stops being the blanket write permission for three unrelated domains |
+| `MANAGE_ORGANIZATION` | Gates sites **and** zones **and** (nominally) the organization | **organization settings and lifecycle only.** Stops being the blanket write permission for three unrelated domains |
 | `VIEW_USERS` | Gates the user list **and** sites **and** zones | **The user list only** |
 
 **This re-scoping is the entire fix for the headline requirement.** No new
@@ -610,7 +610,7 @@ extends the read/manage shape only to Sites and Zones, where it genuinely fits.
 #### D2.6 Deliberately NOT added
 
 - **`VIEW_ORGANIZATION`** — the brief asks it be evaluated. There is no
-  organisation read endpoint to gate (**MISSING**, §C). Adding a permission with
+  organization read endpoint to gate (**MISSING**, §C). Adding a permission with
   nothing behind it inverts the enum's own stated discipline ("no permission
   exists without something to protect", `model.py:76-79`). Add it in the stage
   that adds the endpoint, not before.
@@ -793,7 +793,7 @@ a `super_admin`'s access. **REQUIRES DECISION**, carried forward from Stage 5.
 
 ### F.1 The current state — single-tenant by design, not by oversight
 
-**PROVEN.** Every runtime entry point resolves exactly one organisation from
+**PROVEN.** Every runtime entry point resolves exactly one organization from
 configuration:
 
 | Location | Evidence |
@@ -813,14 +813,14 @@ cameras in other tenants — `_cameras_in_other_tenants()` — and logs:
 
 The runtime knows other tenants can exist and treats that as **a misconfiguration
 to warn about**, not a state to serve. That is single-tenancy as an architectural
-decision. A second organisation's cameras cannot start — not because of a bug,
+decision. A second organization's cameras cannot start — not because of a bug,
 but because nothing asks them to.
 
 ### F.2 Runtime identity — the load-bearing decision
 
-**PROVEN risk.** `Camera.camera_key` is unique **per organisation**, not
+**PROVEN risk.** `Camera.camera_key` is unique **per organization**, not
 globally. Any runtime registry keyed on a bare `camera_key` will collide the
-moment two organisations both use `cam-01` — the overwhelmingly likely case,
+moment two organizations both use `cam-01` — the overwhelmingly likely case,
 since `cam-01` is the natural first name in every deployment.
 
 Collision here is not a crash. It is **cross-tenant frame delivery**: org B's
@@ -853,7 +853,7 @@ churn the entire product surface for an internal concern.
 
 ```
 ACTIVE organizations                  ← replaces default_tenant_id
-        ↓  (per organisation)
+        ↓  (per organization)
 Organization camera inventory         ← CameraService.list(organization_id=…)
         ↓  (filter)
 enabled ∧ analysis_enabled ∧ host     ← main.py:365, unchanged logic
@@ -868,9 +868,9 @@ configuration downstream.
 ### F.4 Sequencing constraint — non-negotiable
 
 **Identity (F.2) must land before bootstrap (F.3).** Starting a second
-organisation's cameras against registries keyed on a bare `camera_key` is how the
+organization's cameras against registries keyed on a bare `camera_key` is how the
 cross-tenant frame leak becomes real. The order is: fix identity, prove it with a
-two-organisation test, *then* iterate tenants.
+two-organization test, *then* iterate tenants.
 
 ### F.5 Platform-operator boundary
 
@@ -884,13 +884,13 @@ structural guarantee into a string comparison, and every tenant-scoped query in
 the application silently becomes unbounded.
 
 Correct shape: a **separate principal type** whose authority is
-*organisation-selection*, not permission-holding — it manages organisations, it
+*organization-selection*, not permission-holding — it manages organizations, it
 does not read their incidents. It sits outside `AccessDecision`, or produces one
 only after explicitly selecting a tenant to act within (an act that must itself
 be audited).
 
 **Sequencing:** the operator boundary must come *after* the multi-tenant runtime
-(§F.3). An operator console that can create a second organisation whose cameras
+(§F.3). An operator console that can create a second organization whose cameras
 cannot run is a UI for a capability that does not exist.
 
 ---
@@ -907,7 +907,7 @@ cannot run is a UI for a capability that does not exist.
 - `SUSPENDED` → `_suspend()` (`resolver.py:119-122`) strips permissions whose
   value starts with `manage_`.
 - **Nothing under `app/vision/` reads `OrganizationStatus` at all.** Suspend or
-  archive an organisation and its cameras keep streaming and keep spending model
+  archive an organization and its cameras keep streaming and keep spending model
   budget. **MISSING.**
 
 ### G.2 The `manage_*` prefix filter — accidental, not designed
@@ -953,7 +953,7 @@ than inheriting one from its name.
    means a genuine violation cannot be closed. Blocking it is defensible
    ("operations are paused"); allowing it is also defensible ("safety work is not
    commercial"). No prior document decides this.
-2. **Report export under SUSPENDED.** Same tension — is an organisation entitled
+2. **Report export under SUSPENDED.** Same tension — is an organization entitled
    to export its own compliance record while suspended? Arguably yes.
 
 Everything else in the table follows from the brief's own stated intent that
@@ -966,7 +966,7 @@ Two, not scattered checks:
 1. **Authorization** — already exists (`decision_for_claims` → `_suspend()`).
    Replace the prefix filter with the explicit set. One function.
 2. **Runtime admission** — does not exist. The place where a camera session is
-   started must consult organisation status, and a transition to
+   started must consult organization status, and a transition to
    SUSPENDED/ARCHIVED must *stop already-running* sessions, not merely prevent
    new ones. `ACTIVE → SUSPENDED` leaving orphaned sessions running is the exact
    failure the brief names.
@@ -975,7 +975,7 @@ Two, not scattered checks:
 
 `Organization` has `id`, `name`, `slug`, `is_active`, `status`, `created_at`
 (`users/models.py:57-70`). Missing: `suspended_at`, `suspension_reason`,
-`archived_at`, `created_by`. Without them "why is this organisation suspended"
+`archived_at`, `created_by`. Without them "why is this organization suspended"
 has no answer in the data.
 
 Also **MISSING**: `is_active` and `status` are two overlapping representations of
@@ -1022,7 +1022,7 @@ appears to succeed. Nothing works. **INCORRECT.**
 `analysis_fps`, `enabled=true`, `analysis_enabled=true`.
 
 **Ownership validation — server-side, non-negotiable:** the site must belong to
-the caller's organisation (the guard added in Stage 1 for cameras — verify it
+the caller's organization (the guard added in Stage 1 for cameras — verify it
 covers `zone_id` too, which arrived later), and the zone must belong to that
 site. Never trust a client-supplied parent id. Cross-tenant parent → 404, not
 403, matching the existing `_restaurant_in_tenant` convention.
@@ -1212,13 +1212,13 @@ timezone collected at site creation.
 ### L-7 · Runtime tenant identity  ← **must precede L-8**
 Compound `(organization_id, camera_key)` through registries, sessions, tickets,
 status, metrics.
-**Done when:** two organisations can each hold a camera named `cam-01` with no
+**Done when:** two organizations can each hold a camera named `cam-01` with no
 collision, proven by test.
 
 ### L-8 · Multi-tenant bootstrap
-Iterate active organisations instead of `default_tenant_id`. Retire the setting
+Iterate active organizations instead of `default_tenant_id`. Retire the setting
 or reduce it to a dev convenience.
-**Done when:** two organisations run cameras simultaneously, isolated. **Tests:**
+**Done when:** two organizations run cameras simultaneously, isolated. **Tests:**
 the brief's two-org fixture (Org A: Manager A/B, Site A1, Zone A1-Z1, Camera
 A1-Z1-C1; Org B: Manager C, Site B1, Zone B1-Z1, Camera B1-Z1-C1) with sessions
 proven not to cross.
@@ -1230,7 +1230,7 @@ gate; transitions stop running work. Lifecycle metadata + audit actions.
 ACTIVE→ARCHIVED stops everything and retains data.
 
 ### L-10 · Organization CRUD + platform operator boundary
-Separate principal; organisation lifecycle API; platform audit trail.
+Separate principal; organization lifecycle API; platform audit trail.
 **Depends on L-8** — do not build before the runtime can serve a second org.
 
 ### L-11 · Camera onboarding backend
@@ -1284,5 +1284,5 @@ API cannot produce a working account; and the credential leak (L-4), because it
 is live.
 
 **Must be corrected before multi-organization work:** runtime tenant identity
-(L-7), because bootstrapping a second organisation onto today's registries would
-deliver one organisation's video to another.
+(L-7), because bootstrapping a second organization onto today's registries would
+deliver one organization's video to another.

@@ -249,7 +249,7 @@ CUTTING_BOARD = ModuleCapability(
         "with the policy version that produced the verdict."
     ),
     reason=(
-        "No colour scheme is configured for this organisation, and no board or "
+        "No colour scheme is configured for this organization, and no board or "
         "ingredient attribute is declared in the perception vocabulary. There "
         "is nothing to read and no rule to read it against."
     ),

@@ -549,13 +549,13 @@ scrolling its own table.
   `role="dialog"` with `aria-modal="true"`, does not mutate state on the
   triggering click, states the consequence plainly ("This account will be
   signed out and refused login immediately... if this is your
-  organisation's only administrator it may leave nobody able to reverse
+  organization's only administrator it may leave nobody able to reverse
   it"), and closing it with `Escape` cancels without mutating. **PROVEN.**
 - **Role-removal confirmation policy**, tested against a user holding both
   an admin-carrying role (`org_admin`) and an ordinary one
   (`restaurant_manager`): removing `org_admin` opens a confirmation dialog
   ("carries administration-level access... may take away this account's
-  ability to manage users or the organisation's structure"); removing
+  ability to manage users or the organization's structure"); removing
   `restaurant_manager` mutates immediately with no dialog. **PROVEN**,
   exactly matching the frozen confirmation policy (confirm only for
   admin-carrying roles).

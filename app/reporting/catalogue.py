@@ -204,7 +204,7 @@ DATA_REPORTS: tuple[ReportType, ...] = (
         permissions=(Permission.VIEW_REPORTS, Permission.VIEW_AUDIT),
         granularities=(Granularity.TOTAL,),
         collectors=(_audit,),
-        basis="The append-only audit trail for this organisation.",
+        basis="The append-only audit trail for this organization.",
         retention_subject="the audit trail",
         retention_days_attr="audit_retention_days",
     ),

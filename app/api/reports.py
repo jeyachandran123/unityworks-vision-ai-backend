@@ -100,7 +100,7 @@ async def _site_timezone(session, organization_id: str, restaurant_id: str) -> t
             select(Restaurant.timezone, Restaurant.name).where(
                 Restaurant.id == restaurant_id,
                 # Tenancy from the session, never from the request body — asking
-                # for another organisation's site is a 404, not a 403, because
+                # for another organization's site is a 404, not a 403, because
                 # "it exists but is not yours" is itself a disclosure.
                 Restaurant.organization_id == organization_id,
             )

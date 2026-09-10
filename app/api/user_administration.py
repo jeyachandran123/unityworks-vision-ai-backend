@@ -16,7 +16,7 @@ role/permission mutation always goes through `RoleAssignment` rows or
 
 Every query here is narrowed to `access.tenant_id` — never to an id supplied
 by the caller — the same discipline `app/api/administration.py` documents. A
-user id that resolves to another organisation is a 404, not a 403: existence
+user id that resolves to another organization is a 404, not a 403: existence
 across a tenant boundary is itself a disclosure.
 
 ### Credentials
@@ -171,7 +171,7 @@ async def _actor(session: AsyncSession, access: AccessDecision) -> User:
     Needed because `set_permission_override`/`clear_permission_override` take
     `User` objects (for `.id`, `.organization_id`, and `granted_by`), not an
     `AccessDecision`. `access.subject` is the caller's email — unique within
-    their own tenant — so this cannot resolve to another organisation's user.
+    their own tenant — so this cannot resolve to another organization's user.
     """
     found = (
         await session.execute(
@@ -311,7 +311,7 @@ async def list_users(
     limit: Annotated[int, Query(ge=1, le=200)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    """Users in the caller's organisation, searchable and filterable.
+    """Users in the caller's organization, searchable and filterable.
 
     The role filter is a subquery rather than a join, deliberately: a user may
     hold several roles, and joining would return them once per matching role
@@ -378,9 +378,9 @@ async def create_user(
     session: DbSession,
     payload: Annotated[dict, Body(...)],
 ) -> dict[str, Any]:
-    """Create a user in the caller's organisation.
+    """Create a user in the caller's organization.
 
-    Duplicate email within the organisation is a clean `ConflictError` (409),
+    Duplicate email within the organization is a clean `ConflictError` (409),
     never a 500 — the unique constraint is `(organization_id, email)`
     (`app/users/models.py:uq_users_org_email`), so this checks the same pair
     before insert rather than letting the database raise.
@@ -584,7 +584,7 @@ async def deactivate_user(
 
     An actor may not deactivate their own account: unlike a permission
     override or a role, there is no "undo" available to a user who has just
-    locked themselves out, and if they were the organisation's only
+    locked themselves out, and if they were the organization's only
     `MANAGE_USERS` holder nobody else could undo it either.
     """
     user = await _user_in_tenant(session, access.tenant_id, user_id)
