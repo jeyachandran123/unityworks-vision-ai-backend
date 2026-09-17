@@ -1,43 +1,13 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"../unityworks-team/hooks/run-hook.cmd\" secret-guard",
-            "shell": "bash"
-          },
-          {
-            "type": "command",
-            "command": "\"../unityworks-team/hooks/run-hook.cmd\" protected-tree",
-            "shell": "bash"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"../unityworks-team/hooks/run-hook.cmd\" destructive-bash",
-            "shell": "bash"
-          }
-        ]
+  "extraKnownMarketplaces": {
+    "unityworks-local": {
+      "source": {
+        "source": "github",
+        "repo": "jeyachandran123/UnityWorks-Team"
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"../unityworks-team/hooks/run-hook.cmd\" contract-reminder",
-            "shell": "bash"
-          }
-        ]
-      }
-    ]
+    }
+  },
+  "enabledPlugins": {
+    "unityworks-team@unityworks-local": true
   }
 }
