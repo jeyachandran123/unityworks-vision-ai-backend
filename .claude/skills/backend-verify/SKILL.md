@@ -62,7 +62,7 @@ diff, then re-run `black`.
 | `ERROR at setup` … `OSError: could not get source code` in `pytest_asyncio/plugin.py` | Stale bytecode from before the repo moved: pytest's rewrite caches match by mtime, not path → `find app compliance vision_os tools tests scripts migrations -type d -name __pycache__ -prune -exec rm -rf {} +` (gitignored, regenerated) |
 | `.venv/Scripts/alembic.exe` (or any launcher) fails to start | Launchers embed the venv's original path → always `$PY -m alembic`, `$PY -m pytest` |
 | Tests change behaviour after creating `.env` | Should not happen: `tests/app/conftest.py` clears env and `env_file`. If it does, that isolation broke — fix it, don't delete `.env` |
-| `export_openapi.py --check` fails | Route surface changed → `unityworks-team:contract-sync` |
+| `export_openapi.py --check` fails | Route surface changed → `contract-sync` |
 | Login fails in a new test | Password under 12 characters — the fixture default is `correct-horse-battery` |
 | `test_membership_migration.py` slow | Expected; it shells out to alembic four times on real SQLite |
 

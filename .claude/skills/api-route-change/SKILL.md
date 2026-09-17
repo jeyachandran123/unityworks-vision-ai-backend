@@ -77,14 +77,15 @@ tautology.
 
 ```bash
 .venv/Scripts/python.exe scripts/export_openapi.py
-cd ../unityworks-vision-ai-frontend && npm run types:generate && npm run verify
 ```
 
-Then **REQUIRED:** `unityworks-team:contract-sync` for the CI pin. Finish with `backend-verify`.
+Then **REQUIRED:** `contract-sync` — it locates the frontend by its `team.conf` kind (never by folder
+name), regenerates its types, runs its verify and handles the CI pin. `/check contract` confirms the
+whole seam. Finish with `backend-verify`.
 
 ## Common mistakes
 
 - Returning 403 for another tenant's id.
 - `camera_ids == ()` treated as "all cameras".
 - Auditing the success path only.
-- Committing backend without regenerating frontend types (the contract-reminder hook prints the commands).
+- Committing backend without regenerating frontend types (the team.conf `remind` for `app/api/` prints the commands).

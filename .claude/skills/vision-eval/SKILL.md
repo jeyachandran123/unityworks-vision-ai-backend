@@ -65,7 +65,7 @@ Layers stay apart: `raw/`, `candidates/`, `annotations/`, `benchmarks/`, `traces
 
 ## Rules
 
-- `tools/` is migrated verbatim and lint-excluded; the protected-tree hook blocks edits. Add a new
+- `tools/` is migrated verbatim and lint-excluded; the `protect` entry in `.claude/team.conf` blocks edits. Add a new
   script alongside only with explicit user confirmation.
 - Never add an HTTP endpoint that triggers evaluation — it would let a user spend the model budget.
 - Never copy frames into the repository to "make a test self-contained".
