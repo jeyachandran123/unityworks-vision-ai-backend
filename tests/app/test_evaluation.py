@@ -67,9 +67,7 @@ async def admin(seeded):
 def test_a_metric_cannot_exist_without_provenance_and_a_definition() -> None:
     """Structural. Forgetting either is a TypeError, not a number nobody can read."""
     with pytest.raises(TypeError):
-        MetricEntry(  # type: ignore[call-arg]
-            key="x", label="X", kind=MetricKind.COUNT, value=1
-        )
+        MetricEntry(key="x", label="X", kind=MetricKind.COUNT, value=1)  # type: ignore[call-arg]
 
 
 def test_every_surfaced_metric_names_its_artifact_dataset_and_definition() -> None:
@@ -88,13 +86,13 @@ def test_every_surfaced_metric_names_its_artifact_dataset_and_definition() -> No
                 for metric in group.metrics:
                     prov = metric.provenance
                     assert prov.artifact, f"{metric.key} names no artifact"
-                    assert (REPO / prov.artifact).is_file(), (
-                        f"{metric.key} names {prov.artifact}, which does not exist"
-                    )
+                    assert (
+                        REPO / prov.artifact
+                    ).is_file(), f"{metric.key} names {prov.artifact}, which does not exist"
                     assert prov.source, metric.key
-                    assert len(metric.definition) > 30, (
-                        f"{metric.key} has no usable definition: {metric.definition!r}"
-                    )
+                    assert (
+                        len(metric.definition) > 30
+                    ), f"{metric.key} has no usable definition: {metric.definition!r}"
                     assert prov.dataset, f"{metric.key} names no dataset"
                     assert prov.split, f"{metric.key} names no split"
                     checked += 1
@@ -104,9 +102,7 @@ def test_every_surfaced_metric_names_its_artifact_dataset_and_definition() -> No
 def test_the_ppe_agreement_metric_matches_its_source_file() -> None:
     """The number on the dashboard is the number in the file. No rounding, no rescaling."""
     raw = json.loads(
-        (REPO / "datasets" / "kitchen-01" / "results" / "baseline.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "datasets" / "kitchen-01" / "results" / "baseline.json").read_text(encoding="utf-8")
     )
     head = next(a for a in raw["attributes"] if a["attribute"] == "head_covering")
 
@@ -131,17 +127,12 @@ def test_the_vlm_metric_keeps_the_experiments_own_name() -> None:
     this phase exists to avoid.
     """
     raw = json.loads(
-        (REPO / "experiments" / "vlm_prompt" / "runs" / "scores.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "experiments" / "vlm_prompt" / "runs" / "scores.json").read_text(encoding="utf-8")
     )
     family = vlm_prompt.load()
     run = next(r for r in family.runs if r.run_id == "variant_A")
     metric = next(
-        m
-        for g in run.groups
-        for m in g.metrics
-        if m.key == "ungated.accuracy_over_parsed"
+        m for g in run.groups for m in g.metrics if m.key == "ungated.accuracy_over_parsed"
     )
 
     assert metric.value == raw["A"]["ungated"]["accuracy_over_parsed"]
@@ -189,9 +180,7 @@ def test_an_undefined_metric_is_none_and_says_why() -> None:
     """
     family = vlm_prompt.load()
     run = next(r for r in family.runs if r.run_id == "variant_A")
-    recall = next(
-        m for g in run.groups for m in g.metrics if m.key == "ungated.absent.recall"
-    )
+    recall = next(m for g in run.groups for m in g.metrics if m.key == "ungated.absent.recall")
 
     assert recall.value is None
     assert "undefined" in recall.undefined_reason.lower()
@@ -317,9 +306,7 @@ def test_there_is_no_aggregate_model_score() -> None:
 def test_the_confidence_threshold_matches_the_policy_file() -> None:
     """Read from the document the deployment uses, not restated in code."""
     document = json.loads(
-        (REPO / "config" / "policies" / "kitchen-safety.example.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "config" / "policies" / "kitchen-safety.example.json").read_text(encoding="utf-8")
     )
     available, _reason, groups = policy.load()
     assert available is True
@@ -337,17 +324,13 @@ def test_the_confidence_threshold_matches_the_policy_file() -> None:
 
 def test_the_attribute_validity_window_matches_the_policy_file() -> None:
     document = json.loads(
-        (REPO / "config" / "policies" / "kitchen-safety.example.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "config" / "policies" / "kitchen-safety.example.json").read_text(encoding="utf-8")
     )
     head = next(a for a in document["attributes"] if a["key"] == "head_covering")
 
     _available, _reason, groups = policy.load()
     example = next(g for g in groups if g.key.endswith("kitchen-safety.example.json"))
-    validity = next(
-        m for m in example.metrics if m.key == "attribute.head_covering.validity_ms"
-    )
+    validity = next(m for m in example.metrics if m.key == "attribute.head_covering.validity_ms")
     assert validity.value == head["validity_ms"]
 
 
@@ -378,9 +361,7 @@ async def test_no_absolute_path_reaches_the_api(client: AsyncClient, developer) 
     assert "\\\\" not in body, "a Windows path survived into the payload"
 
 
-async def test_per_case_failure_detail_is_not_surfaced(
-    client: AsyncClient, developer
-) -> None:
+async def test_per_case_failure_detail_is_not_surfaced(client: AsyncClient, developer) -> None:
     """The reports carry per-person failure cases. Only the tallies leave.
 
     Each case names a frame, a subject and what the person was doing. The
@@ -388,9 +369,7 @@ async def test_per_case_failure_detail_is_not_surfaced(
     counts.
     """
     raw = json.loads(
-        (REPO / "datasets" / "kitchen-01" / "results" / "baseline.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "datasets" / "kitchen-01" / "results" / "baseline.json").read_text(encoding="utf-8")
     )
     sample = raw["failures"][0]
 
@@ -406,9 +385,7 @@ async def test_per_case_failure_detail_is_not_surfaced(
 def test_the_regression_adapter_drops_case_notes() -> None:
     """The recording's per-case notes describe people. They do not leave the file."""
     raw = json.loads(
-        (REPO / "tests" / "compliance" / "kitchen01_model_answers.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "tests" / "compliance" / "kitchen01_model_answers.json").read_text(encoding="utf-8")
     )
     note = raw["cases"][0]["note"]
     assert note, "fixture assumption: the recording has case notes"
@@ -476,9 +453,7 @@ def test_no_recall_is_derived_from_the_detection_counts() -> None:
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 
-async def test_the_evaluation_route_is_permission_gated(
-    client: AsyncClient, admin
-) -> None:
+async def test_the_evaluation_route_is_permission_gated(client: AsyncClient, admin) -> None:
     """A restaurant manager does not read model evaluation."""
     manager = await bearer(client, "manager@example.com")
     assert (await client.get("/api/v1/evaluation", headers=manager)).status_code == 403
@@ -487,21 +462,16 @@ async def test_the_evaluation_route_is_permission_gated(
     assert (await client.get("/api/v1/evaluation", headers=developer)).status_code == 200
 
 
-async def test_an_organization_administrator_no_longer_reads_evaluation(
-    client: AsyncClient, admin
-) -> None:
-    """The Phase 4 role correction, asserted at the route rather than the map.
-
-    Hiding the navigation entry is not closing the door. This is the door: an
-    org_admin who types the address, follows a bookmark or replays a saved
-    request is refused by the server, with the refusal audited exactly as every
-    other refusal on this route already is.
-    """
+async def test_an_organization_administrator_reads_evaluation(client: AsyncClient, admin) -> None:
+    """The Organization Admin holds every permission (2026-09-22), this one
+    included. The door is still a door: a role without the permission is
+    refused by the server, not merely hidden from the navigation."""
     headers = await bearer(client, "admin@example.com")
-    assert (await client.get("/api/v1/evaluation", headers=headers)).status_code == 403
-    assert (
-        await client.get("/api/v1/evaluation/artifacts", headers=headers)
-    ).status_code == 403
+    assert (await client.get("/api/v1/evaluation", headers=headers)).status_code == 200
+    assert (await client.get("/api/v1/evaluation/artifacts", headers=headers)).status_code == 200
+
+    manager = await bearer(client, "manager@example.com")
+    assert (await client.get("/api/v1/evaluation", headers=manager)).status_code == 403
 
 
 async def test_the_evaluation_route_refuses_an_unauthenticated_caller(
@@ -510,9 +480,7 @@ async def test_the_evaluation_route_refuses_an_unauthenticated_caller(
     assert (await client.get("/api/v1/evaluation")).status_code == 401
 
 
-async def test_an_unknown_run_is_a_404_not_an_empty_run(
-    client: AsyncClient, developer
-) -> None:
+async def test_an_unknown_run_is_a_404_not_an_empty_run(client: AsyncClient, developer) -> None:
     """An empty run would read as a run that measured nothing."""
     headers = await bearer(client, "developer@example.com")
     assert (
@@ -570,7 +538,7 @@ def test_the_evaluation_permission_is_not_granted_broadly() -> None:
         for role in Role
         if Permission.VIEW_MODEL_EVALUATION in permissions_for(frozenset({role}))
     }
-    assert holders == {"super_admin", "developer"}
+    assert holders == {"org_admin", "developer"}
 
 
 def test_nothing_in_the_evaluation_package_writes_to_disk() -> None:

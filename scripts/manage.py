@@ -37,6 +37,7 @@ from app.users.models import (
     AccessGrant,
     Organization,
     OrganizationMembership,
+    PermissionOverride,
     PlatformOperatorGrant,
     RoleAssignment,
     User,
@@ -88,8 +89,11 @@ async def list_users(settings: Settings) -> int:
             grant = user.access_grants[0] if user.access_grants else None
             breadth = grant.camera_breadth if grant else "(no grant)"
             print(f"{user.email}")
-            print(f"    active   : {user.is_active}   org: {user.organization_id} "
-                  f"(active: {user.organization.is_active})")
+            if user.organization is None:
+                print(f"    active   : {user.is_active}   org: (none - platform admin)")
+            else:
+                print(f"    active   : {user.is_active}   org: {user.organization_id} "
+                      f"(active: {user.organization.is_active})")
             print(f"    roles    : {roles}")
             print(f"    cameras  : {breadth}")
     await database.disconnect()
@@ -209,9 +213,20 @@ async def check_password(settings: Settings, args) -> int:
         matches = verify_password(password, user.password_hash)
         print(f"password matches : {matches}")
         print(f"user active      : {user.is_active}")
-        print(f"org active       : {user.organization.is_active}")
+        if user.organization is None:
+            # A Platform Admin: no organization, so the grant is what lets him in.
+            operator = (
+                await session.execute(
+                    select(PlatformOperatorGrant.id).where(PlatformOperatorGrant.user_id == user.id)
+                )
+            ).scalar_one_or_none() is not None
+            print(f"platform admin   : {operator}   (belongs to no organization)")
+            org_ok = operator
+        else:
+            print(f"org active       : {user.organization.is_active}")
+            org_ok = user.organization.is_active
 
-        would_login = matches and user.is_active and user.organization.is_active
+        would_login = matches and user.is_active and org_ok
         print(f"=> login would {'SUCCEED' if would_login else 'FAIL'}")
 
     await database.disconnect()
@@ -233,7 +248,11 @@ async def grant(settings: Settings, args) -> int:
             await database.disconnect()
             return 1
 
-        organization_id = (getattr(args, "org", "") or user.organization_id).strip()
+        organization_id = (getattr(args, "org", "") or user.organization_id or "").strip()
+        if not organization_id:
+            print(f"{args.email} belongs to no organization; pass --org", file=sys.stderr)
+            await database.disconnect()
+            return 1
         for existing in user.access_grants:
             if existing.organization_id == organization_id:
                 await session.delete(existing)
@@ -314,6 +333,11 @@ async def grant_operator(settings: Settings, args) -> int:
                     return 0
                 await session.delete(existing)
                 print(f"revoked platform operator from {args.email}")
+                if user.organization_id is None:
+                    print(
+                        "  This account belongs to no organization and can no longer "
+                        "sign in. Give it one with grant-membership --role org_admin."
+                    )
                 return 0
 
             if existing is not None:
@@ -327,11 +351,15 @@ async def grant_operator(settings: Settings, args) -> int:
                     reason=args.reason,
                 )
             )
+            removed = await _leave_every_organization(session, user)
             print(f"granted platform operator to {args.email}")
             print(f"  reason: {args.reason}")
+            if removed:
+                print(f"  left every organization it belonged to ({removed} row(s) removed):")
+                print("  a Platform Admin belongs to none and enters any of them from the console.")
             print(
-                "  This account can now create, suspend and archive any "
-                "organization on this deployment."
+                "  This account can now create organizations and their admins, and "
+                "enter and change anything in any organization on this deployment."
             )
             return 0
     finally:
@@ -431,6 +459,57 @@ async def grant_membership(settings: Settings, args) -> int:
     return 0
 
 
+async def _leave_every_organization(session, user: User) -> int:
+    """Remove the account's memberships, roles, camera grants and overrides.
+
+    A Platform Admin belongs to no organization — the same end state migration
+    `a7e3d2c19f40` produces for accounts that were already operators.
+    """
+    from sqlalchemy import delete
+
+    removed = 0
+    for model in (OrganizationMembership, RoleAssignment, AccessGrant, PermissionOverride):
+        result = await session.execute(delete(model).where(model.user_id == user.id))
+        removed += result.rowcount or 0
+    user.organization_id = None
+    return removed
+
+
+async def create_operator(settings: Settings, args) -> int:
+    """Create a Platform Admin: an account in no organization, with the grant.
+
+    The way to bootstrap a deployment's first Platform Admin. Like
+    `grant-operator` it is deliberately a command-line act, and it requires a
+    reason for the same reason.
+    """
+    database = await _session(settings)
+    email = args.email.strip().lower()
+    password = _read_password(args.password)
+    try:
+        async with database.session_scope() as session:
+            existing = await session.execute(select(User).where(User.email == email))
+            if existing.scalar_one_or_none() is not None:
+                print(f"{email} already exists — use grant-operator", file=sys.stderr)
+                return 1
+            user = User(
+                id=uuid.uuid4().hex,
+                organization_id=None,
+                email=email,
+                display_name=args.name or "Platform Admin",
+                password_hash=hash_password(password, min_length=settings.password_min_length),
+            )
+            session.add(user)
+            await session.flush()
+            session.add(
+                PlatformOperatorGrant(user_id=user.id, granted_by=args.by or "", reason=args.reason)
+            )
+        print(f"created platform admin {email}")
+        print("  It belongs to no organization and signs in to the platform console.")
+        return 0
+    finally:
+        await database.disconnect()
+
+
 async def list_operators(settings: Settings) -> int:
     database = await _session(settings)
     try:
@@ -511,6 +590,16 @@ def main() -> int:
     operator.add_argument("--by", default="", help="who is granting it")
     operator.add_argument("--revoke", action="store_true")
 
+    creator = sub.add_parser(
+        "create-operator",
+        help="create a Platform Admin (belongs to no organization)",
+    )
+    creator.add_argument("--email", required=True)
+    creator.add_argument("--name", default="")
+    creator.add_argument("--reason", required=True, help="why this account needs platform authority")
+    creator.add_argument("--by", default="", help="who is creating it")
+    creator.add_argument("--password", default=None, help="non-interactive only; lands in shell history")
+
     sub.add_parser("list-operators", help="show every platform operator")
 
     args = parser.parse_args()
@@ -524,6 +613,7 @@ def main() -> int:
         "grant": lambda: grant(settings, args),
         "grant-membership": lambda: grant_membership(settings, args),
         "grant-operator": lambda: grant_operator(settings, args),
+        "create-operator": lambda: create_operator(settings, args),
         "list-operators": lambda: list_operators(settings),
     }
     return asyncio.run(handlers[args.command]())

@@ -16,7 +16,7 @@ than an engineering task.
 ### There is no write route, and the read route is gated twice
 
 `VIEW_PATRON_ID` admits the status read. `MANAGE_PATRON_ID` — held by
-`SUPER_ADMIN` alone — admits the detail of the gate itself. No route accepts a
+`ORG_ADMIN` — admits the detail of the gate itself. No route accepts a
 token, and `app/domain/patron.require_writable` refuses unconditionally, so the
 first real write is not one line away from existing.
 
@@ -62,9 +62,7 @@ PATRON_ID = ModuleCapability(
         "deliberately holds no persistent biometric identity, and turning this "
         "on means contradicting that posture on purpose."
     ),
-    requirements=tuple(
-        Requirement(name, detail) for name, detail in patron_domain.REQUIREMENTS
-    )
+    requirements=tuple(Requirement(name, detail) for name, detail in patron_domain.REQUIREMENTS)
     + (
         Requirement(
             "biometric_source",
@@ -81,9 +79,7 @@ PATRON_ID = ModuleCapability(
 
 
 @router.get("/patron-id", dependencies=[Depends(requires(Permission.VIEW_PATRON_ID))])
-async def patron_id(
-    request: Request, access: CurrentAccess, session: DbSession
-) -> dict[str, Any]:
+async def patron_id(request: Request, access: CurrentAccess, session: DbSession) -> dict[str, Any]:
     """Whether patron identification is enabled. It is not, and it says why.
 
     The row count is real and is zero. It is reported for one reason: an
@@ -131,9 +127,9 @@ async def patron_id(
 async def patron_id_gate(request: Request, access: CurrentAccess) -> dict[str, Any]:
     """The gate in detail, for whoever would be responsible for opening it.
 
-    Gated on `MANAGE_PATRON_ID`, which `SUPER_ADMIN` alone holds. Reading the
-    detail of what would unlock biometric re-identification is itself a
-    privilege, and an organization administrator is the wrong altitude for it.
+    Gated on `MANAGE_PATRON_ID`, which `ORG_ADMIN` holds. Reading the detail
+    of what would unlock biometric re-identification is itself a privilege,
+    and is never implied by `VIEW_PATRON_ID`.
 
     Read-only and side-effect free. Asking changes nothing, and there is no
     corresponding write route — this reports the state of a decision, it does

@@ -32,6 +32,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import AuditEvent
 
+#: Where the Platform Admin's own sign-in and sign-out are filed. He belongs to
+#: no organization, and `audit_events.organization_id` is not nullable. Every
+#: organization id is minted as `org-<slug>` (`app/api/platform.py`), so this
+#: value cannot collide with one — and no organization's trail ever shows it.
+PLATFORM_AUDIT_SCOPE = "platform"
+
 
 class AuditAction(enum.Enum):
     """A closed set. An action that is not here is not audited, deliberately."""
@@ -151,6 +157,9 @@ class AuditAction(enum.Enum):
     #: the complete history of who could reach this organization and when, which
     #: is exactly what an access review needs and what nothing else records.
     ORGANIZATION_MEMBER_ADDED = "organization.member_added"
+    #: The Platform Admin created an Organization Admin: account, membership,
+    #: role and camera scope, in one step.
+    ORGANIZATION_ADMIN_CREATED = "organization.admin_created"
     ORGANIZATION_MEMBER_REMOVED = "organization.member_removed"
 
 

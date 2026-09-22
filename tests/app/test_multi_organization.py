@@ -116,11 +116,11 @@ class TestPermissionVocabulary:
         manager = permissions_for(frozenset({Role.RESTAURANT_MANAGER}))
         assert Permission.RETIRE_CAMERAS not in manager
 
-    def test_super_admin_picks_up_new_permissions_by_construction(self):
-        """Its baseline is `frozenset(Permission)` minus one, so a permission
-        added later is held automatically. That is correct and intended, and
-        this asserts it did in fact happen rather than assuming it."""
-        held = permissions_for(frozenset({Role.SUPER_ADMIN}))
+    def test_org_admin_picks_up_new_permissions_by_construction(self):
+        """Its baseline is `frozenset(Permission)`, so a permission added later
+        is held automatically. That is correct and intended, and this asserts
+        it did in fact happen rather than assuming it."""
+        held = permissions_for(frozenset({Role.ORG_ADMIN}))
         assert Permission.MANAGE_SITES in held
         assert Permission.RETIRE_CAMERAS in held
 
@@ -131,9 +131,7 @@ class TestSuspendedForbidden:
         set is that somebody adds a permission and forgets it. Every `manage_*`
         must still be covered, so the replacement can never be *weaker* than
         the rule it replaced."""
-        missed = {
-            p for p in Permission if p.value.startswith("manage_")
-        } - SUSPENDED_FORBIDDEN
+        missed = {p for p in Permission if p.value.startswith("manage_")} - SUSPENDED_FORBIDDEN
         assert not missed, f"these manage permissions survive a suspension: {missed}"
 
     def test_the_prefix_rule_would_have_missed_these(self):
@@ -243,9 +241,7 @@ async def test_manager_c_may_not_see_sites_at_all(estate, client: AsyncClient):
 
     assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 403
     assert (
-        await client.patch(
-            f"/api/v1/restaurants/{site_id}", json={"name": "No"}, headers=headers
-        )
+        await client.patch(f"/api/v1/restaurants/{site_id}", json={"name": "No"}, headers=headers)
     ).status_code == 403
 
 
@@ -267,9 +263,7 @@ async def test_revoke_still_wins_over_the_role(estate, client: AsyncClient):
     headers = await bearer(client, "admin@example.com")
 
     rows = await client.get(f"{ADMIN_BASE}/{created['c']}/permissions", headers=headers)
-    view_sites = next(
-        r for r in rows.json()["permissions"] if r["permission"] == "view_sites"
-    )
+    view_sites = next(r for r in rows.json()["permissions"] if r["permission"] == "view_sites")
     assert view_sites["role_grants"] is True
     assert view_sites["state"] == "revoke"
     assert view_sites["effective"] is False
@@ -335,10 +329,10 @@ async def operator(admin, client: AsyncClient):
     return admin
 
 
-async def test_a_super_admin_is_not_a_platform_operator(client: AsyncClient, admin):
+async def test_an_org_admin_is_not_a_platform_operator(client: AsyncClient, admin):
     """The boundary, asserted from the wrong side.
 
-    `super_admin` is the most powerful *tenant* role and holds every permission
+    `org_admin` is the most powerful *tenant* role and holds every permission
     there is. None of them reach the platform surface, because the platform
     surface does not read permissions — it requires a different principal type
     that no role can produce.
@@ -346,7 +340,7 @@ async def test_a_super_admin_is_not_a_platform_operator(client: AsyncClient, adm
     async with admin.state.database.session_scope() as session:
         _, user = make_user(
             email="tenant-super@example.com",
-            roles=("super_admin",),
+            roles=("org_admin",),
             camera_breadth="all_in_tenant",
             camera_ids="",
         )
@@ -355,15 +349,11 @@ async def test_a_super_admin_is_not_a_platform_operator(client: AsyncClient, adm
     headers = await bearer(client, "tenant-super@example.com")
     assert (await client.get(f"{PLATFORM}/organizations", headers=headers)).status_code == 403
     assert (
-        await client.post(
-            f"{PLATFORM}/organizations", json={"name": "Sneaky"}, headers=headers
-        )
+        await client.post(f"{PLATFORM}/organizations", json={"name": "Sneaky"}, headers=headers)
     ).status_code == 403
 
 
-async def test_an_operator_creates_and_lists_organizations(
-    operator, client: AsyncClient
-):
+async def test_an_operator_creates_and_lists_organizations(operator, client: AsyncClient):
     headers = await bearer(client, "operator@example.com")
 
     created = await client.post(
@@ -385,15 +375,11 @@ async def test_an_organization_id_that_would_break_runtime_identity_is_refused(
     """The id becomes the tenant half of every camera's runtime identity, so
     the charset is enforced at the only place an id is ever minted."""
     headers = await bearer(client, "operator@example.com")
-    response = await client.post(
-        f"{PLATFORM}/organizations", json={"name": "!!!"}, headers=headers
-    )
+    response = await client.post(f"{PLATFORM}/organizations", json={"name": "!!!"}, headers=headers)
     assert response.status_code == 422
 
 
-async def test_suspending_an_organization_requires_a_reason(
-    operator, client: AsyncClient
-):
+async def test_suspending_an_organization_requires_a_reason(operator, client: AsyncClient):
     """It stops a paying customer's product working, and "why" is only
     reliably known at the moment of the act."""
     headers = await bearer(client, "operator@example.com")
@@ -426,9 +412,7 @@ async def test_suspension_reaches_authorization(operator, client: AsyncClient):
     ).status_code == 403
 
 
-async def test_archiving_an_organization_refuses_every_request(
-    operator, client: AsyncClient
-):
+async def test_archiving_an_organization_refuses_every_request(operator, client: AsyncClient):
     """Stronger than suspension, and enforced at authentication rather than
     per permission: a token minted before the archival must stop working."""
     headers = await bearer(client, "operator@example.com")
@@ -470,9 +454,6 @@ async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
     `tests/app/test_organization_access.py` covers the other side.
     """
     headers = await bearer(client, "operator@example.com")
-    # The operator's own account holds `org_admin` in org-test, so this route
-    # answers for *that* tenant through the ordinary tenant door — never
-    # through the operator one, and never for another organization.
     listed = await client.get(f"{PLATFORM}/organizations", headers=headers)
     assert listed.status_code == 200
     for organization in listed.json()["organizations"]:
@@ -482,20 +463,21 @@ async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
         assert "users" not in organization
         assert "cameras" not in organization
 
-    # And the operator's *own* token still reaches only their own tenant. It
-    # names org-test, so it reads org-test — entering another organization
-    # requires the other endpoint, and issues another token to do it with.
+    # The operator's own token is a platform session: it names no
+    # organization and reads no tenant's data, even one the account used to be
+    # a member of. Reaching a customer takes the entry endpoint and the
+    # separate, audited token it issues.
     identity = await client.get("/api/v1/auth/me", headers=headers)
-    assert identity.json()["tenant_id"] == "org-test"
-    assert identity.json()["acting_as"] == ""
+    assert identity.json()["tenant_id"] == ""
+    assert identity.json()["acting_as"] == "platform_operator"
+    refused = await client.get("/api/v1/restaurants", headers=headers)
+    assert refused.status_code == 403, refused.text
 
 
 # ── Pillar 2: camera placement cannot cross a boundary ───────────────────────
 
 
-async def test_a_camera_cannot_be_placed_in_another_sites_zone(
-    client: AsyncClient, admin
-):
+async def test_a_camera_cannot_be_placed_in_another_sites_zone(client: AsyncClient, admin):
     """The gap that let `zone_id` through unread.
 
     The route validated the restaurant and then passed `zone_id` from the
@@ -505,12 +487,8 @@ async def test_a_camera_cannot_be_placed_in_another_sites_zone(
     """
     headers = await bearer(client, "admin@example.com")
 
-    first = await client.post(
-        "/api/v1/restaurants", json={"name": "Site One"}, headers=headers
-    )
-    second = await client.post(
-        "/api/v1/restaurants", json={"name": "Site Two"}, headers=headers
-    )
+    first = await client.post("/api/v1/restaurants", json={"name": "Site One"}, headers=headers)
+    second = await client.post("/api/v1/restaurants", json={"name": "Site Two"}, headers=headers)
     assert first.status_code == 200 and second.status_code == 200
 
     elsewhere = await client.post(
@@ -536,15 +514,11 @@ async def test_a_camera_cannot_be_placed_in_another_sites_zone(
     assert "zone" in refused.text.lower()
 
 
-async def test_a_camera_cannot_be_created_without_an_address(
-    client: AsyncClient, admin
-):
+async def test_a_camera_cannot_be_created_without_an_address(client: AsyncClient, admin):
     """A camera with no host is skipped by the runtime, so it would be created,
     listed, and permanently inert with nothing ever saying why."""
     headers = await bearer(client, "admin@example.com")
-    site = await client.post(
-        "/api/v1/restaurants", json={"name": "Hostless"}, headers=headers
-    )
+    site = await client.post("/api/v1/restaurants", json={"name": "Hostless"}, headers=headers)
 
     response = await client.post(
         "/api/v1/cameras",
@@ -560,16 +534,12 @@ async def test_a_camera_cannot_be_created_without_an_address(
     assert "host" in response.text
 
 
-async def test_a_camera_never_returns_its_credential_reference(
-    client: AsyncClient, admin
-):
+async def test_a_camera_never_returns_its_credential_reference(client: AsyncClient, admin):
     """`literal:` made this field a channel that could carry the secret itself.
     The scheme is useful to an administrator; the reference is not, and it
     names something an attacker who reaches the process can go and read."""
     headers = await bearer(client, "admin@example.com")
-    site = await client.post(
-        "/api/v1/restaurants", json={"name": "Credentialed"}, headers=headers
-    )
+    site = await client.post("/api/v1/restaurants", json={"name": "Credentialed"}, headers=headers)
 
     created = await client.post(
         "/api/v1/cameras",
@@ -592,13 +562,9 @@ async def test_a_camera_never_returns_its_credential_reference(
     assert "CCTV_PASSWORD" not in created.text
 
 
-async def test_a_literal_credential_can_no_longer_be_written(
-    client: AsyncClient, admin
-):
+async def test_a_literal_credential_can_no_longer_be_written(client: AsyncClient, admin):
     headers = await bearer(client, "admin@example.com")
-    site = await client.post(
-        "/api/v1/restaurants", json={"name": "Literal"}, headers=headers
-    )
+    site = await client.post("/api/v1/restaurants", json={"name": "Literal"}, headers=headers)
 
     response = await client.post(
         "/api/v1/cameras",
@@ -616,9 +582,7 @@ async def test_a_literal_credential_can_no_longer_be_written(
     assert "hunter2" not in response.text, "the refusal echoed the secret back"
 
 
-async def test_a_connection_test_refuses_a_loopback_address(
-    client: AsyncClient, admin
-):
+async def test_a_connection_test_refuses_a_loopback_address(client: AsyncClient, admin):
     """The test would otherwise be a port scanner pointed at this server."""
     headers = await bearer(client, "admin@example.com")
     response = await client.post(
@@ -650,9 +614,7 @@ async def test_another_organizations_site_is_not_found(client: AsyncClient, admi
     headers = await bearer(client, "admin@example.com")
     outsider = await bearer(client, "outsider@example.com")
 
-    site = await client.post(
-        "/api/v1/restaurants", json={"name": "Ours"}, headers=headers
-    )
+    site = await client.post("/api/v1/restaurants", json={"name": "Ours"}, headers=headers)
     assert site.status_code == 200
 
     response = await client.patch(
@@ -663,9 +625,7 @@ async def test_another_organizations_site_is_not_found(client: AsyncClient, admi
     assert response.status_code == 404
 
 
-async def test_a_camera_scope_cannot_name_another_organizations_camera(
-    client: AsyncClient, admin
-):
+async def test_a_camera_scope_cannot_name_another_organizations_camera(client: AsyncClient, admin):
     headers = await bearer(client, "admin@example.com")
     response = await client.post(
         ADMIN_BASE,

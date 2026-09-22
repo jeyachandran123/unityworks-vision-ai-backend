@@ -95,16 +95,24 @@ class User(Base):
 
     __tablename__ = "users"
     __table_args__ = (
-        # Email is unique per organization, not globally: the same person may
-        # legitimately hold accounts at two customers, and a global constraint
-        # would also let anyone probe for an address's existence across tenants.
-        UniqueConstraint("organization_id", "email", name="uq_users_org_email"),
+        # One account per person, so email is unique across the deployment.
+        # A person who works for two customers holds one account with two
+        # memberships rather than two accounts — which is also what lets login
+        # resolve an email to exactly one row. It was unique per organization
+        # until 2026-09-22; the probe concern that justified that is handled at
+        # the one tenant-facing creation route, which refuses without saying
+        # where an address is already held (`app/api/user_administration.py`).
+        UniqueConstraint("email", name="uq_users_email"),
         Index("ix_users_email", "email"),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
-    organization_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    #: The organization the account was created in, or ``None`` for an account
+    #: that belongs to no organization at all — the Platform Admin. It confers
+    #: no entry by itself (`OrganizationMembership` does); it is where an
+    #: account's failed logins are filed.
+    organization_id: Mapped[str | None] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True
     )
     email: Mapped[str] = mapped_column(String(320), nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
@@ -115,7 +123,7 @@ class User(Base):
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    organization: Mapped[Organization] = relationship(back_populates="users")
+    organization: Mapped[Organization | None] = relationship(back_populates="users")
     role_assignments: Mapped[list[RoleAssignment]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )

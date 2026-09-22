@@ -18,8 +18,8 @@ separate authorization model.
 configuration and membership — never an incident, never an observation, never a
 frame, never an evidence record. An operator who needs to see those enters the
 organization explicitly through `POST /platform/organizations/{id}/enter`, which
-is audited and read-only, and reads them through the ordinary tenant routes with
-a tenant token. Adding a cross-tenant read here would make that entry pointless
+is audited and grants full reach inside that one organization, and reads them
+through the ordinary tenant routes with the separate token it issues. Adding a cross-tenant read here would make that entry pointless
 and would be the silent surveillance reach the architecture exists to prevent.
 
 **It does not grant platform-operator status.** Listing operators is a read;
@@ -43,20 +43,23 @@ from fastapi import APIRouter, Body, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import CurrentOperator, DbSession
+from app.api.dependencies import CurrentOperator, DbSession, settings_of
+from app.auth.passwords import hash_password
 from app.authorization.model import (
     ROLE_PERMISSIONS,
     OrganizationStatus,
     Permission,
     Role,
 )
-from app.domain.audit import AuditAction, AuditTrail
+from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.models import AuditEvent, Camera, Restaurant
 from app.errors import ConflictError, NotFoundError, ValidationError
 from app.users.models import (
+    AccessGrant,
     Organization,
     OrganizationMembership,
     PlatformOperatorGrant,
+    RoleAssignment,
     User,
 )
 
@@ -76,6 +79,7 @@ PLATFORM_ACTIONS: tuple[str, ...] = (
     AuditAction.PLATFORM_OPERATOR_ENTERED.value,
     AuditAction.ORGANIZATION_MEMBER_ADDED.value,
     AuditAction.ORGANIZATION_MEMBER_REMOVED.value,
+    AuditAction.ORGANIZATION_ADMIN_CREATED.value,
 )
 
 
@@ -334,7 +338,8 @@ def _person_to_wire(user: User, names: dict[str, str], operators: set[str]) -> d
             "organization_id": membership.organization_id,
             "organization_name": names.get(membership.organization_id, membership.organization_id),
             "roles": sorted(roles_by_org.get(membership.organization_id, [])),
-            "is_home": membership.organization_id == user.organization_id,
+            "is_home": user.organization_id is not None
+            and membership.organization_id == user.organization_id,
             "granted_at": _iso(membership.granted_at),
             "granted_by": membership.granted_by or "",
         }
@@ -348,9 +353,12 @@ def _person_to_wire(user: User, names: dict[str, str], operators: set[str]) -> d
         "email": user.email,
         "display_name": user.display_name,
         "is_active": user.is_active,
-        #: Where the account lives. Never conflated with what it may enter.
+        #: Where the account was created, or `None` for the Platform Admin, who
+        #: belongs to no organization. Never conflated with what it may enter.
         "home_organization_id": user.organization_id,
-        "home_organization_name": names.get(user.organization_id, user.organization_id),
+        "home_organization_name": (
+            names.get(user.organization_id, user.organization_id) if user.organization_id else ""
+        ),
         "memberships": memberships,
         "organization_count": len(memberships),
         "last_login_at": _iso(user.last_login_at),
@@ -359,7 +367,8 @@ def _person_to_wire(user: User, names: dict[str, str], operators: set[str]) -> d
         #: account filed somewhere it can no longer enter. Reported rather than
         #: hidden: it is a legitimate state, and it is also what a mistaken
         #: membership revocation looks like.
-        "home_membership_missing": all(
+        "home_membership_missing": user.organization_id is not None
+        and all(
             membership.organization_id != user.organization_id
             for membership in (user.memberships or ())
         ),
@@ -427,16 +436,29 @@ async def add_member(
     Roles inside the organization are granted through the organization's own
     user administration, by somebody who holds `MANAGE_USERS` there.
 
+    ### Except the one role the platform gives: Organization Admin
+
+    `"role": "org_admin"` also writes the role and an every-camera grant in the
+    same transaction. That is how one Organization Admin comes to hold several
+    organizations, and an admin admitted with nothing would be an admin who
+    signs in and sees nothing. No other role is accepted here: the rest are
+    staffed from inside the organization, by its own administrators.
+
     ### It admits, it does not create
 
-    There is no user creation here. An operator who could mint accounts into any
-    customer could mint one for themselves, and the audited read-only entry
-    route would become an unnecessary formality.
+    Creating a brand-new Organization Admin is `POST .../people`.
     """
     organization = await _organization(session, organization_id)
     user_id = str(payload.get("user_id", "") or "").strip()
     if not user_id:
         raise ValidationError("'user_id' is required")
+    role = str(payload.get("role", "") or "").strip().lower()
+    if role not in ("", Role.ORG_ADMIN.value):
+        raise ValidationError(
+            "only 'org_admin' can be given from the platform; other roles are "
+            "granted inside the organization by its administrators",
+            details={"role": role},
+        )
 
     user = await _user(session, user_id)
 
@@ -460,6 +482,9 @@ async def add_member(
             granted_by=operator.subject,
         )
     )
+    if role:
+        for row in _org_admin_rows(user.id, organization_id, granted_by=operator.subject):
+            session.add(row)
     await session.flush()
 
     await AuditTrail(session).record(
@@ -472,7 +497,145 @@ async def add_member(
         resource_type="user",
         resource_id=user.id,
         request_id=_request_id(request),
-        detail={"email": user.email, "home_organization_id": user.organization_id},
+        detail={
+            "email": user.email,
+            "home_organization_id": user.organization_id,
+            "role": role or None,
+        },
+    )
+
+    await session.refresh(user, attribute_names=["memberships", "role_assignments"])
+    names = await _organization_names(session)
+    operators = await _operator_user_ids(session)
+    return _person_to_wire(user, names, operators)
+
+
+def _org_admin_rows(user_id: str, organization_id: str, *, granted_by: str) -> list:
+    """What makes somebody an Organization Admin *in* one organization.
+
+    The role, and every camera. The membership is written by the caller,
+    because admitting a person and making them an admin are the same act here
+    but not everywhere.
+    """
+    return [
+        RoleAssignment(
+            user_id=user_id,
+            organization_id=organization_id,
+            role=Role.ORG_ADMIN.value,
+            granted_by=granted_by,
+        ),
+        AccessGrant(
+            user_id=user_id,
+            organization_id=organization_id,
+            camera_breadth="all_in_tenant",
+            camera_ids="",
+            site_ids="",
+        ),
+    ]
+
+
+@router.post("/organizations/{organization_id}/people")
+async def create_organization_admin(
+    organization_id: str,
+    request: Request,
+    operator: CurrentOperator,
+    session: DbSession,
+    payload: Annotated[dict, Body(...)],
+) -> dict[str, Any]:
+    """Create an Organization Admin: account, membership, role and cameras.
+
+    ### One step, or nothing
+
+    The Platform Admin creates an organization and then the person who runs it.
+    Doing that as three separate acts — create an account, admit it, grant it a
+    role — is how an organization ends up with somebody who can sign in and do
+    nothing, or with nobody at all. So all of it happens in this request's one
+    transaction, and the password is checked before any row exists: a refusal
+    leaves nothing behind.
+
+    ### Only Organization Admins
+
+    Everyone else is staffed from inside the organization by its own admin,
+    who knows the kitchen. The platform creates the first person, and that
+    person creates the rest.
+
+    ### A duplicate email is a plain conflict
+
+    The caller is a Platform Admin, who can already list every person on the
+    deployment (`GET /platform/people`), so naming the collision conceals
+    nothing and tells him the next step: give the existing account this
+    organization through `POST .../members` with `role: org_admin`.
+    """
+    organization = await _organization(session, organization_id)
+    if str(organization.status or "").strip().lower() == OrganizationStatus.ARCHIVED.value:
+        raise ValidationError(
+            "an archived organization cannot take a new administrator: nobody may sign in to one",
+            details={"organization_id": organization_id},
+        )
+
+    email = str(payload.get("email", "") or "").strip().lower()
+    if not email or "@" not in email:
+        raise ValidationError("'email' must be a valid address")
+    display_name = str(payload.get("display_name", "") or "").strip() or email.split("@")[0]
+
+    # Hashed before anything is written, so a short password creates nothing.
+    password_hash = hash_password(
+        str(payload.get("password", "") or ""),
+        min_length=settings_of(request).password_min_length,
+    )
+
+    existing = (
+        await session.execute(select(User.id).where(User.email == email))
+    ).scalar_one_or_none()
+    if existing is not None:
+        # Audited with the same weight as a success, and committed before the
+        # error propagates: the request rolls back on the way out.
+        await AuditTrail(session).record(
+            action=AuditAction.ORGANIZATION_ADMIN_CREATED,
+            organization_id=organization.id,
+            actor=operator.subject,
+            actor_roles=("platform_operator",),
+            outcome=AuditOutcome.DENIED,
+            resource_type="user",
+            resource_id=existing,
+            request_id=_request_id(request),
+            detail={"email": email, "reason": "email_in_use"},
+        )
+        await session.commit()
+        raise ConflictError(
+            f"{email} already has an account. To make it an Organization Admin here, "
+            "add it as a member of this organization with the Organization Admin role.",
+            details={"email": email, "user_id": existing},
+        )
+
+    user = User(
+        organization_id=organization.id,
+        email=email,
+        display_name=display_name,
+        password_hash=password_hash,
+        is_active=True,
+    )
+    session.add(user)
+    await session.flush()
+
+    session.add(
+        OrganizationMembership(
+            user_id=user.id, organization_id=organization.id, granted_by=operator.subject
+        )
+    )
+    for row in _org_admin_rows(user.id, organization.id, granted_by=operator.subject):
+        session.add(row)
+    await session.flush()
+
+    await AuditTrail(session).record(
+        action=AuditAction.ORGANIZATION_ADMIN_CREATED,
+        organization_id=organization.id,
+        actor=operator.subject,
+        actor_roles=("platform_operator",),
+        resource_type="user",
+        resource_id=user.id,
+        request_id=_request_id(request),
+        detail={"email": email, "display_name": display_name, "role": Role.ORG_ADMIN.value},
     )
 
     await session.refresh(user, attribute_names=["memberships", "role_assignments"])
@@ -587,7 +750,11 @@ async def list_operators(operator: CurrentOperator, session: DbSession) -> dict[
                 "display_name": user.display_name,
                 "is_active": user.is_active,
                 "home_organization_id": user.organization_id,
-                "home_organization_name": names.get(user.organization_id, user.organization_id),
+                "home_organization_name": (
+                    names.get(user.organization_id, user.organization_id)
+                    if user.organization_id
+                    else ""
+                ),
                 "granted_at": _iso(grant.granted_at),
                 "granted_by": grant.granted_by or "",
                 "reason": grant.reason or "",

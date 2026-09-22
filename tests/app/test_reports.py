@@ -195,9 +195,7 @@ def test_a_finished_window_with_every_source_read_is_complete() -> None:
 def test_a_report_cannot_be_built_without_coverage() -> None:
     """Structural, not conventional. Forgetting is a TypeError, not a bad page."""
     with pytest.raises(TypeError):
-        ReportData(  # type: ignore[call-arg]
-            report_id="x", title="X", subtitle="", sections=()
-        )
+        ReportData(report_id="x", title="X", subtitle="", sections=())  # type: ignore[call-arg]
 
 
 # ── Periods and timezones ────────────────────────────────────────────────────
@@ -277,9 +275,7 @@ async def test_the_catalogue_lists_every_report_including_the_unrunnable(
     assert body["can_export"] is True
 
 
-async def test_an_incident_report_aggregates_real_rows(
-    client: AsyncClient, with_incidents
-) -> None:
+async def test_an_incident_report_aggregates_real_rows(client: AsyncClient, with_incidents) -> None:
     headers = await bearer(client, "admin@example.com")
     since = (datetime.now(UTC) - timedelta(days=7)).isoformat()
 
@@ -422,9 +418,7 @@ async def test_patron_id_reports_blocked_rather_than_not_configured(
     """The distinction survives into the report, as it must."""
     headers = await bearer(client, "admin@example.com")
     patron = (await client.get("/api/v1/reports/module_patron_id", headers=headers)).json()
-    counting = (
-        await client.get("/api/v1/reports/module_people_counting", headers=headers)
-    ).json()
+    counting = (await client.get("/api/v1/reports/module_people_counting", headers=headers)).json()
 
     assert patron["capability_state"] == "blocked"
     assert counting["capability_state"] == "not_configured"
@@ -469,20 +463,15 @@ async def test_a_refused_report_is_audited_with_the_same_weight_as_a_success(
         from sqlalchemy import select
 
         actions = (
-            (
-                await session.execute(
-                    select(AuditEvent.action, AuditEvent.outcome, AuditEvent.resource_id)
-                )
+            await session.execute(
+                select(AuditEvent.action, AuditEvent.outcome, AuditEvent.resource_id)
             )
-            .all()
-        )
+        ).all()
 
     assert ("report.denied", "denied", "audit_activity") in actions
 
 
-async def test_export_is_a_separate_permission_from_reading(
-    client: AsyncClient, seeded
-) -> None:
+async def test_export_is_a_separate_permission_from_reading(client: AsyncClient, seeded) -> None:
     """A kitchen supervisor may read a report and may not take a copy away.
 
     The screen is shared; a downloaded file is not, and it outlives every
@@ -503,9 +492,7 @@ async def test_export_is_a_separate_permission_from_reading(
     ).status_code == 403
 
 
-async def test_a_report_is_scoped_to_the_caller_tenant(
-    client: AsyncClient, with_incidents
-) -> None:
+async def test_a_report_is_scoped_to_the_caller_tenant(client: AsyncClient, with_incidents) -> None:
     """Another organization's incidents are invisible, not merely filtered out."""
     outsider = await bearer(client, "outsider@example.com")
     body = (
@@ -572,15 +559,12 @@ async def test_every_export_writes_an_audit_row(client: AsyncClient, with_incide
         from sqlalchemy import select
 
         rows = (
-            (
-                await session.execute(
-                    select(AuditEvent.action, AuditEvent.detail).where(
-                        AuditEvent.resource_type == "report"
-                    )
+            await session.execute(
+                select(AuditEvent.action, AuditEvent.detail).where(
+                    AuditEvent.resource_type == "report"
                 )
             )
-            .all()
-        )
+        ).all()
 
     actions = [action for action, _ in rows]
     assert "report.exported" in actions
@@ -751,9 +735,7 @@ async def test_deleting_a_camera_is_audited_as_both_acts(
     async with app.state.database.session_scope() as session:
         from sqlalchemy import select
 
-        actions = (
-            (await session.execute(select(AuditEvent.action, AuditEvent.resource_id))).all()
-        )
+        actions = (await session.execute(select(AuditEvent.action, AuditEvent.resource_id))).all()
 
     assert ("camera.deleted", "cam-01") in actions
     assert ("observation.truncated", "cam-01") in actions
@@ -787,12 +769,15 @@ async def test_a_camera_is_not_deleted_when_its_partition_cannot_be_purged(
     assert remaining == "cam-01"
 
 
-def test_manage_patron_id_is_held_by_nobody() -> None:
-    """Excluded explicitly, not merely inert because an unrelated guard refuses.
+def test_manage_patron_id_is_held_by_the_organization_admin_alone() -> None:
+    """A product-owner decision (2026-09-22): the Organization Admin holds every
+    permission, this one included, and no other role holds it.
 
-    A permission that is harmless only because of a guard elsewhere is a trap
-    for whoever relaxes that guard later without knowing it was doing silent
-    work.
+    Holding it is still not being able to use it: `app/domain/patron.
+    require_writable` refuses the write path until the DPIA and DPO sign-off
+    exist (`tests/app/test_modules.py` pins that).
     """
-    for role in Role:
-        assert Permission.MANAGE_PATRON_ID not in permissions_for(frozenset({role})), role
+    holders = {
+        role for role in Role if Permission.MANAGE_PATRON_ID in permissions_for(frozenset({role}))
+    }
+    assert holders == {Role.ORG_ADMIN}

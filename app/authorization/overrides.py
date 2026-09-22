@@ -40,7 +40,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.authorization.model import OverrideState, Permission
 from app.errors import ScopeError
-from app.users.models import PermissionOverride, User
+from app.users.models import OrganizationMembership, PermissionOverride, User
 
 
 async def set_permission_override(
@@ -50,6 +50,7 @@ async def set_permission_override(
     target: User,
     permission: Permission,
     state: OverrideState,
+    organization_id: str,
 ) -> PermissionOverride:
     """Create or update one (user, permission) override row.
 
@@ -57,11 +58,8 @@ async def set_permission_override(
     on the existing row rather than creating a duplicate, which is what the
     `uq_permission_override_user_permission` constraint would refuse anyway.
     """
-    _guard(actor, target)
-
-    # The target's home organization: the only one an administrator currently
-    # administers a user in, and what the row meant before the column existed.
-    organization = target.organization_id
+    await _guard(session, actor, target, organization_id)
+    organization = organization_id
 
     existing = await session.execute(
         select(PermissionOverride).where(
@@ -92,17 +90,19 @@ async def clear_permission_override(
     actor: User,
     target: User,
     permission: Permission,
+    organization_id: str,
 ) -> None:
     """Remove an override, reverting the permission to INHERIT (role behavior).
 
     Removing a row that does not exist is a no-op: the end state — no override
     — is what the caller asked for either way.
     """
-    _guard(actor, target)
+    await _guard(session, actor, target, organization_id)
 
     existing = await session.execute(
         select(PermissionOverride).where(
             PermissionOverride.user_id == target.id,
+            PermissionOverride.organization_id == organization_id,
             PermissionOverride.permission == permission.value,
         )
     )
@@ -111,20 +111,46 @@ async def clear_permission_override(
         await session.delete(row)
 
 
-def _guard(actor: User, target: User) -> None:
+async def _guard(session: AsyncSession, actor: User, target: User, organization_id: str) -> None:
+    """No self-modification, and no reaching outside the organization.
+
+    The organization is the one the actor is working in — the caller passes the
+    tenant of its own request-scoped decision. The target must be a *member* of
+    it. Comparing home organizations stopped being the right test when one
+    person could hold several organizations, and it never worked for the
+    Platform Admin, who has none.
+    """
     if actor.id == target.id:
         raise ScopeError(
             "a user may not grant or revoke a permission for themselves",
             details={"user_id": actor.id},
         )
-    if actor.organization_id != target.organization_id:
+    await require_member(session, target, organization_id, what="permission overrides")
+
+
+async def require_member(
+    session: AsyncSession, target: User, organization_id: str, *, what: str
+) -> None:
+    """Refuse unless `target` is a member of `organization_id`.
+
+    Read from the table rather than from `target.memberships`, so a caller that
+    loaded the user without that relationship still gets the right answer
+    instead of a lazy load failing inside an async request.
+    """
+    member = (
+        await session.execute(
+            select(OrganizationMembership.id).where(
+                OrganizationMembership.user_id == target.id,
+                OrganizationMembership.organization_id == organization_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if member is None:
         raise ScopeError(
-            "cross-tenant permission overrides are not permitted",
-            details={
-                "actor_organization_id": actor.organization_id,
-                "target_organization_id": target.organization_id,
-            },
+            f"cross-tenant {what} are not permitted: the target is not a member of "
+            "this organization",
+            details={"organization_id": organization_id, "target_user_id": target.id},
         )
 
 
-__all__ = ["clear_permission_override", "set_permission_override"]
+__all__ = ["clear_permission_override", "require_member", "set_permission_override"]

@@ -26,6 +26,7 @@ from sqlalchemy import select
 
 from app.authorization.model import Permission
 from app.authorization.platform import OPERATOR_ENTRY_PERMISSIONS
+from app.authorization.resolver import SUSPENDED_FORBIDDEN
 from app.domain.audit import AuditAction
 from app.domain.models import AuditEvent, Restaurant
 from app.users.models import Organization, OrganizationMembership, PlatformOperatorGrant
@@ -283,39 +284,39 @@ async def test_a_revoked_membership_ends_the_session_it_authorised(estate, clien
 # ── Scenario 3: the platform operator ────────────────────────────────────────
 
 
-async def test_an_operator_is_owed_the_chooser_even_with_one_membership(
+async def test_an_operator_signs_in_to_the_platform_even_with_a_membership(
     estate, client: AsyncClient
 ):
     """`must_select` is not `len(organizations) > 1`.
 
-    An operator belongs to one organization — their own — and the customers
-    they administer are not among their memberships. Deriving the routing
-    decision from the length of the membership list would send them straight
-    into their home tenant, which is the one place their job is not.
+    The Platform Admin always signs in to the platform, never into an
+    organization — even an account that still carries a membership from before
+    the two-tier model (the migration removes those; this fixture keeps one to
+    prove login does not depend on that). Every organization is his to enter
+    from the console.
     """
     body = (await login(client, "operator@example.com")).json()
-    assert body["organizations"] == [
-        {
-            "id": "org-acme",
-            "name": body["organizations"][0]["name"],
-            "slug": body["organizations"][0]["slug"],
-            "status": "active",
-            "site_count": 0,
-            "camera_count": 0,
-        }
-    ]
+    assert body["organizations"] == []
+    assert body["user"]["tenant_id"] == ""
     assert body["is_platform_operator"] is True
     assert body["must_select"] is True
 
 
-async def test_entering_an_organization_grants_a_read_only_session(estate, client: AsyncClient):
+async def test_entering_an_organization_grants_full_reach(estate, client: AsyncClient):
+    """The Platform Admin can do anything inside any organization.
+
+    Full reach, not read-only: every permission there is. What is kept from the
+    read-only design is the accountability — a separate token marked
+    `act: platform_operator`, and an audit row in the entered organization.
+    """
     headers = await bearer(client, "operator@example.com")
 
     entered = await client.post(f"{PLATFORM}/organizations/org-borden/enter", headers=headers)
     assert entered.status_code == 200, entered.text
     body = entered.json()
     assert body["acting_as"] == "platform_operator"
-    assert body["read_only"] is True
+    assert body["read_only"] is False
+    assert set(body["permissions"]) == {p.value for p in Permission}
     assert body["organization"]["id"] == "org-borden"
 
     inside = {"Authorization": f"Bearer {body['access_token']}"}
@@ -330,42 +331,46 @@ async def test_entering_an_organization_grants_a_read_only_session(estate, clien
     assert (await client.get("/api/v1/restaurants", headers=inside)).status_code == 200
 
 
-async def test_an_entered_operator_may_not_write(estate, client: AsyncClient):
+async def test_an_entered_platform_admin_may_write(estate, client: AsyncClient):
     headers = await bearer(client, "operator@example.com")
     entered = await client.post(f"{PLATFORM}/organizations/org-borden/enter", headers=headers)
     inside = {"Authorization": f"Bearer {entered.json()['access_token']}"}
 
+    created = await client.post("/api/v1/restaurants", json={"name": "Anna Nagar"}, headers=inside)
+    assert created.status_code in (200, 201), created.text
+
+
+async def test_entry_into_a_suspended_organization_still_cannot_write(estate, client: AsyncClient):
+    """Suspension means "no writes" for everyone inside, the Platform Admin too.
+
+    Entry used to be read-only, so it never needed to ask. Now that it carries
+    every permission, it is narrowed by the same `SUSPENDED_FORBIDDEN` set a
+    member's session is. Lifting the suspension is a platform act, done from
+    the console rather than from inside the customer.
+    """
+    headers = await bearer(client, "operator@example.com")
+    suspended = await client.put(
+        f"{PLATFORM}/organizations/org-borden/status",
+        json={"status": "suspended", "reason": "Invoice 2026-09 unpaid."},
+        headers=headers,
+    )
+    assert suspended.status_code == 200, suspended.text
+
+    entered = await client.post(f"{PLATFORM}/organizations/org-borden/enter", headers=headers)
+    assert entered.status_code == 200, entered.text
+    granted = set(entered.json()["permissions"])
+    assert not granted & {p.value for p in SUSPENDED_FORBIDDEN}
+
+    inside = {"Authorization": f"Bearer {entered.json()['access_token']}"}
+    assert (await client.get("/api/v1/restaurants", headers=inside)).status_code == 200
     refused = await client.post("/api/v1/restaurants", json={"name": "Nope"}, headers=inside)
     assert refused.status_code == 403, refused.text
 
 
-def test_the_operator_read_set_excludes_the_sensitive_reads():
-    """A unit assertion, because this set is the whole of the policy.
-
-    Stated as a list rather than derived from a `view_` prefix, and asserted as
-    a list here for the same reason: the exclusions are decisions, and a rule
-    that happened to produce them today would silently stop excluding a
-    permission added tomorrow.
-    """
-    for excluded in (
-        Permission.VIEW_EVIDENCE,
-        Permission.VIEW_PATRON_ID,
-        Permission.VIEW_AUDIT,
-        Permission.EXPORT_REPORTS,
-        Permission.REGISTER_DEMAND,
-        Permission.ACCESS_DEVTOOLS,
-    ):
-        assert excluded not in OPERATOR_ENTRY_PERMISSIONS
-
-    # And no write of any kind.
-    for permission in OPERATOR_ENTRY_PERMISSIONS:
-        assert not permission.value.startswith("manage_")
-        assert permission not in {
-            Permission.RETIRE_CAMERAS,
-            Permission.DELETE_EVIDENCE,
-            Permission.ACKNOWLEDGE_INCIDENTS,
-            Permission.RESOLVE_INCIDENTS,
-        }
+def test_entry_reach_is_every_permission():
+    """Stated as the complete set, so a permission added later reaches an
+    entered Platform Admin without anybody remembering to list it."""
+    assert OPERATOR_ENTRY_PERMISSIONS == frozenset(Permission)
 
 
 async def test_entering_an_organization_is_audited_against_that_organization(
@@ -397,8 +402,8 @@ async def test_entering_an_organization_is_audited_against_that_organization(
     # `detail` is stored as JSON text, so the trail keeps what was written
     # rather than what a later version of the code would produce.
     detail = json.loads(raw_detail) if isinstance(raw_detail, str) else raw_detail
-    assert detail["read_only"] is True
-    assert "view_evidence" not in detail["permissions"]
+    assert detail["read_only"] is False
+    assert "view_evidence" in detail["permissions"]
     assert "view_incidents" in detail["permissions"]
 
 
@@ -441,7 +446,7 @@ async def test_revoking_the_grant_ends_an_entry_session(estate, client: AsyncCli
 async def test_a_tenant_role_still_cannot_enter_an_organization(estate, client: AsyncClient):
     """The boundary, asserted from the wrong side, now that a door exists.
 
-    `super_admin` is the most powerful tenant role there is. It does not reach
+    `org_admin` is the most powerful tenant role there is. It does not reach
     the entry endpoint, because that endpoint does not read permissions — it
     requires a principal no role can produce.
     """
@@ -449,7 +454,7 @@ async def test_a_tenant_role_still_cannot_enter_an_organization(estate, client: 
         _, superuser = make_user(
             org_id="org-acme",
             email="super@example.com",
-            roles=("super_admin",),
+            roles=("org_admin",),
             camera_breadth="all_in_tenant",
             camera_ids="",
         )

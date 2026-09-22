@@ -100,21 +100,36 @@ class TestEffectivePermissions:
 
 class TestParseOverrides:
     def test_unknown_permission_is_dropped(self) -> None:
-        rows = [PermissionOverride(user_id="u1", organization_id="org-test", permission="not_a_real_permission", state="grant")]
+        rows = [
+            PermissionOverride(
+                user_id="u1",
+                organization_id="org-test",
+                permission="not_a_real_permission",
+                state="grant",
+            )
+        ]
         granted, revoked = parse_overrides(rows)
         assert granted == frozenset()
         assert revoked == frozenset()
 
     def test_unknown_state_is_dropped(self) -> None:
-        rows = [PermissionOverride(user_id="u1", organization_id="org-test", permission="view_live", state="maybe")]
+        rows = [
+            PermissionOverride(
+                user_id="u1", organization_id="org-test", permission="view_live", state="maybe"
+            )
+        ]
         granted, revoked = parse_overrides(rows)
         assert granted == frozenset()
         assert revoked == frozenset()
 
     def test_grant_and_revoke_sort_into_their_own_sets(self) -> None:
         rows = [
-            PermissionOverride(user_id="u1", organization_id="org-test", permission="view_evidence", state="grant"),
-            PermissionOverride(user_id="u1", organization_id="org-test", permission="view_live", state="revoke"),
+            PermissionOverride(
+                user_id="u1", organization_id="org-test", permission="view_evidence", state="grant"
+            ),
+            PermissionOverride(
+                user_id="u1", organization_id="org-test", permission="view_live", state="revoke"
+            ),
         ]
         granted, revoked = parse_overrides(rows)
         assert granted == frozenset({Permission.VIEW_EVIDENCE})
@@ -150,7 +165,12 @@ class TestDecideWithOverrides:
         _, user = make_user(roles=("kitchen_supervisor",))
         user.is_active = True
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_evidence", state="grant")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="view_evidence",
+                state="grant",
+            )
         ]
         decision = decide(user, organization_id=user.organization_id)
         assert decision.has(Permission.VIEW_EVIDENCE)
@@ -159,7 +179,12 @@ class TestDecideWithOverrides:
         _, user = make_user(roles=("restaurant_manager",))
         user.is_active = True
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_live", state="revoke")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="view_live",
+                state="revoke",
+            )
         ]
         decision = decide(user, organization_id=user.organization_id)
         assert not decision.has(Permission.VIEW_LIVE)
@@ -168,7 +193,12 @@ class TestDecideWithOverrides:
         _, user = make_user(roles=("restaurant_manager",))
         user.is_active = True
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_live", state="revoke")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="view_live",
+                state="revoke",
+            )
         ]
         assert not decide(user, organization_id=user.organization_id).has(Permission.VIEW_LIVE)
 
@@ -178,7 +208,12 @@ class TestDecideWithOverrides:
     def test_an_inactive_user_reaches_nothing_regardless_of_overrides(self) -> None:
         _, user = make_user(roles=("kitchen_supervisor",))
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="access_devtools", state="grant")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="access_devtools",
+                state="grant",
+            )
         ]
         user.is_active = False
         decision = decide(user, organization_id=user.organization_id)
@@ -205,7 +240,12 @@ class TestDecideWithOverrides:
 
         # Step 2: REVOKE.
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_live", state="revoke")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="view_live",
+                state="revoke",
+            )
         ]
         second = decide(user, organization_id=user.organization_id)
         assert not second.has(Permission.VIEW_LIVE)
@@ -222,16 +262,19 @@ class TestDecideWithOverrides:
     def test_revoke_wins_regardless_of_how_many_roles_grant_it(self) -> None:
         """Three roles that each independently carry `VIEW_INCIDENTS`; a
         REVOKE on that permission must still win over every one of them."""
-        roles = frozenset(
-            {Role.RESTAURANT_MANAGER, Role.KITCHEN_SUPERVISOR, Role.HYGIENE_OFFICER}
-        )
+        roles = frozenset({Role.RESTAURANT_MANAGER, Role.KITCHEN_SUPERVISOR, Role.HYGIENE_OFFICER})
         for role in roles:
             assert Permission.VIEW_INCIDENTS in permissions_for(frozenset({role}))
 
         _, user = make_user(roles=tuple(r.value for r in roles))
         user.is_active = True
         user.permission_overrides = [
-            PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_incidents", state="revoke")
+            PermissionOverride(
+                user_id=user.id,
+                organization_id=user.organization_id,
+                permission="view_incidents",
+                state="revoke",
+            )
         ]
         decision = decide(user, organization_id=user.organization_id)
         assert not decision.has(Permission.VIEW_INCIDENTS)
@@ -346,7 +389,14 @@ class TestOrganizationLifecycleOverHttp:
         database = seeded.state.database
         async with database.session_scope() as session:
             user = await session.get(User, "user-manager@example.com")
-            session.add(PermissionOverride(user_id=user.id, organization_id=user.organization_id, permission="view_audit", state="grant"))
+            session.add(
+                PermissionOverride(
+                    user_id=user.id,
+                    organization_id=user.organization_id,
+                    permission="view_audit",
+                    state="grant",
+                )
+            )
 
         after = (await client.get("/api/v1/auth/me", headers=headers)).json()
         assert "view_audit" in after["permissions"]
@@ -378,6 +428,7 @@ class TestSetPermissionOverride:
                 target=target,
                 permission=Permission.VIEW_EVIDENCE,
                 state=OverrideState.GRANT,
+                organization_id="org-test",
             )
 
         async with database.session_scope() as session:
@@ -398,7 +449,9 @@ class TestSetPermissionOverride:
                 )
             )
             target = result.scalar_one()
-            assert decide(target, organization_id=target.organization_id).has(Permission.VIEW_EVIDENCE)
+            assert decide(target, organization_id=target.organization_id).has(
+                Permission.VIEW_EVIDENCE
+            )
 
     async def test_clearing_an_override_removes_it(self, two_users_same_org) -> None:
         database = two_users_same_org.state.database
@@ -411,13 +464,18 @@ class TestSetPermissionOverride:
                 target=target,
                 permission=Permission.VIEW_EVIDENCE,
                 state=OverrideState.GRANT,
+                organization_id="org-test",
             )
 
         async with database.session_scope() as session:
             actor = await session.get(User, "user-actor@example.com")
             target = await session.get(User, "user-target@example.com")
             await clear_permission_override(
-                session, actor=actor, target=target, permission=Permission.VIEW_EVIDENCE
+                session,
+                actor=actor,
+                target=target,
+                permission=Permission.VIEW_EVIDENCE,
+                organization_id="org-test",
             )
 
         async with database.session_scope() as session:
@@ -438,7 +496,9 @@ class TestSetPermissionOverride:
                 )
             )
             target = result.scalar_one()
-            assert not decide(target, organization_id=target.organization_id).has(Permission.VIEW_EVIDENCE)
+            assert not decide(target, organization_id=target.organization_id).has(
+                Permission.VIEW_EVIDENCE
+            )
 
     async def test_self_modification_is_refused(self, two_users_same_org) -> None:
         database = two_users_same_org.state.database
@@ -451,6 +511,7 @@ class TestSetPermissionOverride:
                     target=actor,
                     permission=Permission.MANAGE_USERS,
                     state=OverrideState.GRANT,
+                    organization_id="org-test",
                 )
 
     async def test_cross_tenant_modification_is_refused(self, seeded) -> None:
@@ -465,6 +526,7 @@ class TestSetPermissionOverride:
                 await session.execute(select(User).where(User.email == "manager@example.com"))
             ).scalar_one()
             assert actor.organization_id != target.organization_id
+            # The outsider works in org-other; the manager is not a member there.
             with pytest.raises(ScopeError, match="cross-tenant"):
                 await set_permission_override(
                     session,
@@ -472,4 +534,5 @@ class TestSetPermissionOverride:
                     target=target,
                     permission=Permission.VIEW_EVIDENCE,
                     state=OverrideState.GRANT,
+                    organization_id="org-other",
                 )

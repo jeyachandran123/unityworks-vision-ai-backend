@@ -60,11 +60,15 @@ class Authentication:
     """
 
     user: User
-    #: The organization this session starts in. See `AuthService._opening`.
-    decision: AccessDecision
-    #: Every organization the account may enter, sorted. Always contains
-    #: `decision.tenant_id`.
+    #: The organization this session starts in (see `AuthService._opening`), or
+    #: ``None`` for a platform session, which starts in no organization.
+    decision: AccessDecision | None
+    #: Every organization the account may enter, sorted. Contains
+    #: `decision.tenant_id` whenever there is a decision.
     organizations: tuple[str, ...]
+    #: The Platform Admin's sign-in. He belongs to no organization, so the
+    #: session he gets is a platform session rather than a tenant one.
+    platform: bool = False
 
     @property
     def must_select(self) -> bool:
@@ -73,9 +77,10 @@ class Authentication:
         One organization is not a choice, and presenting it as one is the
         specific misfeature this flow exists to avoid: a single-organization
         administrator should reach their Command Center, not a page with one
-        card on it.
+        card on it. The Platform Admin is always owed the choice: every
+        organization is his, and none is where he starts.
         """
-        return len(self.organizations) > 1
+        return self.platform or len(self.organizations) > 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +88,8 @@ class IssuedSession:
     access_token: str
     refresh_token: str
     expires_at: datetime
-    decision: AccessDecision
+    #: ``None`` for a platform session, which carries no tenant decision.
+    decision: AccessDecision | None
 
 
 class AuthService:
@@ -115,6 +121,12 @@ class AuthService:
 
         if not user.is_active:
             raise InvalidCredentialsError("email or password is incorrect")
+
+        # The Platform Admin first. He belongs to no organization, so there is
+        # no opening organization to look for; he signs in to the platform.
+        if await _is_platform_admin(session, user):
+            user.last_login_at = datetime.now(UTC)
+            return Authentication(user=user, decision=None, organizations=(), platform=True)
 
         opening = self._opening(user)
         if opening is None:
@@ -167,11 +179,28 @@ class AuthService:
                 return organization_id
         return None
 
+    def issue_platform(self, user: User) -> IssuedSession:
+        """A platform session: platform authority, no organization.
+
+        `act: platform_operator` on both tokens and no tenant on either. Every
+        request made with it re-reads the operator grant, exactly as an entry
+        session does, so revoking the grant ends it on the next call.
+        """
+        access, expires = self._tokens.issue_access(
+            subject=user.email, tenant_id="", acting_as=ACTING_AS_PLATFORM_OPERATOR
+        )
+        refresh, _ = self._tokens.issue_refresh(
+            subject=user.email, tenant_id="", acting_as=ACTING_AS_PLATFORM_OPERATOR
+        )
+        return IssuedSession(
+            access_token=access, refresh_token=refresh, expires_at=expires, decision=None
+        )
+
     def issue(self, decision: AccessDecision) -> IssuedSession:
         roles = tuple(sorted(r.value for r in decision.roles))
         # `acting_as` travels on both tokens. On the access token because every
         # request has to be resolvable from it alone; on the refresh token
-        # because a refresh must not quietly launder an audited read-only
+        # because a refresh must not quietly launder an audited
         # operator entry into an ordinary session with the roles the account
         # happens to hold in that organization.
         access, expires = self._tokens.issue_access(
@@ -278,6 +307,15 @@ async def user_for_claims(session: AsyncSession, claims: TokenClaims) -> User:
     if user is None or not user.is_active:
         raise AuthenticationError("the account is no longer active")
 
+    if claims.is_platform_session:
+        # No organization to check. The operator grant is the only thing that
+        # authorised this session, so it is the only thing re-read.
+        try:
+            await resolve_operator(session, user)
+        except ScopeError as exc:
+            raise AuthenticationError("this was a platform session and the grant is gone") from exc
+        return user
+
     organization = await organization_of(session, user, claims.tenant_id)
     if organization is None:
         raise AuthenticationError("the token's tenant no longer exists")
@@ -320,15 +358,39 @@ async def decision_for_claims(session: AsyncSession, claims: TokenClaims) -> Acc
     """
     user = await user_for_claims(session, claims)
 
+    if claims.is_platform_session:
+        # Authenticated, and inside no organization. Every tenant route asks for
+        # an `AccessDecision`, which is always scoped to one — so the answer is
+        # a refusal that says what to do, not an empty decision that would read
+        # as "this organization has nothing in it".
+        raise ScopeError(
+            "this is a platform session; enter an organization first",
+            details={"required": "organization"},
+        )
+
     if claims.acting_as == ACTING_AS_PLATFORM_OPERATOR:
         # `user_for_claims` has already re-checked the grant against the
         # database. The reach is stated, never resolved: this account has no
         # roles in the organization it is standing in, and building the decision
         # from the rows it does not have is exactly what must not happen.
         operator = await resolve_operator(session, user)
-        return entry_decision(operator, claims.tenant_id)
+        organization = await organization_of(session, user, claims.tenant_id)
+        suspended = (
+            organization is not None
+            and parse_organization_status(organization.status) is OrganizationStatus.SUSPENDED
+        )
+        return entry_decision(operator, claims.tenant_id, suspended=suspended)
 
     return decide(user, organization_id=claims.tenant_id)
+
+
+async def _is_platform_admin(session: AsyncSession, user: User) -> bool:
+    """Whether this account holds a platform-operator grant."""
+    try:
+        await resolve_operator(session, user)
+    except ScopeError:
+        return False
+    return True
 
 
 async def accessible_organizations(session: AsyncSession, user: User) -> list[Organization]:

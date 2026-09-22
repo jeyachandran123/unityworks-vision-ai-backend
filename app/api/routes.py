@@ -21,6 +21,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from app.api.dependencies import (
+    AccessClaims,
     CurrentAccess,
     DbSession,
     auth_of,
@@ -31,10 +32,16 @@ from app.api.dependencies import (
 )
 from app.api.devtools import router as devtools_router
 from app.auth.cookies import clear_refresh_cookie, read_refresh_cookie, set_refresh_cookie
-from app.auth.service import accessible_organizations, load_user_by_email, organization_of
+from app.auth.service import (
+    accessible_organizations,
+    decision_for_claims,
+    load_user_by_email,
+    organization_of,
+    user_for_claims,
+)
 from app.authorization.model import OrganizationStatus
 from app.authorization.resolver import decide, membership_for, parse_organization_status
-from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
+from app.domain.audit import PLATFORM_AUDIT_SCOPE, AuditAction, AuditOutcome, AuditTrail
 from app.errors import AppError, AuthenticationError, NoSessionError, ScopeError
 
 # ── health ───────────────────────────────────────────────────────────────────
@@ -128,7 +135,12 @@ async def login(
         await session.commit()
         raise
 
+    if authentication.platform:
+        return await _platform_login(request, response, session, authentication.user)
+
     decision = authentication.decision
+    if decision is None:  # pragma: no cover - a tenant authentication always carries one
+        raise AuthenticationError("the sign-in produced no organization to open")
     issued = auth.issue(decision)
 
     await trail.record(
@@ -167,6 +179,56 @@ async def login(
         # case is not derivable from that list at all.
         "must_select": authentication.must_select or is_operator,
         "is_platform_operator": is_operator,
+    }
+
+
+async def _platform_login(request: Request, response: Response, session, user) -> dict[str, Any]:
+    """The Platform Admin's sign-in: a platform session, and the console next.
+
+    He belongs to no organization, so there is no organization list to return
+    and no tenant to open. `must_select` is true because every organization is
+    his to enter and none is where he starts.
+    """
+    issued = auth_of(request).issue_platform(user)
+
+    await AuditTrail(session).record(
+        action=AuditAction.LOGIN,
+        organization_id=PLATFORM_AUDIT_SCOPE,
+        actor=user.email,
+        actor_roles=("platform_operator",),
+        resource_type="session",
+        request_id=getattr(request.state, "request_id", ""),
+    )
+    set_refresh_cookie(response, issued.refresh_token, settings_of(request))
+    logger.info("platform login succeeded for {}", user.email)
+
+    return {
+        "access_token": issued.access_token,
+        "token_type": "bearer",
+        "expires_at": issued.expires_at.isoformat(),
+        "user": platform_identity(user),
+        "organizations": [],
+        "must_select": True,
+        "is_platform_operator": True,
+    }
+
+
+def platform_identity(user) -> dict[str, Any]:
+    """The identity of a platform session, in the same shape as `_identity`.
+
+    No tenant, no roles, no permissions, no cameras: none of those exist until
+    the Platform Admin enters an organization, and reporting an empty scope as
+    anything else would be the fabricated reading this product must not show.
+    """
+    return {
+        "subject": user.email,
+        "display_name": user.display_name,
+        "tenant_id": "",
+        "acting_as": "platform_operator",
+        "roles": [],
+        "permissions": [],
+        "camera_scope": {"breadth": "none", "camera_ids": []},
+        "site_ids": [],
     }
 
 
@@ -230,7 +292,7 @@ async def _organization_summaries(session: DbSession, organizations: list) -> li
 
 @auth_router.get("/organizations")
 async def my_organizations(
-    request: Request, access: CurrentAccess, session: DbSession
+    request: Request, claims: AccessClaims, session: DbSession
 ) -> dict[str, Any]:
     """The organizations this account may enter.
 
@@ -242,7 +304,20 @@ async def my_organizations(
 
     `active` names the organization the caller is currently in, so the chooser
     can mark it without inferring it from a token it cannot read.
+
+    A platform session is a member of nothing, so its list is empty; the
+    Platform Admin's organizations come from `GET /platform/organizations`.
     """
+    if claims.is_platform_session:
+        await user_for_claims(session, claims)
+        return {
+            "organizations": [],
+            "active": "",
+            "acting_as": claims.acting_as,
+            "is_platform_operator": True,
+        }
+
+    access = await decision_for_claims(session, claims)
     user = await load_user_by_email(session, access.subject)
     if user is None:
         raise AuthenticationError("the account is no longer active")
@@ -351,7 +426,9 @@ async def _tenant_for_email(session, email: str) -> str:
         user = await load_user_by_email(session, email)
     except Exception:  # noqa: BLE001 - attribution is best effort
         return ""
-    return user.organization_id if user else ""
+    if user is None:
+        return ""
+    return user.organization_id or PLATFORM_AUDIT_SCOPE
 
 
 @auth_router.post("/refresh")
@@ -372,8 +449,6 @@ async def refresh(
     exchanged is no longer held by the client, which turns a stolen-and-replayed
     token into a visible anomaly rather than a silent second session.
     """
-    from app.auth.service import decision_for_claims
-
     auth = auth_of(request)
     token = read_refresh_cookie(request)
     if not token:
@@ -384,6 +459,21 @@ async def refresh(
         raise NoSessionError("no active session")
 
     claims = auth.verify_refresh(token)
+
+    if claims.is_platform_session:
+        # Stays a platform session. Refreshing must never turn one kind of
+        # session into another — the same rule that keeps an entry session an
+        # entry session.
+        user = await user_for_claims(session, claims)
+        issued = auth.issue_platform(user)
+        set_refresh_cookie(response, issued.refresh_token, settings_of(request))
+        return {
+            "access_token": issued.access_token,
+            "token_type": "bearer",
+            "expires_at": issued.expires_at.isoformat(),
+            "user": platform_identity(user),
+        }
+
     decision = await decision_for_claims(session, claims)
     issued = auth.issue(decision)
 
@@ -419,7 +509,7 @@ async def logout(request: Request, response: Response, session: DbSession) -> di
         if claims is not None:
             await AuditTrail(session).record(
                 action=AuditAction.LOGOUT,
-                organization_id=claims.tenant_id,
+                organization_id=claims.tenant_id or PLATFORM_AUDIT_SCOPE,
                 actor=claims.subject,
                 actor_roles=claims.roles,
                 resource_type="session",
@@ -431,14 +521,17 @@ async def logout(request: Request, response: Response, session: DbSession) -> di
 
 
 @auth_router.get("/me")
-async def me(access: CurrentAccess) -> dict[str, Any]:
+async def me(claims: AccessClaims, session: DbSession) -> dict[str, Any]:
     """Who the caller is and what they may reach.
 
     The frontend uses this to decide what to render. It is a convenience, not a
     control — every capability listed here is separately enforced server-side on
-    the route that provides it.
+    the route that provides it. Answers a platform session too, with an empty
+    tenant and no permissions.
     """
-    return _identity(access)
+    if claims.is_platform_session:
+        return platform_identity(await user_for_claims(session, claims))
+    return _identity(await decision_for_claims(session, claims))
 
 
 def _identity(decision) -> dict[str, Any]:

@@ -51,31 +51,21 @@ request-scoped `AccessDecision` — never a cached or stale value, since
    name only `org_admin`) staffing `restaurant_manager`/`kitchen_supervisor`/
    etc. accounts is exactly the case this API exists for, and every
    permission those roles carry is already a subset of what `org_admin`
-   itself holds. The same subset check still refuses an `org_admin`
-   assigning `super_admin` or `developer`, both of which carry permissions
-   (`access_devtools`, `view_model_evaluation`, …) `org_admin` does not have
-   — which is the actual escalation this rule exists to close. Removing a
+   itself holds. Since `org_admin` became the complete permission set
+   (2026-09-22) it can assign every role; the subset check still refuses any
+   *other* role holder assigning a role wider than their own, which is the
+   actual escalation this rule exists to close. Removing a
    role or REVOKing a permission carries no such requirement — both only
    ever narrow the target's access, and narrowing what someone else can do
    is not an escalation in the direction this rule exists to block.
 3. **`MANAGE_USERS` gates the whole surface.** Every route below depends on
    it.
 
-**Deliberately left unimplemented, not decided here:** whether a
-`MANAGE_USERS` holder who does not themselves hold a role should be permitted
-to *remove* that role from someone else, or to REVOKE a permission from
-someone else, when the target holds it via a role the actor cannot reach.
-Concretely: today `MANAGE_USERS` is held by exactly `Role.SUPER_ADMIN` and
-`Role.ORG_ADMIN` (`app/authorization/model.py`, `ROLE_PERMISSIONS`), and
-`ORG_ADMIN` does not hold every permission `SUPER_ADMIN` does — so an
-`org_admin` reaching this API can remove a `super_admin`'s role, or REVOKE a
-permission from a `super_admin` target, using only the rules above, and rule 2
-does not stop it because removal/REVOKE is a narrowing act rather than a
-granting one. Whether that should be blocked by a role hierarchy is exactly
-the ambiguity the frozen architecture document's Decision Table calls
-"REQUIRES OWNER DECISION" for the REVOKE asymmetry, and inventing a hierarchy
-rule here would be creating security policy rather than implementing an
-approved one. Left open; see the Stage 5 report, §12.
+**The role-hierarchy question this used to leave open is gone.** It asked
+whether an `org_admin` should be able to remove a role from a `super_admin`
+whose permissions it did not hold. There is no `super_admin` any more, and
+`org_admin` holds every permission, so no `MANAGE_USERS` holder can be narrower
+than an admin target in its own organization.
 """
 
 from __future__ import annotations
@@ -107,7 +97,7 @@ from app.authorization.model import (
 )
 from app.authorization.overrides import clear_permission_override, set_permission_override
 from app.authorization.resolver import decide, parse_overrides
-from app.domain.audit import AuditAction, AuditTrail
+from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.errors import ConflictError, NotFoundError, ScopeError, ValidationError
 from app.users.models import OrganizationMembership, RoleAssignment, User
 
@@ -134,8 +124,20 @@ def _roles_tuple(access: AccessDecision) -> tuple[str, ...]:
     return tuple(sorted(r.value for r in access.roles))
 
 
+def _members_of(tenant_id: str):
+    """The ids of everyone who may enter `tenant_id`: its members.
+
+    Who belongs to an organization is decided by membership, not by where the
+    account was created. One person may hold several organizations, and the
+    Platform Admin was created in none.
+    """
+    return select(OrganizationMembership.user_id).where(
+        OrganizationMembership.organization_id == tenant_id
+    )
+
+
 async def _user_in_tenant(session: AsyncSession, tenant_id: str, user_id: str) -> User:
-    """Load a user, eagerly, already narrowed to the caller's tenant.
+    """Load a user, eagerly, already narrowed to the caller's tenant's members.
 
     A mismatch is a `NotFoundError`, not a `ScopeError` — the same "it exists
     but is not yours" avoidance `app/api/administration.py:_restaurant_in_tenant`
@@ -144,7 +146,7 @@ async def _user_in_tenant(session: AsyncSession, tenant_id: str, user_id: str) -
     found = (
         await session.execute(
             select(User)
-            .where(User.id == user_id, User.organization_id == tenant_id)
+            .where(User.id == user_id, User.id.in_(_members_of(tenant_id)))
             .options(
                 selectinload(User.role_assignments),
                 selectinload(User.access_grants),
@@ -154,9 +156,7 @@ async def _user_in_tenant(session: AsyncSession, tenant_id: str, user_id: str) -
                 # status applies. Lazily loading a relationship inside an async
                 # request raises `MissingGreenlet` rather than doing the IO, so
                 # every path that reaches `decide()` has to bring them along.
-                selectinload(User.memberships).selectinload(
-                    OrganizationMembership.organization
-                ),
+                selectinload(User.memberships).selectinload(OrganizationMembership.organization),
             )
         )
     ).scalar_one_or_none()
@@ -169,16 +169,13 @@ async def _actor(session: AsyncSession, access: AccessDecision) -> User:
     """The caller's own row, loaded fresh in this request's session.
 
     Needed because `set_permission_override`/`clear_permission_override` take
-    `User` objects (for `.id`, `.organization_id`, and `granted_by`), not an
-    `AccessDecision`. `access.subject` is the caller's email — unique within
-    their own tenant — so this cannot resolve to another organization's user.
+    `User` objects (for `.id` and `granted_by`), not an `AccessDecision`.
+    `access.subject` is the caller's email, which is unique across the
+    deployment — so it resolves to exactly one account, including a Platform
+    Admin working inside an organization he entered and is not a member of.
     """
     found = (
-        await session.execute(
-            select(User).where(
-                User.email == access.subject, User.organization_id == access.tenant_id
-            )
-        )
+        await session.execute(select(User).where(User.email == access.subject))
     ).scalar_one_or_none()
     if found is None:  # pragma: no cover - the caller authenticated as this user
         raise NotFoundError("the acting account could not be reloaded")
@@ -226,33 +223,42 @@ def _require_grantable_role(access: AccessDecision, role: Role) -> None:
         )
 
 
-def _user_to_wire(user: User) -> dict[str, Any]:
-    """A user record. No `password_hash`, ever — the same discipline
+def _user_to_wire(user: User, organization_id: str) -> dict[str, Any]:
+    """A user record, as they are in *this* organization.
+
+    Roles and camera scope are per organization, so both are read for the one
+    the caller is working in — a person who is an Org Admin at one customer and
+    an auditor at another is shown as whichever they are here. No
+    `password_hash`, ever — the same discipline
     `app/api/administration.py:list_users` already applies."""
     return {
         "id": user.id,
         "email": user.email,
         "display_name": user.display_name,
         "is_active": bool(user.is_active),
-        "roles": sorted(a.role for a in user.role_assignments),
+        "roles": sorted(
+            a.role for a in user.role_assignments if a.organization_id == organization_id
+        ),
         # Reported on every user, because "which cameras can this account
         # reach" is half of what access means here and it was previously
         # invisible to every administration screen.
-        "camera_scope": grant_to_wire(_grant_of(user)),
+        "camera_scope": grant_to_wire(_grant_of(user, organization_id)),
         "created_at": user.created_at.isoformat() if user.created_at else None,
         "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
     }
 
 
-def _grant_of(user: User):
-    """The user's single `AccessGrant`, or `None`.
+def _grant_of(user: User, organization_id: str):
+    """The user's `AccessGrant` in this organization, or `None`.
 
     `None` is not a missing value to paper over: it is the state that means no
     camera access, and `grant_to_wire` says so explicitly rather than omitting
     the field.
     """
-    grants = list(user.access_grants or ())
-    return grants[0] if grants else None
+    return next(
+        (g for g in (user.access_grants or ()) if g.organization_id == organization_id),
+        None,
+    )
 
 
 async def _permission_rows(target: User, organization_id: str) -> list[dict[str, Any]]:
@@ -318,7 +324,7 @@ async def list_users(
     and make `total` wrong in a way that only shows up for exactly the accounts
     an administrator is most likely to be looking at.
     """
-    statement = select(User).where(User.organization_id == access.tenant_id)
+    statement = select(User).where(User.id.in_(_members_of(access.tenant_id)))
     if q:
         needle = f"%{q.strip().lower()}%"
         statement = statement.where(
@@ -333,7 +339,10 @@ async def list_users(
         wanted = _role_from(role)
         statement = statement.where(
             User.id.in_(
-                select(RoleAssignment.user_id).where(RoleAssignment.role == wanted.value)
+                select(RoleAssignment.user_id).where(
+                    RoleAssignment.role == wanted.value,
+                    RoleAssignment.organization_id == access.tenant_id,
+                )
             )
         )
 
@@ -357,7 +366,7 @@ async def list_users(
         .all()
     )
     return {
-        "users": [_user_to_wire(u) for u in users],
+        "users": [_user_to_wire(u, access.tenant_id) for u in users],
         "count": len(users),
         "total": total,
         "limit": limit,
@@ -368,7 +377,7 @@ async def list_users(
 @router.get("/{user_id}", dependencies=_READS)
 async def get_user(user_id: str, access: CurrentAccess, session: DbSession) -> dict[str, Any]:
     user = await _user_in_tenant(session, access.tenant_id, user_id)
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 @router.post("", dependencies=_WRITES)
@@ -380,10 +389,13 @@ async def create_user(
 ) -> dict[str, Any]:
     """Create a user in the caller's organization.
 
-    Duplicate email within the organization is a clean `ConflictError` (409),
-    never a 500 — the unique constraint is `(organization_id, email)`
-    (`app/users/models.py:uq_users_org_email`), so this checks the same pair
-    before insert rather than letting the database raise.
+    A duplicate email is a clean `ConflictError` (409), never a 500. Email is
+    unique across the deployment (`app/users/models.py:uq_users_email`), so the
+    address may already belong to somebody at another customer — and saying so
+    would confirm to one customer that a person has an account at another. The
+    refusal therefore says only that the address cannot be used here and that a
+    Platform Admin can give an existing account access. Where it is held goes
+    to the audit trail, which is for the people entitled to know.
 
     Every role in `roles` must be grantable by the actor (rule 2 in the module
     docstring, `_require_grantable_role`); an unknown role name is a
@@ -419,11 +431,31 @@ async def create_user(
 
     existing = (
         await session.execute(
-            select(User).where(User.organization_id == access.tenant_id, User.email == email)
+            select(User).where(User.email == email).options(selectinload(User.memberships))
         )
     ).scalar_one_or_none()
     if existing is not None:
-        raise ConflictError(f"a user with email '{email}' already exists in this organization")
+        held_in = sorted(m.organization_id for m in existing.memberships or ())
+        if access.tenant_id in held_in:
+            raise ConflictError(f"a user with email '{email}' already exists in this organization")
+        await AuditTrail(session).record(
+            action=AuditAction.USER_CREATED,
+            organization_id=access.tenant_id,
+            actor=access.subject,
+            actor_roles=_roles_tuple(access),
+            outcome=AuditOutcome.DENIED,
+            resource_type="user",
+            request_id=_request_id(request),
+            detail={"email": email, "reason": "email_in_use", "held_in": held_in},
+        )
+        # Committed before raising, as a failed login is: the request rolls back
+        # on the way out, and the record of the refusal must not go with it.
+        await session.commit()
+        raise ConflictError(
+            "This email address cannot be used here. If this person already has a "
+            "UnityWorks account, a Platform Admin can give it access to this "
+            "organization."
+        )
 
     scope = parse_camera_scope_request(payload)
     require_grantable_scope(access, scope)
@@ -477,7 +509,9 @@ async def create_user(
         )
 
     actor = await _actor(session, access)
-    await set_camera_scope(session, actor=actor, target=user, scope=scope)
+    await set_camera_scope(
+        session, actor=actor, target=user, scope=scope, organization_id=access.tenant_id
+    )
 
     await session.flush()
     await session.refresh(user, attribute_names=["role_assignments", "access_grants"])
@@ -498,7 +532,7 @@ async def create_user(
         },
     )
 
-    wire = _user_to_wire(user)
+    wire = _user_to_wire(user, access.tenant_id)
     if generated_password is not None:
         # Returned exactly once, in this response, and stored nowhere. The
         # same "printed once" convention `scripts/manage.py reset-password
@@ -534,7 +568,7 @@ async def update_user(
         changed.append("display_name")
 
     if not changed:
-        return _user_to_wire(user)
+        return _user_to_wire(user, access.tenant_id)
 
     await session.flush()
     await AuditTrail(session).record(
@@ -547,7 +581,7 @@ async def update_user(
         request_id=_request_id(request),
         detail={"fields": sorted(changed)},
     )
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 @router.post("/{user_id}/activate", dependencies=_WRITES)
@@ -556,7 +590,7 @@ async def activate_user(
 ) -> dict[str, Any]:
     user = await _user_in_tenant(session, access.tenant_id, user_id)
     if user.is_active:
-        return _user_to_wire(user)
+        return _user_to_wire(user, access.tenant_id)
 
     user.is_active = True
     await session.flush()
@@ -569,7 +603,7 @@ async def activate_user(
         resource_id=user.id,
         request_id=_request_id(request),
     )
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 @router.post("/{user_id}/deactivate", dependencies=_WRITES)
@@ -591,7 +625,7 @@ async def deactivate_user(
     if _is_self(access, user):
         raise ScopeError("you may not deactivate your own account")
     if not user.is_active:
-        return _user_to_wire(user)
+        return _user_to_wire(user, access.tenant_id)
 
     user.is_active = False
     await session.flush()
@@ -604,7 +638,7 @@ async def deactivate_user(
         resource_id=user.id,
         request_id=_request_id(request),
     )
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 # ── role assignment ──────────────────────────────────────────────────────────
@@ -657,7 +691,7 @@ async def assign_role(
             request_id=_request_id(request),
             detail={"role": role.value},
         )
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 @router.delete("/{user_id}/roles/{role_value}", dependencies=_WRITES)
@@ -698,7 +732,7 @@ async def remove_role(
             request_id=_request_id(request),
             detail={"role": role.value},
         )
-    return _user_to_wire(user)
+    return _user_to_wire(user, access.tenant_id)
 
 
 # ── permission overrides ─────────────────────────────────────────────────────
@@ -751,7 +785,12 @@ async def set_override(
     actor = await _actor(session, access)
     try:
         await set_permission_override(
-            session, actor=actor, target=target, permission=permission, state=state
+            session,
+            actor=actor,
+            target=target,
+            permission=permission,
+            state=state,
+            organization_id=access.tenant_id,
         )
     except ScopeError:
         # Self-modification or (structurally unreachable here, since `target`
@@ -798,7 +837,13 @@ async def reset_override(
     permission = _permission_from(permission_value)
 
     actor = await _actor(session, access)
-    await clear_permission_override(session, actor=actor, target=target, permission=permission)
+    await clear_permission_override(
+        session,
+        actor=actor,
+        target=target,
+        permission=permission,
+        organization_id=access.tenant_id,
+    )
 
     await session.flush()
     await session.refresh(target, attribute_names=["permission_overrides"])
@@ -837,7 +882,7 @@ async def get_camera_scope(
     inventing its own reading of a missing row.
     """
     user = await _user_in_tenant(session, access.tenant_id, user_id)
-    return {"user_id": user.id, "camera_scope": grant_to_wire(_grant_of(user))}
+    return {"user_id": user.id, "camera_scope": grant_to_wire(_grant_of(user, access.tenant_id))}
 
 
 @router.put("/{user_id}/camera-scope", dependencies=_WRITES)
@@ -866,7 +911,9 @@ async def set_camera_scope_route(
         )
 
     actor = await _actor(session, access)
-    await set_camera_scope(session, actor=actor, target=target, scope=scope)
+    await set_camera_scope(
+        session, actor=actor, target=target, scope=scope, organization_id=access.tenant_id
+    )
 
     await session.flush()
     await session.refresh(target, attribute_names=["access_grants"])
@@ -887,7 +934,10 @@ async def set_camera_scope_route(
             "camera_count": len(scope.camera_ids),
         },
     )
-    return {"user_id": target.id, "camera_scope": grant_to_wire(_grant_of(target))}
+    return {
+        "user_id": target.id,
+        "camera_scope": grant_to_wire(_grant_of(target, access.tenant_id)),
+    }
 
 
 __all__ = ["router"]

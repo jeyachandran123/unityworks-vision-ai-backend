@@ -57,12 +57,12 @@ async def admin(seeded):
 
 
 @pytest.fixture
-async def super_admin(seeded):
+async def root_admin(seeded):
     database = seeded.state.database
     async with database.session_scope() as session:
         _, user = make_user(
             email="root@example.com",
-            roles=("super_admin",),
+            roles=("org_admin",),
             camera_breadth="all_in_tenant",
             camera_ids="",
         )
@@ -118,16 +118,12 @@ async def test_every_module_route_is_permission_gated(
     assert response.status_code == (200 if holds else 403), response.text
 
 
-async def test_a_module_route_refuses_an_unauthenticated_caller(
-    client: AsyncClient, admin
-) -> None:
+async def test_a_module_route_refuses_an_unauthenticated_caller(client: AsyncClient, admin) -> None:
     response = await client.get("/api/v1/modules/people-counting")
     assert response.status_code == 401
 
 
-async def test_demography_is_not_implied_by_people_counting(
-    client: AsyncClient, admin
-) -> None:
+async def test_demography_is_not_implied_by_people_counting(client: AsyncClient, admin) -> None:
     """Footfall and inferred demography are different purposes, so different keys.
 
     A restaurant manager may read how many people came in. Inferring their age
@@ -136,15 +132,11 @@ async def test_demography_is_not_implied_by_people_counting(
     """
     headers = await bearer(client, "manager@example.com")
 
-    assert (
-        await client.get("/api/v1/modules/people-counting", headers=headers)
-    ).status_code == 200
+    assert (await client.get("/api/v1/modules/people-counting", headers=headers)).status_code == 200
     assert (await client.get("/api/v1/modules/demography", headers=headers)).status_code == 403
 
 
-async def test_module_counts_are_scoped_to_the_caller_tenant(
-    client: AsyncClient, admin
-) -> None:
+async def test_module_counts_are_scoped_to_the_caller_tenant(client: AsyncClient, admin) -> None:
     """The count is a real query, narrowed to the caller's organization.
 
     A row planted in another tenant must not appear in this one's total — and
@@ -198,24 +190,21 @@ async def test_patron_id_reports_blocked_rather_than_not_configured(
     assert other["state"] == "not_configured"
 
 
-async def test_the_patron_gate_detail_is_reachable_by_nobody(
-    client: AsyncClient, super_admin
+async def test_the_patron_gate_detail_is_reachable_by_organization_admins_only(
+    client: AsyncClient, root_admin
 ) -> None:
-    """`MANAGE_PATRON_ID` is now held by no role, including `super_admin`.
+    """`MANAGE_PATRON_ID` is held by the Organization Admin and nobody else.
 
-    This test previously asserted that `super_admin` could read the gate detail,
-    because `frozenset(Permission)` handed it the permission by construction. It
-    was inert only because `app/domain/patron.require_writable` refuses
-    unconditionally — and a permission that is harmless solely because of an
-    unrelated guard is a trap for whoever relaxes that guard later without
-    knowing it was doing silent work.
-
-    So the exclusion is now explicit, and the correct holder of this permission
-    until a DPIA and a named DPO sign-off exist is **nobody**. The route still
-    exists and still says why; nothing can currently call it, and granting it
-    will be a line somebody has to write.
+    A product-owner decision (2026-09-22): the Organization Admin holds every
+    permission. Reading the gate detail is still not the same as writing a
+    patron token — `app/domain/patron.require_writable` refuses the write path
+    until the DPIA and DPO sign-off exist, which the next test pins.
     """
-    for email in ("outsider@example.com", "root@example.com"):
+    headers = await bearer(client, "root@example.com")
+    response = await client.get("/api/v1/modules/patron-id/gate", headers=headers)
+    assert response.status_code == 200, response.text
+
+    for email in ("manager@example.com", "supervisor@example.com", "developer@example.com"):
         headers = await bearer(client, email)
         response = await client.get("/api/v1/modules/patron-id/gate", headers=headers)
         assert response.status_code == 403, f"{email} reached the patron gate detail"
@@ -348,9 +337,7 @@ async def test_a_new_pos_connector_is_inactive(admin) -> None:
     """Registering a connector and letting it exchange data are two decisions."""
     database = admin.state.database
     async with database.session_scope() as session:
-        connector = module_models.PosConnector(
-            organization_id="org-test", connector_key="till-02"
-        )
+        connector = module_models.PosConnector(organization_id="org-test", connector_key="till-02")
         session.add(connector)
         await session.flush()
         assert connector.is_active is False
@@ -513,9 +500,7 @@ async def test_observation_retention_has_an_interim_default() -> None:
     not expire before the imagery that is more sensitive than it.
     """
     Settings.model_config["env_file"] = None
-    settings = Settings(
-        app_env="test", secret_key="test-only-secret-value-not-for-any-deployment"
-    )
+    settings = Settings(app_env="test", secret_key="test-only-secret-value-not-for-any-deployment")
 
     assert settings.observation_retention_days == 90
     assert settings.evidence_retention_days < settings.observation_retention_days
@@ -728,7 +713,7 @@ def test_no_new_permission_is_granted_by_accident() -> None:
     """The two that must stay narrow, stated as tests rather than as comments."""
     for role in Role:
         granted = permissions_for(frozenset({role}))
-        if role is not Role.SUPER_ADMIN:
+        if role is not Role.ORG_ADMIN:
             assert Permission.MANAGE_PATRON_ID not in granted, role
 
     # A kitchen screen is shared with whoever walks past it.

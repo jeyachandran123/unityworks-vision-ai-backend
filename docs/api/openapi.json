@@ -164,7 +164,7 @@
         ]
       },
       "post": {
-        "description": "Create a user in the caller's organization.\n\nDuplicate email within the organization is a clean `ConflictError` (409),\nnever a 500 \u2014 the unique constraint is `(organization_id, email)`\n(`app/users/models.py:uq_users_org_email`), so this checks the same pair\nbefore insert rather than letting the database raise.\n\nEvery role in `roles` must be grantable by the actor (rule 2 in the module\ndocstring, `_require_grantable_role`); an unknown role name is a\n`ValidationError` (422).\n\n### `camera_scope` is required, and that is the fix for a real bug\n\nThis route used to create a `User` and its `RoleAssignment` rows and stop.\nNo `AccessGrant` was written, and a missing grant reads as\n`CameraScope.none()` \u2014 correctly, since that is the only safe reading of an\nabsent row. The result was an account that logged in, held every permission\nits role carried, and could reach no cameras at all. Nothing reported it.\n`admin1@unityworks.local` is in exactly that state in production today.\n\nThe fix is not a default. Both candidate defaults are wrong: `none`\nsilently recreates the unusable account, and `all_in_tenant` silently\ncreates an over-privileged one. So the caller states which of the three\nscopes they mean, and `none` remains a legitimate answer \u2014 for an account\nthat will be scoped later, or one that never needs video.",
+        "description": "Create a user in the caller's organization.\n\nA duplicate email is a clean `ConflictError` (409), never a 500. Email is\nunique across the deployment (`app/users/models.py:uq_users_email`), so the\naddress may already belong to somebody at another customer \u2014 and saying so\nwould confirm to one customer that a person has an account at another. The\nrefusal therefore says only that the address cannot be used here and that a\nPlatform Admin can give an existing account access. Where it is held goes\nto the audit trail, which is for the people entitled to know.\n\nEvery role in `roles` must be grantable by the actor (rule 2 in the module\ndocstring, `_require_grantable_role`); an unknown role name is a\n`ValidationError` (422).\n\n### `camera_scope` is required, and that is the fix for a real bug\n\nThis route used to create a `User` and its `RoleAssignment` rows and stop.\nNo `AccessGrant` was written, and a missing grant reads as\n`CameraScope.none()` \u2014 correctly, since that is the only safe reading of an\nabsent row. The result was an account that logged in, held every permission\nits role carried, and could reach no cameras at all. Nothing reported it.\n`admin1@unityworks.local` is in exactly that state in production today.\n\nThe fix is not a default. Both candidate defaults are wrong: `none`\nsilently recreates the unusable account, and `all_in_tenant` silently\ncreates an over-privileged one. So the caller states which of the three\nscopes they mean, and `none` remains a legitimate answer \u2014 for an account\nthat will be scoped later, or one that never needs video.",
         "operationId": "create_user_api_v1_admin_users_post",
         "requestBody": {
           "content": {
@@ -940,7 +940,7 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "description": "Who the caller is and what they may reach.\n\nThe frontend uses this to decide what to render. It is a convenience, not a\ncontrol \u2014 every capability listed here is separately enforced server-side on\nthe route that provides it.",
+        "description": "Who the caller is and what they may reach.\n\nThe frontend uses this to decide what to render. It is a convenience, not a\ncontrol \u2014 every capability listed here is separately enforced server-side on\nthe route that provides it. Answers a platform session too, with an empty\ntenant and no permissions.",
         "operationId": "me_api_v1_auth_me_get",
         "responses": {
           "200": {
@@ -964,7 +964,7 @@
     },
     "/api/v1/auth/organizations": {
       "get": {
-        "description": "The organizations this account may enter.\n\nMembership, and nothing else. There is no widening branch here for an\nadministrator and none for a platform operator \u2014 an operator's cross-customer\nlist lives behind `GET /api/v1/platform/organizations`, which requires a\ndifferent principal, and answering both questions from one route would be\nthe second authorization system that eventually disagrees with the first.\n\n`active` names the organization the caller is currently in, so the chooser\ncan mark it without inferring it from a token it cannot read.",
+        "description": "The organizations this account may enter.\n\nMembership, and nothing else. There is no widening branch here for an\nadministrator and none for a platform operator \u2014 an operator's cross-customer\nlist lives behind `GET /api/v1/platform/organizations`, which requires a\ndifferent principal, and answering both questions from one route would be\nthe second authorization system that eventually disagrees with the first.\n\n`active` names the organization the caller is currently in, so the chooser\ncan mark it without inferring it from a token it cannot read.\n\nA platform session is a member of nothing, so its list is empty; the\nPlatform Admin's organizations come from `GET /platform/organizations`.",
         "operationId": "my_organizations_api_v1_auth_organizations_get",
         "responses": {
           "200": {
@@ -2136,7 +2136,7 @@
     },
     "/api/v1/modules/patron-id/gate": {
       "get": {
-        "description": "The gate in detail, for whoever would be responsible for opening it.\n\nGated on `MANAGE_PATRON_ID`, which `SUPER_ADMIN` alone holds. Reading the\ndetail of what would unlock biometric re-identification is itself a\nprivilege, and an organization administrator is the wrong altitude for it.\n\nRead-only and side-effect free. Asking changes nothing, and there is no\ncorresponding write route \u2014 this reports the state of a decision, it does\nnot make one.",
+        "description": "The gate in detail, for whoever would be responsible for opening it.\n\nGated on `MANAGE_PATRON_ID`, which `ORG_ADMIN` holds. Reading the detail\nof what would unlock biometric re-identification is itself a privilege,\nand is never implied by `VIEW_PATRON_ID`.\n\nRead-only and side-effect free. Asking changes nothing, and there is no\ncorresponding write route \u2014 this reports the state of a decision, it does\nnot make one.",
         "operationId": "patron_id_gate_api_v1_modules_patron_id_gate_get",
         "responses": {
           "200": {
@@ -2611,7 +2611,7 @@
     },
     "/api/v1/platform/organizations/{organization_id}/enter": {
       "post": {
-        "description": "Take a read-only session inside one organization.\n\n### This is a widening, and it is meant to look like one\n\nEverything else in this module operates on organizations *as objects* \u2014\ntheir existence, their names, their lifecycle. None of it reads a customer's\ndata, and `PlatformOperator` carries nothing that could. This route is the\nsingle deliberate exception, and the shape of it is the argument:\n\n* it is a **POST**, because it is an act rather than a view;\n* it **writes an audit row before it returns**, filed against the customer,\n  so the record exists in the tenant whose data is about to be read;\n* it mints a **separate token** carrying `act: platform_operator`, so every\n  subsequent request is identifiable as part of this entry rather than\n  indistinguishable from the customer's own staff;\n* the reach it grants is **stated, not resolved** \u2014 see\n  `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS` \u2014 and contains no\n  write, no evidence, no patron identity and no audit read.\n\nThe property the previous design had, and which is kept: an operator cannot\nread a tenant's data *through the operator door*. `GET /platform/...` still\nreturns counts and never contents. What has changed is that there is now a\nsecond door, it is locked differently, and going through it is recorded.\n\n### Archived organizations are refused\n\nLogin is refused inside an archived organization, and entry is a login by\nanother name. An operator who needs to look at an archived customer's data\nis describing a restore, which is a decision rather than a click.",
+        "description": "Take a full-reach session inside one organization, and record it.\n\n### This is a widening, and it is meant to look like one\n\nEverything else in this module operates on organizations *as objects* \u2014\ntheir existence, their names, their lifecycle. None of it reads a customer's\ndata, and `PlatformOperator` carries nothing that could. This route is the\nsingle deliberate exception, and the shape of it is the argument:\n\n* it is a **POST**, because it is an act rather than a view;\n* it **writes an audit row before it returns**, filed against the customer,\n  so the record exists in the tenant whose data is about to be read;\n* it mints a **separate token** carrying `act: platform_operator`, so every\n  subsequent request is identifiable as part of this entry rather than\n  indistinguishable from the customer's own staff;\n* the reach it grants is **stated, not resolved** \u2014 see\n  `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS`. Since 2026-09-22\n  that is every permission: the Platform Admin can do anything inside any\n  organization. A suspended organization still refuses writes.\n\nThe property the previous design had, and which is kept: an operator cannot\nread a tenant's data *through the operator door*. `GET /platform/...` still\nreturns counts and never contents. What has changed is that there is now a\nsecond door, it is locked differently, and going through it is recorded.\n\n### Archived organizations are refused\n\nLogin is refused inside an archived organization, and entry is a login by\nanother name. An operator who needs to look at an archived customer's data\nis describing a restore, which is a decision rather than a click.",
         "operationId": "enter_organization_api_v1_platform_organizations__organization_id__enter_post",
         "parameters": [
           {
@@ -2699,7 +2699,7 @@
         ]
       },
       "post": {
-        "description": "Admit an existing account to an organization.\n\n### Membership is the entry ticket, and only the entry ticket\n\nThis writes one `organization_memberships` row and nothing else. It grants\nno role, no camera scope and no permission \u2014 which means the person can now\nsign into this organization and, until somebody grants them a role *there*,\nsee nothing. That is the correct default and it is deliberate: admitting\nsomebody and deciding what they may do are two decisions, made by different\npeople at different times, and collapsing them is how an account acquires\nauthority nobody consciously granted.\n\nRoles inside the organization are granted through the organization's own\nuser administration, by somebody who holds `MANAGE_USERS` there.\n\n### It admits, it does not create\n\nThere is no user creation here. An operator who could mint accounts into any\ncustomer could mint one for themselves, and the audited read-only entry\nroute would become an unnecessary formality.",
+        "description": "Admit an existing account to an organization.\n\n### Membership is the entry ticket, and only the entry ticket\n\nThis writes one `organization_memberships` row and nothing else. It grants\nno role, no camera scope and no permission \u2014 which means the person can now\nsign into this organization and, until somebody grants them a role *there*,\nsee nothing. That is the correct default and it is deliberate: admitting\nsomebody and deciding what they may do are two decisions, made by different\npeople at different times, and collapsing them is how an account acquires\nauthority nobody consciously granted.\n\nRoles inside the organization are granted through the organization's own\nuser administration, by somebody who holds `MANAGE_USERS` there.\n\n### Except the one role the platform gives: Organization Admin\n\n`\"role\": \"org_admin\"` also writes the role and an every-camera grant in the\nsame transaction. That is how one Organization Admin comes to hold several\norganizations, and an admin admitted with nothing would be an admin who\nsigns in and sees nothing. No other role is accepted here: the rest are\nstaffed from inside the organization, by its own administrators.\n\n### It admits, it does not create\n\nCreating a brand-new Organization Admin is `POST .../people`.",
         "operationId": "add_member_api_v1_platform_organizations__organization_id__members_post",
         "parameters": [
           {
@@ -2803,6 +2803,63 @@
           }
         },
         "summary": "Remove Member",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/organizations/{organization_id}/people": {
+      "post": {
+        "description": "Create an Organization Admin: account, membership, role and cameras.\n\n### One step, or nothing\n\nThe Platform Admin creates an organization and then the person who runs it.\nDoing that as three separate acts \u2014 create an account, admit it, grant it a\nrole \u2014 is how an organization ends up with somebody who can sign in and do\nnothing, or with nobody at all. So all of it happens in this request's one\ntransaction, and the password is checked before any row exists: a refusal\nleaves nothing behind.\n\n### Only Organization Admins\n\nEveryone else is staffed from inside the organization by its own admin,\nwho knows the kitchen. The platform creates the first person, and that\nperson creates the rest.\n\n### A duplicate email is a plain conflict\n\nThe caller is a Platform Admin, who can already list every person on the\ndeployment (`GET /platform/people`), so naming the collision conceals\nnothing and tells him the next step: give the existing account this\norganization through `POST .../members` with `role: org_admin`.",
+        "operationId": "create_organization_admin_api_v1_platform_organizations__organization_id__people_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organization_id",
+            "required": true,
+            "schema": {
+              "title": "Organization Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Organization Admin Api V1 Platform Organizations  Organization Id  People Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Organization Admin",
         "tags": [
           "platform"
         ]

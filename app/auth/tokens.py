@@ -52,6 +52,12 @@ class TokenType(enum.Enum):
     REFRESH = "refresh"
 
 
+#: The `act` value of a session reached by platform authority. Owned here, at
+#: the token layer, and re-exported as
+#: `app.authorization.platform.ACTING_AS_PLATFORM_OPERATOR`.
+PLATFORM_ACT = "platform_operator"
+
+
 @dataclass(frozen=True, slots=True)
 class TokenClaims:
     """A verified token's contents. Constructed only after signature checks pass."""
@@ -74,6 +80,16 @@ class TokenClaims:
     #: the point of putting it here is that it makes the session's provenance
     #: undeniable rather than that it makes it powerful.
     acting_as: str = ""
+
+    @property
+    def is_platform_session(self) -> bool:
+        """The Platform Admin's own session: platform authority, no organization.
+
+        The one token shape allowed to name no tenant. It reaches the platform
+        console and the entry doors; every tenant route refuses it, because
+        there is no tenant for an `AccessDecision` to be scoped to.
+        """
+        return not self.tenant_id and self.acting_as == PLATFORM_ACT
 
     @property
     def is_access(self) -> bool:
@@ -122,9 +138,9 @@ class TokenService:
         #
         # `acting_as` is the exception, and it is not a role. It records how the
         # tenant on this token was reached, so that refreshing an operator entry
-        # yields another operator entry. Dropping it here would turn a read-only
-        # audited session into an ordinary one at the next refresh — silently,
-        # and in the direction of more access.
+        # yields another operator entry, and a platform session another platform
+        # session. Dropping it here would turn an audited entry into a session
+        # indistinguishable from the customer's own staff at the next refresh.
         return self._issue(
             subject=subject,
             tenant_id=tenant_id,
@@ -144,13 +160,16 @@ class TokenService:
         lifetime: timedelta,
         acting_as: str = "",
     ) -> tuple[str, datetime]:
-        if not subject or not tenant_id:
-            raise ValueError("a token must name a subject and a tenant")
+        if not subject:
+            raise ValueError("a token must name a subject")
+        if not tenant_id and acting_as != PLATFORM_ACT:
+            raise ValueError("a token must name a tenant unless it is a platform session")
 
         now = datetime.now(UTC)
         expires = now + lifetime
         payload: dict[str, Any] = {
             "sub": subject,
+            # Empty only for a platform session, which names no organization.
             "ten": tenant_id,
             "typ": token_type.value,
             "iss": self._settings.jwt_issuer,
@@ -200,7 +219,8 @@ class TokenService:
 
         subject = str(payload.get("sub", ""))
         tenant_id = str(payload.get("ten", ""))
-        if not subject or not tenant_id:
+        acting_as = str(payload.get("act", ""))
+        if not subject or (not tenant_id and acting_as != PLATFORM_ACT):
             raise AuthenticationError("the token names no subject or no tenant")
 
         return TokenClaims(
@@ -211,7 +231,7 @@ class TokenService:
             token_id=str(payload.get("jti", "")),
             issued_at=datetime.fromtimestamp(int(payload["iat"]), tz=UTC),
             expires_at=datetime.fromtimestamp(int(payload["exp"]), tz=UTC),
-            acting_as=str(payload.get("act", "")),
+            acting_as=acting_as,
         )
 
 

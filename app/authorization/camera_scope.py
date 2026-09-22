@@ -163,8 +163,8 @@ async def set_camera_scope(
     actor: User,
     target: User,
     scope: CameraScope,
+    organization_id: str,
     site_ids: tuple[str, ...] | None = None,
-    organization_id: str = "",
 ) -> AccessGrant:
     """Create or replace the target's `AccessGrant` row in one organization.
 
@@ -173,21 +173,21 @@ async def set_camera_scope(
     where the history of a change lives, not a pile of superseded grant rows
     whose precedence nobody would be able to state.
 
-    `organization_id` defaults to the target's home organization, which is the
-    only organization any caller currently administers a user in, and which is
-    what the row meant before the column existed. A caller that means a
-    different one has to say so — a camera id is unique only within an
-    organization, so a grant written into the wrong one would name whatever
-    cameras happened to share those keys.
+    `organization_id` is required: it is the organization the actor is working
+    in, and the target must be a member of it. A camera id is unique only
+    within an organization, so a grant written into the wrong one would name
+    whatever cameras happened to share those keys — which is why there is no
+    default to fall back to.
     """
-    organization = organization_id or target.organization_id
+    from app.authorization.overrides import require_member
+
+    organization = organization_id
     if actor.id == target.id:
         raise ScopeError(
             "you may not change your own camera access; an actor who can widen "
             "their own reach can widen it to everything"
         )
-    if actor.organization_id != target.organization_id:
-        raise ScopeError("a camera grant may not cross an organization boundary")
+    await require_member(session, target, organization, what="camera grants")
 
     grant = (
         await session.execute(

@@ -120,7 +120,7 @@ async def _authenticate(socket: WebSocket):
     when it opened.
     """
     from app.auth.service import decision_for_claims
-    from app.errors import AuthenticationError
+    from app.errors import AuthenticationError, ScopeError
     from app.infrastructure.observability import AUTH_FAILURES
 
     try:
@@ -157,6 +157,10 @@ async def _authenticate(socket: WebSocket):
             decision = await decision_for_claims(session, claims)
     except AuthenticationError as exc:
         raise _HandshakeFailure(CLOSE_UNAUTHENTICATED, "authentication failed") from exc
+    except ScopeError as exc:
+        # A platform session: signed in, inside no organization, so there is no
+        # live monitoring to stream until an organization is entered.
+        raise _HandshakeFailure(CLOSE_FORBIDDEN, "enter an organization first") from exc
 
     from app.authorization.model import Permission
 

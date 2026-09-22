@@ -52,7 +52,7 @@ from app.domain.audit import AuditAction, AuditTrail
 from app.domain.models import Camera, Restaurant
 from app.domain.runtime_identity import validate_organization_id
 from app.errors import ConflictError, NotFoundError, ValidationError
-from app.users.models import Organization, User
+from app.users.models import Organization, OrganizationMembership
 
 router = APIRouter(prefix="/api/v1/platform", tags=["platform"])
 
@@ -122,8 +122,12 @@ async def _counts(session: DbSession) -> dict[str, dict[str, int]]:
         select(Camera.organization_id, func.count()).group_by(Camera.organization_id),
         "camera_count",
     )
+    # People are counted by membership: a person who holds two organizations
+    # is one of each's people, and the Platform Admin is nobody's.
     await tally(
-        select(User.organization_id, func.count()).group_by(User.organization_id),
+        select(OrganizationMembership.organization_id, func.count()).group_by(
+            OrganizationMembership.organization_id
+        ),
         "user_count",
     )
     return out
@@ -168,25 +172,16 @@ async def list_organizations(
     if q:
         needle = f"%{q.strip().lower()}%"
         statement = statement.where(
-            func.lower(Organization.name).like(needle)
-            | func.lower(Organization.slug).like(needle)
+            func.lower(Organization.name).like(needle) | func.lower(Organization.slug).like(needle)
         )
     if status:
         statement = statement.where(Organization.status == status.strip().lower())
 
     total = int(
-        (
-            await session.execute(
-                select(func.count()).select_from(statement.subquery())
-            )
-        ).scalar_one()
+        (await session.execute(select(func.count()).select_from(statement.subquery()))).scalar_one()
     )
     rows = (
-        (
-            await session.execute(
-                statement.order_by(Organization.name).limit(limit).offset(offset)
-            )
-        )
+        (await session.execute(statement.order_by(Organization.name).limit(limit).offset(offset)))
         .scalars()
         .all()
     )
@@ -471,7 +466,7 @@ async def enter_organization(
     operator: CurrentOperator,
     session: DbSession,
 ) -> dict[str, Any]:
-    """Take a read-only session inside one organization.
+    """Take a full-reach session inside one organization, and record it.
 
     ### This is a widening, and it is meant to look like one
 
@@ -487,8 +482,9 @@ async def enter_organization(
       subsequent request is identifiable as part of this entry rather than
       indistinguishable from the customer's own staff;
     * the reach it grants is **stated, not resolved** — see
-      `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS` — and contains no
-      write, no evidence, no patron identity and no audit read.
+      `app.authorization.platform.OPERATOR_ENTRY_PERMISSIONS`. Since 2026-09-22
+      that is every permission: the Platform Admin can do anything inside any
+      organization. A suspended organization still refuses writes.
 
     The property the previous design had, and which is kept: an operator cannot
     read a tenant's data *through the operator door*. `GET /platform/...` still
@@ -512,7 +508,8 @@ async def enter_organization(
             details={"organization_id": organization_id, "status": organization.status},
         )
 
-    decision = entry_decision(operator, organization.id)
+    suspended = str(organization.status or "").strip().lower() == OrganizationStatus.SUSPENDED.value
+    decision = entry_decision(operator, organization.id, suspended=suspended)
     issued = auth_of(request).issue(decision)
 
     await AuditTrail(session).record(
@@ -529,7 +526,7 @@ async def enter_organization(
             # from the code that was deployed at the time. A permission set that
             # changes later must not silently rewrite what an old entry meant.
             "permissions": sorted(p.value for p in decision.permissions),
-            "read_only": True,
+            "read_only": False,
         },
     )
 
@@ -545,7 +542,7 @@ async def enter_organization(
             **(await _counts(session)).get(organization.id, {}),
         ),
         "acting_as": decision.acting_as,
-        "read_only": True,
+        "read_only": False,
         "permissions": sorted(p.value for p in decision.permissions),
     }
 

@@ -55,7 +55,7 @@ from app.authorization.model import AccessDecision, Permission
 from app.domain.audit import AuditAction, AuditTrail
 from app.domain.models import Camera, Restaurant, Zone
 from app.errors import NotFoundError, ValidationError
-from app.users.models import RoleAssignment, User
+from app.users.models import OrganizationMembership, RoleAssignment, User
 
 router = APIRouter(prefix="/api/v1", tags=["administration"])
 
@@ -93,7 +93,9 @@ def _slugify(name: str) -> str:
 # ── Restaurants ──────────────────────────────────────────────────────────────
 
 
-def restaurant_to_wire(restaurant: Restaurant, *, zone_count: int, camera_count: int) -> dict[str, Any]:
+def restaurant_to_wire(
+    restaurant: Restaurant, *, zone_count: int, camera_count: int
+) -> dict[str, Any]:
     return {
         "id": restaurant.id,
         "name": restaurant.name,
@@ -108,20 +110,30 @@ def restaurant_to_wire(restaurant: Restaurant, *, zone_count: int, camera_count:
     }
 
 
-async def _counts(session: AsyncSession, organization_id: str) -> tuple[dict[str, int], dict[str, int]]:
+async def _counts(
+    session: AsyncSession, organization_id: str
+) -> tuple[dict[str, int], dict[str, int]]:
     """Zone and camera counts per restaurant, in two queries rather than 2N."""
     zones = (
-        await session.execute(
-            select(Zone.restaurant_id).join(
-                Restaurant, Restaurant.id == Zone.restaurant_id
-            ).where(Restaurant.organization_id == organization_id)
+        (
+            await session.execute(
+                select(Zone.restaurant_id)
+                .join(Restaurant, Restaurant.id == Zone.restaurant_id)
+                .where(Restaurant.organization_id == organization_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     cameras = (
-        await session.execute(
-            select(Camera.restaurant_id).where(Camera.organization_id == organization_id)
+        (
+            await session.execute(
+                select(Camera.restaurant_id).where(Camera.organization_id == organization_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     zone_counts: dict[str, int] = {}
     for restaurant_id in zones:
@@ -157,8 +169,7 @@ async def list_restaurants(
     if q:
         needle = f"%{q.strip().lower()}%"
         statement = statement.where(
-            func.lower(Restaurant.name).like(needle)
-            | func.lower(Restaurant.slug).like(needle)
+            func.lower(Restaurant.name).like(needle) | func.lower(Restaurant.slug).like(needle)
         )
     if is_active is not None:
         statement = statement.where(Restaurant.is_active.is_(is_active))
@@ -167,11 +178,7 @@ async def list_restaurants(
         (await session.execute(select(func.count()).select_from(statement.subquery()))).scalar_one()
     )
     found = (
-        (
-            await session.execute(
-                statement.order_by(Restaurant.name).limit(limit).offset(offset)
-            )
-        )
+        (await session.execute(statement.order_by(Restaurant.name).limit(limit).offset(offset)))
         .scalars()
         .all()
     )
@@ -352,10 +359,14 @@ async def list_zones(
     found = (await session.execute(statement)).scalars().all()
 
     camera_rows = (
-        await session.execute(
-            select(Camera.zone_id).where(Camera.organization_id == access.tenant_id)
+        (
+            await session.execute(
+                select(Camera.zone_id).where(Camera.organization_id == access.tenant_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     per_zone: dict[str, int] = {}
     for zone_id in camera_rows:
         if zone_id:
@@ -450,7 +461,15 @@ async def list_users(access: CurrentAccess, session: DbSession) -> dict[str, Any
         (
             await session.execute(
                 select(User)
-                .where(User.organization_id == access.tenant_id)
+                .where(
+                    # Members, not accounts created here: one person may hold
+                    # several organizations.
+                    User.id.in_(
+                        select(OrganizationMembership.user_id).where(
+                            OrganizationMembership.organization_id == access.tenant_id
+                        )
+                    )
+                )
                 .order_by(User.email)
             )
         )
@@ -460,9 +479,9 @@ async def list_users(access: CurrentAccess, session: DbSession) -> dict[str, Any
 
     assignments = (
         await session.execute(
-            select(RoleAssignment.user_id, RoleAssignment.role)
-            .join(User, User.id == RoleAssignment.user_id)
-            .where(User.organization_id == access.tenant_id)
+            select(RoleAssignment.user_id, RoleAssignment.role).where(
+                RoleAssignment.organization_id == access.tenant_id
+            )
         )
     ).all()
     roles_by_user: dict[str, list[str]] = {}
@@ -478,9 +497,7 @@ async def list_users(access: CurrentAccess, session: DbSession) -> dict[str, Any
                 "is_active": bool(user.is_active),
                 "roles": sorted(roles_by_user.get(user.id, [])),
                 "created_at": user.created_at.isoformat() if user.created_at else None,
-                "last_login_at": user.last_login_at.isoformat()
-                if user.last_login_at
-                else None,
+                "last_login_at": user.last_login_at.isoformat() if user.last_login_at else None,
             }
             for user in users
         ],

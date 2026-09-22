@@ -14,6 +14,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.service import AuthService, decision_for_claims, user_for_claims
+from app.auth.tokens import TokenClaims
 from app.authorization.model import AccessDecision, Permission
 from app.authorization.platform import PlatformOperator, resolve_operator
 from app.configuration.settings import Settings
@@ -71,25 +72,37 @@ def bearer_token(request: Request) -> str:
     return token.strip()
 
 
-async def current_access(
+async def access_claims(
     request: Request,
     token: Annotated[str, Depends(bearer_token)],
-    session: Annotated[AsyncSession, Depends(db_session)],
-) -> AccessDecision:
-    """The caller's identity and reach, rebuilt from the database each request.
+) -> TokenClaims:
+    """The verified access token, before anything is resolved from it.
 
-    Rebuilt rather than read from the token so that a revoked role or a disabled
-    account takes effect immediately rather than at the next token expiry.
+    Shared by the three doors below and by the few auth routes that answer both
+    a tenant session and a platform session.
     """
     from app.infrastructure.observability import AUTH_FAILURES
 
     auth: AuthService = request.app.state.auth
     try:
-        claims = auth.verify_access(token)
+        return auth.verify_access(token)
     except AuthenticationError:
         AUTH_FAILURES.labels("invalid_token").inc()
         raise
 
+
+async def current_access(
+    request: Request,
+    claims: Annotated[TokenClaims, Depends(access_claims)],
+    session: Annotated[AsyncSession, Depends(db_session)],
+) -> AccessDecision:
+    """The caller's identity and reach, rebuilt from the database each request.
+
+    Rebuilt rather than read from the token so that a revoked role or a disabled
+    account takes effect immediately rather than at the next token expiry. A
+    platform session is refused here (403): it names no organization, and this
+    decision is always scoped to one.
+    """
     decision = await decision_for_claims(session, claims)
     request.state.subject = decision.subject
     request.state.tenant_id = decision.tenant_id
@@ -117,7 +130,7 @@ def requires(permission: Permission):
 
 async def current_operator(
     request: Request,
-    token: Annotated[str, Depends(bearer_token)],
+    claims: Annotated[TokenClaims, Depends(access_claims)],
     session: Annotated[AsyncSession, Depends(db_session)],
 ) -> PlatformOperator:
     """The caller as a **platform operator**, or a refusal.
@@ -131,17 +144,9 @@ async def current_operator(
 
     The account still has to authenticate normally: an operator is a person
     with a login, and the grant is checked on every request from the database
-    rather than carried in the token, exactly as roles are.
+    rather than carried in the token, exactly as roles are. Accepts the
+    Platform Admin's platform session and his entry sessions alike.
     """
-    from app.infrastructure.observability import AUTH_FAILURES
-
-    auth: AuthService = request.app.state.auth
-    try:
-        claims = auth.verify_access(token)
-    except AuthenticationError:
-        AUTH_FAILURES.labels("invalid_token").inc()
-        raise
-
     user = await user_for_claims(session, claims)
     operator = await resolve_operator(session, user)
     request.state.subject = operator.subject
@@ -152,6 +157,7 @@ async def current_operator(
     return operator
 
 
+AccessClaims = Annotated[TokenClaims, Depends(access_claims)]
 CurrentAccess = Annotated[AccessDecision, Depends(current_access)]
 CurrentOperator = Annotated[PlatformOperator, Depends(current_operator)]
 DbSession = Annotated[AsyncSession, Depends(db_session)]

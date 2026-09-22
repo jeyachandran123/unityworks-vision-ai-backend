@@ -21,6 +21,24 @@ pytestmark = pytest.mark.asyncio
 BASE = "/api/v1/admin/users"
 
 
+async def manager_who_manages_users(client: AsyncClient) -> dict[str, str]:
+    """A restaurant manager granted `manage_users` by override.
+
+    The actor rule 2 exists for: somebody who may administer accounts but holds
+    less than an Organization Admin. Since `org_admin` became the complete
+    permission set it can no longer play that part, so the escalation tests use
+    this account instead.
+    """
+    admin_headers = await bearer(client, "admin@example.com")
+    granted = await client.put(
+        f"{BASE}/user-manager@example.com/permissions/manage_users",
+        json={"state": "grant"},
+        headers=admin_headers,
+    )
+    assert granted.status_code == 200, granted.text
+    return await bearer(client, "manager@example.com")
+
+
 @pytest.fixture
 async def admin(seeded):
     """An `org_admin` inside org-test. The seeded admin belongs to org-other."""
@@ -207,10 +225,7 @@ async def test_create_user_rejects_an_unknown_role(client: AsyncClient, admin) -
     assert response.status_code == 422
 
 
-async def test_org_admin_cannot_create_a_super_admin(client: AsyncClient, admin) -> None:
-    """`super_admin` carries permissions (`access_devtools`, ...) `org_admin`
-    does not hold — the escalation rule 2 in the module docstring exists to
-    close, checked via permission subset rather than role identity."""
+async def test_super_admin_is_not_a_role_any_more(client: AsyncClient, admin) -> None:
     headers = await bearer(client, "admin@example.com")
     response = await client.post(
         BASE,
@@ -221,7 +236,29 @@ async def test_org_admin_cannot_create_a_super_admin(client: AsyncClient, admin)
         },
         headers=headers,
     )
-    assert response.status_code == 403
+    assert response.status_code == 422
+
+
+async def test_a_narrower_user_manager_cannot_create_an_org_admin(
+    client: AsyncClient, admin
+) -> None:
+    """Rule 2, now that `org_admin` is the complete set.
+
+    A restaurant manager given `manage_users` by override may staff accounts,
+    but may not mint an Organization Admin: that role carries permissions the
+    manager does not hold. Checked by permission subset, not role identity.
+    """
+    manager_headers = await manager_who_manages_users(client)
+    response = await client.post(
+        BASE,
+        json={
+            "email": "wannabe@example.com",
+            "roles": ["org_admin"],
+            "camera_scope": {"breadth": "none"},
+        },
+        headers=manager_headers,
+    )
+    assert response.status_code == 403, response.text
 
 
 # ── update / activate / deactivate ──────────────────────────────────────────
@@ -334,7 +371,7 @@ async def test_removing_a_role_the_user_does_not_hold_is_a_no_op(
 async def test_cannot_assign_a_role_carrying_a_permission_the_actor_lacks(
     client: AsyncClient, admin
 ) -> None:
-    headers = await bearer(client, "admin@example.com")
+    headers = await manager_who_manages_users(client)
     response = await client.post(
         f"{BASE}/user-supervisor@example.com/roles",
         json={"role": "developer"},
@@ -379,9 +416,7 @@ async def test_an_actor_may_not_change_their_own_roles(client: AsyncClient, admi
     assert response.status_code == 403
 
 
-async def test_a_grant_override_survives_unrelated_role_removal(
-    client: AsyncClient, admin
-) -> None:
+async def test_a_grant_override_survives_unrelated_role_removal(client: AsyncClient, admin) -> None:
     """`PermissionOverride` and `RoleAssignment` are independent tables keyed
     only off `user_id` (`app/users/models.py`) — no foreign key ties one to
     the other. Removing every role a user holds must not silently delete a
@@ -579,9 +614,9 @@ async def test_reset_restores_role_behavior(client: AsyncClient, admin) -> None:
 
 
 async def test_grant_requires_the_actor_to_hold_the_permission(client: AsyncClient, admin) -> None:
-    """`org_admin` does not hold `access_devtools`; it may not GRANT it to
-    anyone else, even though it holds `MANAGE_USERS`."""
-    headers = await bearer(client, "admin@example.com")
+    """A manager with `manage_users` does not hold `access_devtools`; it may
+    not GRANT it to anyone else, even though it may administer accounts."""
+    headers = await manager_who_manages_users(client)
     response = await client.put(
         f"{BASE}/user-supervisor@example.com/permissions/access_devtools",
         json={"state": "grant"},
@@ -780,9 +815,7 @@ async def test_multiple_users_with_the_same_role_stay_independent(
 # ── camera access scope: the provisioning bug, and its administration ────────
 
 
-async def test_a_new_user_receives_a_real_access_grant(
-    client: AsyncClient, admin
-) -> None:
+async def test_a_new_user_receives_a_real_access_grant(client: AsyncClient, admin) -> None:
     """The bug this route shipped with, asserted directly.
 
     `POST /admin/users` created the user and its roles and wrote no
@@ -805,13 +838,11 @@ async def test_a_new_user_receives_a_real_access_grant(
     assert created.status_code == 200, created.text
     assert created.json()["camera_scope"]["breadth"] == "all_in_tenant"
 
-    scope = await client.get(
-        f"{BASE}/{created.json()['id']}/camera-scope", headers=headers
-    )
+    scope = await client.get(f"{BASE}/{created.json()['id']}/camera-scope", headers=headers)
     assert scope.status_code == 200
-    assert scope.json()["camera_scope"]["breadth"] == "all_in_tenant", (
-        "the account was created without a usable camera grant"
-    )
+    assert (
+        scope.json()["camera_scope"]["breadth"] == "all_in_tenant"
+    ), "the account was created without a usable camera grant"
 
 
 async def test_creating_a_user_without_stating_a_camera_scope_is_refused(
@@ -832,9 +863,7 @@ async def test_creating_a_user_without_stating_a_camera_scope_is_refused(
     assert "camera_scope" in response.text
 
 
-async def test_none_remains_a_legitimate_stated_answer(
-    client: AsyncClient, admin
-) -> None:
+async def test_none_remains_a_legitimate_stated_answer(client: AsyncClient, admin) -> None:
     """Requiring the field must not become "everyone gets cameras".
 
     An account that will be scoped later, or one that never needs video, is a
@@ -874,9 +903,7 @@ async def test_a_listed_scope_refuses_a_camera_that_does_not_exist(
     assert "cam-does-not-exist" in response.text
 
 
-async def test_an_admin_may_not_change_their_own_camera_scope(
-    client: AsyncClient, admin
-) -> None:
+async def test_an_admin_may_not_change_their_own_camera_scope(client: AsyncClient, admin) -> None:
     """Consistent with permission overrides, and for the same reason: an actor
     who can widen their own reach can widen it to everything."""
     headers = await bearer(client, "admin@example.com")

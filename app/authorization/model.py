@@ -52,7 +52,6 @@ class Role(enum.Enum):
     employee.
     """
 
-    SUPER_ADMIN = "super_admin"
     ORG_ADMIN = "org_admin"
     RESTAURANT_MANAGER = "restaurant_manager"
     KITCHEN_SUPERVISOR = "kitchen_supervisor"
@@ -63,7 +62,7 @@ class Role(enum.Enum):
     @property
     def is_platform_role(self) -> bool:
         """Whether this role may reach engineering surfaces (DevTools)."""
-        return self in (Role.SUPER_ADMIN, Role.DEVELOPER)
+        return self in (Role.ORG_ADMIN, Role.DEVELOPER)
 
 
 class Permission(enum.Enum):
@@ -196,7 +195,7 @@ class Permission(enum.Enum):
     #: name — the platform holds neither — but still the most sensitive read in
     #: the product, and never implied by any other permission.
     VIEW_PATRON_ID = "view_patron_id"
-    #: Configuring biometric re-identification. Held by SUPER_ADMIN alone, and
+    #: Configuring biometric re-identification. Held by ORG_ADMIN, and
     #: even then the write path refuses until the legal gate is satisfied: this
     #: permission decides who may *ask*, not whether the answer is yes.
     MANAGE_PATRON_ID = "manage_patron_id"
@@ -225,90 +224,24 @@ class Permission(enum.Enum):
 #:   AUDITOR has no VIEW_LIVE. An auditor reviews the record; live monitoring is
 #:   an operational act with a different purpose and a different lawful basis.
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
-    #: Everything **except** biometric re-identification.
+    #: The top tenant role, and the only admin role there is. Every permission,
+    #: stated as the complete set so that a permission added later reaches the
+    #: Organization Admin without anybody having to remember to list it here.
     #:
-    #: `frozenset(Permission)` would hand `MANAGE_PATRON_ID` to this role by
-    #: construction, and it would be inert only because
-    #: `app/domain/patron.require_writable` refuses unconditionally. A
-    #: permission that is harmless solely because of an unrelated guard is a
-    #: trap for whoever relaxes that guard later without knowing it was doing
-    #: silent work — so the exclusion is stated here, where somebody granting
-    #: it has to write the line themselves.
+    #: There used to be a `super_admin` tenant role above this one. It read as a
+    #: third admin tier in a product that has two — the Platform Admin, who is not
+    #: a role at all (`app.authorization.platform`), and this — and it was merged
+    #: into this role on 2026-09-22.
     #:
-    #: Until a DPIA and a named DPO sign-off exist, the correct holder of this
-    #: permission is **nobody**, and that is what this says.
-    Role.SUPER_ADMIN: frozenset(Permission) - {Permission.MANAGE_PATRON_ID},
-    Role.ORG_ADMIN: frozenset(
-        {
-            Permission.MANAGE_ORGANIZATION,
-            Permission.MANAGE_USERS,
-            Permission.VIEW_USERS,
-            Permission.VIEW_LIVE,
-            Permission.VIEW_OBSERVATIONS,
-            Permission.VIEW_EVIDENCE,
-            Permission.VIEW_CAMERA_HEALTH,
-            Permission.REGISTER_DEMAND,
-            Permission.MANAGE_CAMERAS,
-            Permission.VIEW_CAMERAS,
-            # Retirement, unlike the rest of camera administration, is held
-            # here and by SUPER_ADMIN alone. A restaurant manager who may add
-            # and rename cameras should not thereby be able to close an
-            # observation partition.
-            Permission.RETIRE_CAMERAS,
-            # The estate. These are new keys, and this role held their reach
-            # before they existed — it gated sites and zones through
-            # MANAGE_ORGANIZATION and VIEW_USERS. Listing them here preserves
-            # exactly what this role could already do.
-            Permission.VIEW_SITES,
-            Permission.MANAGE_SITES,
-            Permission.VIEW_ZONES,
-            Permission.MANAGE_ZONES,
-            Permission.VIEW_INCIDENTS,
-            Permission.ACKNOWLEDGE_INCIDENTS,
-            Permission.RESOLVE_INCIDENTS,
-            Permission.DELETE_EVIDENCE,
-            Permission.VIEW_AUDIT,
-            # The new modules. An org admin reads all of them and configures the
-            # ones that are operational configuration.
-            Permission.VIEW_PEOPLE_COUNT,
-            Permission.VIEW_DEMOGRAPHY,
-            Permission.VIEW_TABLE_OCCUPANCY,
-            Permission.MANAGE_TABLE_OCCUPANCY,
-            Permission.VIEW_CUTTING_BOARD,
-            Permission.MANAGE_CUTTING_BOARD,
-            Permission.VIEW_MEAL_DETECTION,
-            Permission.VIEW_POS_INTEGRATION,
-            Permission.MANAGE_POS_INTEGRATION,
-            Permission.VIEW_REPORTS,
-            Permission.EXPORT_REPORTS,
-            # No VIEW_MODEL_EVALUATION.
-            #
-            # It was held here on the reasoning that an organization
-            # administrator answers for what the system claims, so they may see
-            # how well it scores. That reasoning is sound about accountability
-            # and wrong about this permission. What the dashboard actually shows
-            # is per-attribute agreement on a 43-subject annotated split,
-            # per-state confusion matrices, prompt-variant comparisons and a
-            # dataset's own written admission that it cannot measure detection
-            # recall. Those answer "should we ship this model" — an engineering
-            # question — and an administrator scanning for an operational figure
-            # is the wrong reader for them.
-            #
-            # The accountability the reasoning was reaching for is served by
-            # VIEW_REPORTS, which this role holds: reports carry coverage,
-            # completeness and the ruleset version every figure was computed
-            # under, which is what "answering for what the system claims"
-            # actually needs.
-            #
-            # Holders are now SUPER_ADMIN and DEVELOPER.
-            #
-            # Reads that patron identification exists and is blocked. Does NOT
-            # hold MANAGE_PATRON_ID: an organization administrator is the wrong
-            # altitude for a decision that needs a DPIA behind it, and the
-            # separation means turning it on is visibly not routine.
-            Permission.VIEW_PATRON_ID,
-        }
-    ),
+    #: ### `MANAGE_PATRON_ID` is included, by decision
+    #:
+    #: The previous definition withheld it on the grounds that, until a DPIA and a
+    #: named DPO sign-off exist, the correct holder of biometric re-identification
+    #: configuration is nobody. The product owner decided that Organization Admins
+    #: hold it. The DPIA obligation is unaffected by where the permission sits and
+    #: remains outstanding; `app/domain/patron.require_writable` still refuses the
+    #: write path until that legal gate is satisfied.
+    Role.ORG_ADMIN: frozenset(Permission),
     Role.RESTAURANT_MANAGER: frozenset(
         {
             Permission.VIEW_USERS,
@@ -663,8 +596,7 @@ class AccessDecision:
         from app.domain.runtime_identity import runtime_camera_id
 
         return tuple(
-            CameraId(runtime_camera_id(self.tenant_id, key))
-            for key in self.cameras.camera_ids
+            CameraId(runtime_camera_id(self.tenant_id, key)) for key in self.cameras.camera_ids
         )
 
     def _tenant(self):

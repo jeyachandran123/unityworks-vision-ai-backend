@@ -9,7 +9,7 @@ The second is the boundary. This module added eight cross-organization
 endpoints to a product whose entire multi-tenant guarantee is that a principal
 names exactly one tenant. Every one of them is a place that guarantee could be
 lost, so each is tested from the wrong side as well as the right one: a tenant
-`super_admin` — the most powerful role there is — must be refused by all of
+`org_admin` — the most powerful tenant role there is — must be refused by all of
 them, and none of them may return a customer's operational content.
 """
 
@@ -22,10 +22,17 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy import select
 
+from app.authorization.model import Permission
 from app.domain.audit import AuditAction
 from app.domain.models import AuditEvent, Restaurant
-from app.users.models import Organization, OrganizationMembership, PlatformOperatorGrant
-from tests.app.conftest import admit, bearer, make_user
+from app.users.models import (
+    AccessGrant,
+    Organization,
+    OrganizationMembership,
+    PlatformOperatorGrant,
+    User,
+)
+from tests.app.conftest import admit, bearer, login, make_user
 
 pytestmark = pytest.mark.asyncio
 
@@ -86,12 +93,12 @@ async def estate(app):
 
 @pytest_asyncio.fixture
 async def tenant_super(estate, client: AsyncClient):
-    """A tenant `super_admin` — every permission there is, and no platform reach."""
+    """A tenant `org_admin` — every permission there is, and no platform reach."""
     async with estate.state.database.session_scope() as session:
         _, superuser = make_user(
             org_id="org-acme",
             email="super@example.com",
-            roles=("super_admin",),
+            roles=("org_admin",),
             camera_breadth="all_in_tenant",
             camera_ids="",
         )
@@ -110,6 +117,7 @@ async def tenant_super(estate, client: AsyncClient):
         ("GET", "/people/user-solo@example.com"),
         ("GET", "/organizations/org-acme/members"),
         ("POST", "/organizations/org-acme/members"),
+        ("POST", "/organizations/org-acme/people"),
         ("DELETE", "/organizations/org-acme/members/user-solo@example.com"),
         ("GET", "/operators"),
         ("GET", "/roles"),
@@ -429,6 +437,153 @@ async def test_role_policy_is_reported_as_read_only_because_it_is(estate, client
     assert body["customization"]["mechanism"] == "permission_overrides"
 
     roles = {r["role"]: r for r in body["roles"]}
-    assert "super_admin" in roles and "kitchen_supervisor" in roles
-    # The one exclusion the model makes by hand, still made.
-    assert "manage_patron_id" not in roles["super_admin"]["permissions"]
+    assert "super_admin" not in roles
+    assert "org_admin" in roles and "kitchen_supervisor" in roles
+    # The Organization Admin holds every permission, patron identity included.
+    assert "manage_patron_id" in roles["org_admin"]["permissions"]
+
+
+# ── creating an Organization Admin ───────────────────────────────────────────
+
+NEW_ADMIN = {
+    "email": "lead@borden.example",
+    "display_name": "Borden Lead",
+    "password": "a-long-enough-password",
+}
+
+
+async def test_creating_an_org_admin_writes_user_membership_role_and_scope(
+    estate, client: AsyncClient
+):
+    """One step, and all of it: the account, the entry ticket, the role, and
+    every camera. Three separate acts are how an organization ends up with
+    somebody who can sign in and do nothing — or with nobody at all."""
+    headers = await bearer(client, "operator@example.com")
+    created = await client.post(
+        f"{PLATFORM}/organizations/org-borden/people", json=NEW_ADMIN, headers=headers
+    )
+    assert created.status_code == 200, created.text
+    person = created.json()
+    assert person["email"] == "lead@borden.example"
+    assert [(m["organization_id"], m["roles"]) for m in person["memberships"]] == [
+        ("org-borden", ["org_admin"])
+    ]
+
+    async with estate.state.database.session_scope() as session:
+        grant = (
+            await session.execute(select(AccessGrant).where(AccessGrant.user_id == person["id"]))
+        ).scalar_one()
+    assert (grant.organization_id, grant.camera_breadth) == ("org-borden", "all_in_tenant")
+
+
+async def test_the_new_org_admin_signs_straight_into_his_organization(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    await client.post(
+        f"{PLATFORM}/organizations/org-borden/people", json=NEW_ADMIN, headers=headers
+    )
+
+    body = (await login(client, NEW_ADMIN["email"], NEW_ADMIN["password"])).json()
+    assert body["must_select"] is False
+    assert body["user"]["tenant_id"] == "org-borden"
+    assert set(body["user"]["permissions"]) == {p.value for p in Permission}
+
+
+async def test_a_duplicate_email_is_a_plain_conflict_for_the_platform(estate, client: AsyncClient):
+    """The Platform Admin can already list every person on the deployment, so
+    naming the collision hides nothing from him and tells him what to do."""
+    headers = await bearer(client, "operator@example.com")
+    refused = await client.post(
+        f"{PLATFORM}/organizations/org-borden/people",
+        json={**NEW_ADMIN, "email": "solo@example.com"},
+        headers=headers,
+    )
+    assert refused.status_code == 409, refused.text
+    assert "solo@example.com" in refused.json()["message"]
+
+
+async def test_a_short_password_creates_nothing(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    refused = await client.post(
+        f"{PLATFORM}/organizations/org-borden/people",
+        json={**NEW_ADMIN, "password": "too-short"},
+        headers=headers,
+    )
+    assert refused.status_code == 422, refused.text
+
+    async with estate.state.database.session_scope() as session:
+        found = (
+            await session.execute(select(User).where(User.email == NEW_ADMIN["email"]))
+        ).scalar_one_or_none()
+    assert found is None
+
+
+async def test_an_archived_organization_gets_no_new_admin(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    await client.put(
+        f"{PLATFORM}/organizations/org-borden/status",
+        json={"status": "archived", "reason": "Contract ended 2026-08-31."},
+        headers=headers,
+    )
+    refused = await client.post(
+        f"{PLATFORM}/organizations/org-borden/people", json=NEW_ADMIN, headers=headers
+    )
+    assert refused.status_code == 422, refused.text
+
+
+async def test_creating_an_org_admin_is_audited_against_the_organization(
+    estate, client: AsyncClient
+):
+    headers = await bearer(client, "operator@example.com")
+    await client.post(
+        f"{PLATFORM}/organizations/org-borden/people", json=NEW_ADMIN, headers=headers
+    )
+
+    async with estate.state.database.session_scope() as session:
+        rows = (
+            await session.execute(
+                select(AuditEvent.organization_id, AuditEvent.actor, AuditEvent.detail).where(
+                    AuditEvent.action == AuditAction.ORGANIZATION_ADMIN_CREATED.value
+                )
+            )
+        ).all()
+    assert len(rows) == 1
+    organization_id, actor, raw = rows[0]
+    detail = json.loads(raw) if isinstance(raw, str) else raw
+    assert (organization_id, actor) == ("org-borden", "operator@example.com")
+    assert detail["email"] == NEW_ADMIN["email"]
+    assert "password" not in json.dumps(detail).lower()
+
+
+async def test_giving_an_org_admin_a_second_organization_grants_the_role_there(
+    estate, client: AsyncClient
+):
+    """One Organization Admin, several organizations: point 8 of the use case."""
+    headers = await bearer(client, "operator@example.com")
+    added = await client.post(
+        f"{PLATFORM}/organizations/org-borden/members",
+        json={"user_id": "user-solo@example.com", "role": "org_admin"},
+        headers=headers,
+    )
+    assert added.status_code == 200, added.text
+    borden = next(m for m in added.json()["memberships"] if m["organization_id"] == "org-borden")
+    assert borden["roles"] == ["org_admin"]
+
+    body = (await login(client, "solo@example.com")).json()
+    assert body["must_select"] is True
+    session_headers = {"Authorization": f"Bearer {body['access_token']}"}
+    moved = await client.post(
+        "/api/v1/auth/organizations/org-borden/select", headers=session_headers
+    )
+    assert moved.status_code == 200, moved.text
+    assert set(moved.json()["user"]["permissions"]) == {p.value for p in Permission}
+
+
+async def test_a_second_organization_can_only_be_given_as_org_admin(estate, client: AsyncClient):
+    """Other roles are staffed from inside the organization, by its admin."""
+    headers = await bearer(client, "operator@example.com")
+    refused = await client.post(
+        f"{PLATFORM}/organizations/org-borden/members",
+        json={"user_id": "user-solo@example.com", "role": "auditor"},
+        headers=headers,
+    )
+    assert refused.status_code == 422, refused.text

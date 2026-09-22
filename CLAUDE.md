@@ -160,12 +160,27 @@ Two principals, and **nothing translates between them**:
   one place, `app/api/dependencies.py::current_access`, rebuilt from the database every request so a
   revoked role takes effect immediately rather than at token expiry. Routes gate with
   `Depends(requires(Permission.X))`.
-- `PlatformOperator` — cross-tenant, has no `tenant_id` and no permissions, resolved only by
-  `current_operator`, produced only by a row in `platform_operator_grants` written out-of-band via
-  `scripts/manage.py grant-operator`. `app/api/platform.py` is the only module that uses it.
+- `PlatformOperator` — the **Platform Admin**. Cross-tenant, has no `tenant_id` and no permissions,
+  resolved only by `current_operator`, produced only by a row in `platform_operator_grants` written
+  out-of-band (`scripts/manage.py create-operator` / `grant-operator`). Only `app/api/platform.py` and
+  `platform_administration.py` use it.
 
-Do not "fix" this by widening `super_admin` — it is a *tenant* role, and widening it would silently
-convert every existing customer's `super_admin` into a cross-customer superuser.
+**Two admins, since 2026-09-22.** The Platform Admin belongs to **no organization**
+(`users.organization_id IS NULL`, no memberships) and signs in to a *platform session*: a token with
+`act: platform_operator` and an empty tenant (`TokenClaims.is_platform_session`). Tenant routes refuse
+it with 403; `/auth/me`, `/auth/refresh`, `/auth/organizations` and `/platform/*` accept it. He enters
+any organization through `POST /platform/organizations/{id}/enter`, which grants **every permission**
+(minus `SUSPENDED_FORBIDDEN` for a suspended organization) and writes an audit row there first. The
+**Organization Admin** (`org_admin`) holds every permission in each organization they are a member of;
+there is no `super_admin`. Email is unique across the deployment: one person, one account, many
+memberships. Design: `../../docs/superpowers/specs/2026-09-10-platform-and-organization-admin-design.md`.
+
+Do not "fix" the boundary by widening `org_admin` across tenants — it is a *tenant* role, and widening
+it would silently convert every customer's Organization Admin into a cross-customer superuser.
+
+**Who belongs to an organization is its memberships**, never `User.organization_id`. Tenant user
+administration, the override and camera-scope guards, and platform people counts all read
+`organization_memberships`; roles and camera grants are shown for the active organization only.
 
 Effective permissions are `(role permissions ∪ GRANTs) − REVOKEs`, composed in
 `app/authorization/resolver.py::decide()`. Overrides are written only through
