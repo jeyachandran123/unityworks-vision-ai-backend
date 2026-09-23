@@ -29,7 +29,9 @@ the WebSocket, and it is derived here rather than set anywhere by hand.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import enum
+import threading
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -145,6 +147,13 @@ class VisionSession:
         self._stats = SessionStats()
         self._producer: asyncio.Task[None] | None = None
         self._consumer: asyncio.Task[None] | None = None
+        # The frame path runs on its own thread, with its own event loop. The
+        # API loop keeps a handle on that loop purely so `stop()` can reach it:
+        # the queue's waiter is a future belonging to it, so closing the queue
+        # from another thread would resolve a foreign loop's future.
+        self._thread: threading.Thread | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._ready = threading.Event()
         self._paused = False
         self._error = ""
 
@@ -200,14 +209,41 @@ class VisionSession:
     # ── lifecycle ────────────────────────────────────────────────────────────
 
     async def start(self) -> None:
-        """Begin producing and consuming. Idempotent."""
+        """Begin producing and consuming, on this session's own thread. Idempotent.
+
+        The thread is the point. Decoding a frame holds the thread it runs on —
+        a socket read and a PyAV decode neither await nor yield — so a frame
+        path scheduled on the caller's loop stops that loop for as long as it
+        takes. With four analysed cameras that was every API request waiting
+        nine seconds behind the decoder, which presents as an application that
+        has mysteriously become slow rather than as anything to do with video.
+
+        `CameraWall` already gives each camera its own thread for exactly this
+        reason, and the consumer half of this session was moved off the API loop
+        after it took `/health` to 31s. This is the same decision applied to the
+        half that was missed.
+        """
         if self._state.is_active or self._state is SessionState.STARTING:
             return
 
         self._state = SessionState.STARTING
         self._error = ""
-        self._producer = asyncio.create_task(self._produce(), name=f"produce-{self.session_id}")
-        self._consumer = asyncio.create_task(self._consume(), name=f"consume-{self.session_id}")
+        self._ready.clear()
+        self._thread = threading.Thread(
+            target=self._thread_main,
+            name=f"session-{self.session_id}",
+            daemon=True,
+        )
+        self._thread.start()
+        # Wait for the thread's loop to exist before returning, so a `stop()`
+        # arriving immediately after `start()` has something to reach. Waited
+        # for off the API loop, because blocking it here would be the very
+        # fault this method exists to avoid.
+        if not await asyncio.to_thread(self._ready.wait, 5.0):
+            self._error = "session thread did not start"
+            self._state = SessionState.FAILED
+            logger.error("session {} thread did not start", self.session_id)
+            return
         self._state = SessionState.RUNNING
         logger.info(
             "session {} started — camera={} kind={} analysis_fps={}",
@@ -246,22 +282,36 @@ class VisionSession:
             return
 
         self._state = SessionState.STOPPING
+        # Asked for from here because it is documented never to block, and
+        # because it is what lets a decode in progress finish early rather than
+        # run to completion while shutdown waits on it.
         self.source.stop()
-        self._queue.close()
 
-        for task in (self._producer, self._consumer):
-            if task is None or task.done():
-                continue
-            task.cancel()
-            try:
-                await task
-            except (asyncio.CancelledError, Exception):  # noqa: BLE001 - shutdown
-                pass
+        loop, thread = self._loop, self._thread
+        if loop is not None and not loop.is_closed():
+            # Every queue and task operation belongs to that loop. Reaching
+            # into them from this thread would resolve a future the session's
+            # loop owns, which fails intermittently rather than loudly.
+            loop.call_soon_threadsafe(self._shut_down_on_own_loop)
+        if thread is not None and thread.is_alive():
+            # Joined off the API loop: a decoder mid-frame can take a moment to
+            # notice, and waiting for it here would stall every other request.
+            await asyncio.to_thread(thread.join, 15.0)
+            if thread.is_alive():
+                # Said out loud. A daemon thread still holding a socket is a
+                # leak, and a silent one would surface later as a camera that
+                # cannot be restarted.
+                logger.warning(
+                    "session {} thread did not finish within 15s; it holds camera {}",
+                    self.session_id,
+                    self.camera_id,
+                )
 
-        await self.source.aclose()
         self._queue.clear()
         self._producer = None
         self._consumer = None
+        self._thread = None
+        self._loop = None
         self._state = SessionState.STOPPED
         logger.info(
             "session {} stopped — received={} processed={} dropped={}",
@@ -287,6 +337,50 @@ class VisionSession:
             processing_ms=elapsed_ms,
             error=error or None,
         )
+
+    def _thread_main(self) -> None:
+        """This session's dedicated thread.
+
+        Nothing here touches the API event loop, and nothing on the API event
+        loop touches this session's source, queue or tasks — only `stats`,
+        `state` and the pause flag cross between the two, and each of those is
+        a single read or write of one value.
+        """
+        try:
+            asyncio.run(self._run())
+        except Exception as exc:  # noqa: BLE001 - a worker thread must not die silently
+            self._error = f"{type(exc).__name__}: {exc}"
+            self._state = SessionState.FAILED
+            logger.error("session {} thread failed: {}", self.session_id, self._error)
+        finally:
+            # Set unconditionally, so a thread that failed before reaching its
+            # loop releases `start()` rather than leaving it on a five-second
+            # timeout that reports the wrong reason.
+            self._ready.set()
+
+    async def _run(self) -> None:
+        """Own the frame path for the life of the session, on this thread's loop."""
+        self._loop = asyncio.get_running_loop()
+        self._producer = asyncio.create_task(self._produce(), name=f"produce-{self.session_id}")
+        self._consumer = asyncio.create_task(self._consume(), name=f"consume-{self.session_id}")
+        # Only now is there a loop for `stop()` to reach, so this is where the
+        # session counts as started.
+        self._ready.set()
+        try:
+            await asyncio.gather(self._producer, self._consumer, return_exceptions=True)
+        finally:
+            with contextlib.suppress(Exception):
+                # The source is closed on the thread that opened it: a PyAV
+                # container belongs to its own thread, and closing one from
+                # elsewhere is undefined rather than merely untidy.
+                await self.source.aclose()
+
+    def _shut_down_on_own_loop(self) -> None:
+        """Close the queue and cancel the tasks. Runs on the session's loop."""
+        self._queue.close()
+        for task in (self._producer, self._consumer):
+            if task is not None and not task.done():
+                task.cancel()
 
     async def _produce(self) -> None:
         """Drain the source into the bounded queue, sampling on the way in."""
