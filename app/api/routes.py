@@ -262,7 +262,7 @@ async def _organization_summaries(session: DbSession, organizations: list) -> li
     """
     from sqlalchemy import func
 
-    from app.domain.models import Camera, Restaurant
+    from app.domain.models import Camera, Zone
 
     ids = [organization.id for organization in organizations]
     if not ids:
@@ -274,7 +274,7 @@ async def _organization_summaries(session: DbSession, organizations: list) -> li
         )
         return {organization_id: int(count) for organization_id, count in rows.all()}
 
-    sites = await tally(Restaurant.organization_id)
+    zones = await tally(Zone.organization_id)
     cameras = await tally(Camera.organization_id)
 
     return [
@@ -283,7 +283,7 @@ async def _organization_summaries(session: DbSession, organizations: list) -> li
             "name": organization.name,
             "slug": organization.slug,
             "status": str(organization.status or "").strip().lower(),
-            "site_count": sites.get(organization.id, 0),
+            "zone_count": zones.get(organization.id, 0),
             "camera_count": cameras.get(organization.id, 0),
         }
         for organization in organizations

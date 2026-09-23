@@ -21,8 +21,8 @@ import time
 import pytest
 
 from app.api.wall import TICKET_TTL_S, mint_ticket, verify_ticket
-from app.vision.wall import STALE_AFTER_S, CameraStream, CameraWall, StreamState
 from app.domain.runtime_identity import runtime_camera_id
+from app.vision.wall import STALE_AFTER_S, CameraStream, CameraWall, StreamState
 from tests.app.conftest import bearer
 
 SECRET = "test-only-secret-value-not-for-any-deployment"
@@ -51,7 +51,7 @@ class FakeCamera:
         self.stream_type = "main"
         self.enabled = enabled
         self.organization_id = org
-        self.restaurant_id = "rest-01"
+        self.zone_id = "rest-01"
         self.host = "10.0.0.5"
         self.rtsp_port = 554
         self.username = "admin"
@@ -160,9 +160,7 @@ class TestTickets:
         ticket = mint_ticket(SECRET, tenant_id=ORG, camera_id="cam-01", subject="a@b.c")
         assert verify_ticket(SECRET, ticket, tenant_id=ORG, camera_id="cam-01", subject="a@b.c")
         # The same ticket must not open a different camera.
-        assert not verify_ticket(
-            SECRET, ticket, tenant_id=ORG, camera_id="cam-02", subject="a@b.c"
-        )
+        assert not verify_ticket(SECRET, ticket, tenant_id=ORG, camera_id="cam-02", subject="a@b.c")
 
     def test_a_ticket_does_not_cross_tenants(self):
         ticket = mint_ticket(SECRET, tenant_id=ORG, camera_id="cam-01", subject="a@b.c")
@@ -203,9 +201,12 @@ class TestWallApi:
             service = CameraService(session)
             for channel in range(1, 5):
                 await service.create(
-                    organization_id=ORG, restaurant_id="rest-01",
-                    camera_key=f"cam-{channel:02d}", name=f"Channel {channel:02d}",
-                    channel=channel, host="10.0.0.5",
+                    organization_id=ORG,
+                    zone_id="zone-01",
+                    camera_key=f"cam-{channel:02d}",
+                    name=f"Channel {channel:02d}",
+                    channel=channel,
+                    host="10.0.0.5",
                 )
             await session.flush()
             # Two enabled, two left dark.
@@ -224,7 +225,12 @@ class TestWallApi:
         assert [c["channel"] for c in body["cameras"]] == [1, 2, 3, 4]
         assert sum(1 for c in body["cameras"] if not c["enabled"]) == 2
         assert {c["state"] for c in body["cameras"]} <= {
-            "disabled", "connecting", "live", "reconnecting", "offline", "error"
+            "disabled",
+            "connecting",
+            "live",
+            "reconnecting",
+            "offline",
+            "error",
         }
 
     @pytest.mark.asyncio
@@ -241,9 +247,12 @@ class TestWallApi:
             service = CameraService(session)
             for channel in range(1, 5):
                 await service.create(
-                    organization_id=ORG, restaurant_id="rest-01",
-                    camera_key=f"cam-{channel:02d}", name=f"Channel {channel:02d}",
-                    channel=channel, host="10.0.0.5",
+                    organization_id=ORG,
+                    zone_id="zone-01",
+                    camera_key=f"cam-{channel:02d}",
+                    name=f"Channel {channel:02d}",
+                    channel=channel,
+                    host="10.0.0.5",
                 )
 
         # The manager fixture is granted cam-01 and cam-02 only.
@@ -257,9 +266,14 @@ class TestWallApi:
 
         async with seeded.state.database.session_scope() as session:
             await CameraService(session).create(
-                organization_id=ORG, restaurant_id="rest-01", camera_key="cam-01",
-                name="Channel 01", channel=1, host="10.0.0.5",
-                username="admin", credential_ref="env:CCTV_PASSWORD",
+                organization_id=ORG,
+                zone_id="zone-01",
+                camera_key="cam-01",
+                name="Channel 01",
+                channel=1,
+                host="10.0.0.5",
+                username="admin",
+                credential_ref="env:CCTV_PASSWORD",
             )
 
         headers = await bearer(client, "manager@example.com")
@@ -284,8 +298,12 @@ class TestWallApi:
 
         async with seeded.state.database.session_scope() as session:
             await CameraService(session).create(
-                organization_id=ORG, restaurant_id="rest-01", camera_key="cam-16",
-                name="Channel 16", channel=16, host="10.0.0.5",
+                organization_id=ORG,
+                zone_id="zone-01",
+                camera_key="cam-16",
+                name="Channel 16",
+                channel=16,
+                host="10.0.0.5",
             )
 
         # The manager fixture is granted cam-01 and cam-02 only.
@@ -398,8 +416,11 @@ class TestPhase6B1Regressions:
                 SECRET, tenant_id="the-current-tenant", camera_id="cam-01", subject="s"
             )
             assert verify_ticket(
-                SECRET, ticket, tenant_id="the-current-tenant",
-                camera_id="cam-01", subject="s",
+                SECRET,
+                ticket,
+                tenant_id="the-current-tenant",
+                camera_id="cam-01",
+                subject="s",
             )
         finally:
             await wall.stop_all()
@@ -504,9 +525,9 @@ class TestPhase6B3Offload:
         await wall.start_cameras(cameras)
         elapsed = time.monotonic() - t0
         try:
-            assert elapsed < 1.0, (
-                f"starting 4 cameras took {elapsed:.2f}s — a slow camera blocked the others"
-            )
+            assert (
+                elapsed < 1.0
+            ), f"starting 4 cameras took {elapsed:.2f}s — a slow camera blocked the others"
         finally:
             await wall.stop_all()
 
@@ -580,9 +601,7 @@ class TestPhase6B3Offload:
                     self._state = StreamState.RECONNECTING
                     await asyncio.sleep(0.02)
                     continue
-                self._publish(
-                    _FakeFrame(payload=b"\x00" * 12, width=2, height=2), started_at
-                )
+                self._publish(_FakeFrame(payload=b"\x00" * 12, width=2, height=2), started_at)
                 await asyncio.sleep(0.01)
 
         monkeypatch.setattr(CameraStream, "_run_async", flaky_run_async)
@@ -677,9 +696,7 @@ class TestStallWatchdog:
         from app.vision import wall as wall_module
 
         monkeypatch.setattr(wall_module, "STALL_WATCHDOG_S", window)
-        monkeypatch.setattr(
-            "app.vision.sources.rtsp.LiveRtspSource", source_class, raising=False
-        )
+        monkeypatch.setattr("app.vision.sources.rtsp.LiveRtspSource", source_class, raising=False)
 
     @pytest.mark.asyncio
     async def test_a_stalled_source_is_torn_down_and_re_dialled(self, monkeypatch, settings):
@@ -750,9 +767,7 @@ class TestStallWatchdog:
             await wall.stop_all()
 
     @pytest.mark.asyncio
-    async def test_one_stalled_camera_does_not_disturb_the_others(
-        self, monkeypatch, settings
-    ):
+    async def test_one_stalled_camera_does_not_disturb_the_others(self, monkeypatch, settings):
         """§2. cam-14 stalling must cost cam-11, cam-12 and cam-13 nothing."""
         dials: dict[str, int] = {}
 
@@ -783,7 +798,9 @@ class TestStallWatchdog:
         try:
             await asyncio.sleep(self.WINDOW * 4)
 
-            assert wall.get(wall_key("cam-14")).stats.stalls >= 1, "the stalled camera recovered nothing"
+            assert (
+                wall.get(wall_key("cam-14")).stats.stalls >= 1
+            ), "the stalled camera recovered nothing"
 
             for healthy in ("cam-11", "cam-12", "cam-13"):
                 stream = wall.get(wall_key(healthy))
@@ -800,9 +817,7 @@ class TestStallWatchdog:
             await wall.stop_all()
 
     @pytest.mark.asyncio
-    async def test_a_busy_publisher_is_not_mistaken_for_a_dead_camera(
-        self, monkeypatch, settings
-    ):
+    async def test_a_busy_publisher_is_not_mistaken_for_a_dead_camera(self, monkeypatch, settings):
         """The feedback loop this watchdog caused in production, pinned.
 
         The first version compared `stats.last_frame_at`, which is set when a
@@ -853,17 +868,15 @@ class TestStallWatchdog:
             await asyncio.sleep(0.8)
             stream = wall.get(wall_key("cam-12"))
 
-            assert stream.stats.stalls == 0, (
-                "a receiving source was torn down as stalled — the feedback loop is back"
-            )
+            assert (
+                stream.stats.stalls == 0
+            ), "a receiving source was torn down as stalled — the feedback loop is back"
             assert len(dials) == 1, "a healthy connection was needlessly re-dialled"
         finally:
             await wall.stop_all()
 
     @pytest.mark.asyncio
-    async def test_repeated_failures_back_off_instead_of_hammering(
-        self, monkeypatch, settings
-    ):
+    async def test_repeated_failures_back_off_instead_of_hammering(self, monkeypatch, settings):
         """A camera that cannot connect must not be re-dialled every 2s forever.
 
         Four cameras plus their analysis sessions retrying on a flat two-second
@@ -914,9 +927,7 @@ class TestMultiTenantRuntimeIdentity:
 
     async def test_two_organizations_may_both_own_a_camera_called_cam_01(self, settings):
         wall = CameraWall(settings)
-        await wall.start_cameras(
-            [FakeCamera(1, org="org-a"), FakeCamera(1, org="org-b")]
-        )
+        await wall.start_cameras([FakeCamera(1, org="org-a"), FakeCamera(1, org="org-b")])
         try:
             a = wall.get(wall_key("cam-01", org="org-a"))
             b = wall.get(wall_key("cam-01", org="org-b"))
@@ -962,8 +973,8 @@ class TestMultiTenantRuntimeIdentity:
             assert stopped == 2
             assert wall.get(wall_key("cam-01", org="org-a")) is None
             assert wall.get(wall_key("cam-02", org="org-a")) is None
-            assert wall.get(wall_key("cam-01", org="org-b")) is not None, (
-                "stopping one organization reached another's streams"
-            )
+            assert (
+                wall.get(wall_key("cam-01", org="org-b")) is not None
+            ), "stopping one organization reached another's streams"
         finally:
             await wall.stop_all()

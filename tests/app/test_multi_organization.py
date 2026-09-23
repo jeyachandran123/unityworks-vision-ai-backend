@@ -20,12 +20,14 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import select
 
 from app.authorization.model import Permission, Role, permissions_for
 from app.authorization.resolver import SUSPENDED_FORBIDDEN
+from app.domain.models import Camera, Zone
 from app.domain.runtime_identity import runtime_camera_id, split_runtime_camera_id
 from app.errors import ValidationError
-from app.users.models import Organization, PlatformOperatorGrant
+from app.users.models import PlatformOperatorGrant
 from tests.app.conftest import bearer, make_user
 
 pytestmark = pytest.mark.asyncio
@@ -55,55 +57,48 @@ PLATFORM = "/api/v1/platform"
 class TestPermissionVocabulary:
     """The vocabulary correction, checked at the level it actually matters."""
 
-    def test_sites_and_zones_have_independent_read_and_manage(self):
+    def test_zones_have_independent_read_and_manage(self):
         """The whole requirement, reduced to its smallest statement.
 
-        Before this existed, reading sites required `VIEW_USERS` and writing
-        them required `MANAGE_ORGANIZATION` — so "may see who works here" and
-        "may read every site" were one grant, and "may rename a zone" and "may
-        reconfigure the organization" were another.
+        Before this existed, reading the estate required `VIEW_USERS` and
+        writing it required `MANAGE_ORGANIZATION` — so "may see who works
+        here" and "may read every zone" were one grant, and "may rename a
+        zone" and "may reconfigure the organization" were another.
         """
-        for permission in (
-            Permission.VIEW_SITES,
-            Permission.MANAGE_SITES,
-            Permission.VIEW_ZONES,
-            Permission.MANAGE_ZONES,
-        ):
+        for permission in (Permission.VIEW_ZONES, Permission.MANAGE_ZONES):
             assert isinstance(permission, Permission)
 
-        assert Permission.VIEW_SITES is not Permission.MANAGE_SITES
         assert Permission.VIEW_ZONES is not Permission.MANAGE_ZONES
+        # The pair that named sites is gone: a permission guarding no surface
+        # is worse than none, because somebody grants it and believes it did
+        # something.
+        assert not any(p.value.endswith("_sites") for p in Permission)
 
     def test_restaurant_manager_keeps_the_reach_it_had_before_the_split(self):
         """The backward-compatibility trap, asserted.
 
-        `RESTAURANT_MANAGER` holds `VIEW_USERS`, which used to gate site and
-        zone *reads*. Splitting the vocabulary silently removes that unless the
+        `RESTAURANT_MANAGER` holds `VIEW_USERS`, which used to gate estate
+        *reads*. Splitting the vocabulary silently removes that unless the
         baseline is set deliberately, and a manager who could see their own
-        sites yesterday must be able to see them today.
+        zones yesterday must be able to see them today.
         """
         held = permissions_for(frozenset({Role.RESTAURANT_MANAGER}))
 
-        assert Permission.VIEW_SITES in held
         assert Permission.VIEW_ZONES in held
         # And no more than that. Gaining write authority it never had would be
         # a privilege expansion hiding inside a compatibility fix.
-        assert Permission.MANAGE_SITES not in held
         assert Permission.MANAGE_ZONES not in held
 
-    def test_kitchen_supervisor_does_not_gain_site_visibility(self):
+    def test_kitchen_supervisor_does_not_gain_estate_visibility(self):
         """The other half of the trap. This role has no `VIEW_USERS`, so it
-        could not read sites before, and must not be able to now."""
+        could not read the estate before, and must not be able to now."""
         held = permissions_for(frozenset({Role.KITCHEN_SUPERVISOR}))
 
-        assert Permission.VIEW_SITES not in held
         assert Permission.VIEW_ZONES not in held
 
     def test_org_admin_administers_the_estate(self):
         held = permissions_for(frozenset({Role.ORG_ADMIN}))
         for permission in (
-            Permission.VIEW_SITES,
-            Permission.MANAGE_SITES,
             Permission.VIEW_ZONES,
             Permission.MANAGE_ZONES,
             Permission.RETIRE_CAMERAS,
@@ -121,7 +116,6 @@ class TestPermissionVocabulary:
         is held automatically. That is correct and intended, and this asserts
         it did in fact happen rather than assuming it."""
         held = permissions_for(frozenset({Role.ORG_ADMIN}))
-        assert Permission.MANAGE_SITES in held
         assert Permission.RETIRE_CAMERAS in held
 
 
@@ -147,7 +141,6 @@ class TestSuspendedForbidden:
         anyone close one would leave a genuine violation open because an
         invoice is late."""
         for permission in (
-            Permission.VIEW_SITES,
             Permission.VIEW_CAMERAS,
             Permission.VIEW_INCIDENTS,
             Permission.ACKNOWLEDGE_INCIDENTS,
@@ -165,7 +158,7 @@ async def estate(admin, client: AsyncClient):
     headers = await bearer(client, "admin@example.com")
 
     site = await client.post(
-        "/api/v1/restaurants",
+        "/api/v1/zones",
         json={"name": "Adyar", "timezone": "Asia/Kolkata"},
         headers=headers,
     )
@@ -193,14 +186,14 @@ async def estate(admin, client: AsyncClient):
     # needs no override at all. Manager C has the read revoked.
     assert (
         await client.put(
-            f"{ADMIN_BASE}/{created['a']}/permissions/manage_sites",
+            f"{ADMIN_BASE}/{created['a']}/permissions/manage_zones",
             json={"state": "grant"},
             headers=headers,
         )
     ).status_code == 200
     assert (
         await client.put(
-            f"{ADMIN_BASE}/{created['c']}/permissions/view_sites",
+            f"{ADMIN_BASE}/{created['c']}/permissions/view_zones",
             json={"state": "revoke"},
             headers=headers,
         )
@@ -209,39 +202,39 @@ async def estate(admin, client: AsyncClient):
     return admin, site.json()["id"], created
 
 
-async def test_manager_a_may_read_and_edit_sites(estate, client: AsyncClient):
+async def test_manager_a_may_read_and_edit_zones(estate, client: AsyncClient):
     _, site_id, _ = estate
     headers = await bearer(client, "manager-a@example.com")
 
-    assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=headers)).status_code == 200
     edited = await client.patch(
-        f"/api/v1/restaurants/{site_id}", json={"name": "Adyar Main"}, headers=headers
+        f"/api/v1/zones/{site_id}", json={"name": "Adyar Main"}, headers=headers
     )
     assert edited.status_code == 200, edited.text
     assert edited.json()["name"] == "Adyar Main"
 
 
-async def test_manager_b_may_read_sites_and_not_edit_them(estate, client: AsyncClient):
+async def test_manager_b_may_read_zones_and_not_edit_them(estate, client: AsyncClient):
     """The case that could not be expressed before. Manager B holds the same
     role as Manager A and has **no overrides at all** — read-only is what the
     corrected baseline already means."""
     _, site_id, _ = estate
     headers = await bearer(client, "manager-b@example.com")
 
-    assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=headers)).status_code == 200
     refused = await client.patch(
-        f"/api/v1/restaurants/{site_id}", json={"name": "Not Allowed"}, headers=headers
+        f"/api/v1/zones/{site_id}", json={"name": "Not Allowed"}, headers=headers
     )
     assert refused.status_code == 403
 
 
-async def test_manager_c_may_not_see_sites_at_all(estate, client: AsyncClient):
+async def test_manager_c_may_not_see_zones_at_all(estate, client: AsyncClient):
     _, site_id, _ = estate
     headers = await bearer(client, "manager-c@example.com")
 
-    assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 403
+    assert (await client.get("/api/v1/zones", headers=headers)).status_code == 403
     assert (
-        await client.patch(f"/api/v1/restaurants/{site_id}", json={"name": "No"}, headers=headers)
+        await client.patch(f"/api/v1/zones/{site_id}", json={"name": "No"}, headers=headers)
     ).status_code == 403
 
 
@@ -257,16 +250,16 @@ async def test_all_three_hold_exactly_one_role(estate, client: AsyncClient):
 
 
 async def test_revoke_still_wins_over_the_role(estate, client: AsyncClient):
-    """Manager C's role grants `view_sites`. The REVOKE must beat it, or the
+    """Manager C's role grants `view_zones`. The REVOKE must beat it, or the
     override engine does not mean anything."""
     _, _, created = estate
     headers = await bearer(client, "admin@example.com")
 
     rows = await client.get(f"{ADMIN_BASE}/{created['c']}/permissions", headers=headers)
-    view_sites = next(r for r in rows.json()["permissions"] if r["permission"] == "view_sites")
-    assert view_sites["role_grants"] is True
-    assert view_sites["state"] == "revoke"
-    assert view_sites["effective"] is False
+    view_zones = next(r for r in rows.json()["permissions"] if r["permission"] == "view_zones")
+    assert view_zones["role_grants"] is True
+    assert view_zones["state"] == "revoke"
+    assert view_zones["effective"] is False
 
 
 # ── Pillar 1: two organizations, one camera key ──────────────────────────────
@@ -405,10 +398,10 @@ async def test_suspension_reaches_authorization(operator, client: AsyncClient):
 
     admin = await bearer(client, "admin@example.com")
     # Reads continue.
-    assert (await client.get("/api/v1/restaurants", headers=admin)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=admin)).status_code == 200
     # Writes do not.
     assert (
-        await client.post("/api/v1/restaurants", json={"name": "New"}, headers=admin)
+        await client.post("/api/v1/zones", json={"name": "New"}, headers=admin)
     ).status_code == 403
 
 
@@ -425,7 +418,7 @@ async def test_archiving_an_organization_refuses_every_request(operator, client:
     )
     assert archived.status_code == 200, archived.text
 
-    assert (await client.get("/api/v1/restaurants", headers=admin)).status_code == 401
+    assert (await client.get("/api/v1/zones", headers=admin)).status_code == 401
 
 
 async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
@@ -459,7 +452,7 @@ async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
     for organization in listed.json()["organizations"]:
         # Counts, not contents. No route on this router returns another
         # organization's incidents, evidence, users or camera list.
-        assert set(organization) >= {"site_count", "camera_count", "user_count"}
+        assert set(organization) >= {"zone_count", "camera_count", "user_count"}
         assert "users" not in organization
         assert "cameras" not in organization
 
@@ -470,39 +463,37 @@ async def test_an_operator_cannot_read_a_tenants_data_through_the_operator_door(
     identity = await client.get("/api/v1/auth/me", headers=headers)
     assert identity.json()["tenant_id"] == ""
     assert identity.json()["acting_as"] == "platform_operator"
-    refused = await client.get("/api/v1/restaurants", headers=headers)
+    refused = await client.get("/api/v1/zones", headers=headers)
     assert refused.status_code == 403, refused.text
 
 
 # ── Pillar 2: camera placement cannot cross a boundary ───────────────────────
 
 
-async def test_a_camera_cannot_be_placed_in_another_sites_zone(client: AsyncClient, admin):
+async def test_a_camera_cannot_be_placed_in_another_organizations_zone(client: AsyncClient, admin):
     """The gap that let `zone_id` through unread.
 
-    The route validated the restaurant and then passed `zone_id` from the
-    request body straight to the domain service, so a camera could be attached
-    to any zone in the database — and every observation it produced would be
-    attributed there.
+    The route validated the placement's parent and then passed `zone_id` from
+    the request body straight to the domain service, so a camera could be
+    attached to any zone in the database — including another customer's — and
+    every observation it produced would be attributed there.
     """
     headers = await bearer(client, "admin@example.com")
 
-    first = await client.post("/api/v1/restaurants", json={"name": "Site One"}, headers=headers)
-    second = await client.post("/api/v1/restaurants", json={"name": "Site Two"}, headers=headers)
-    assert first.status_code == 200 and second.status_code == 200
+    mine = await client.post("/api/v1/zones", json={"name": "My kitchen"}, headers=headers)
+    assert mine.status_code == 200, mine.text
 
-    elsewhere = await client.post(
-        "/api/v1/zones",
-        json={"restaurant_id": second.json()["id"], "name": "Somebody Else's Kitchen"},
-        headers=headers,
-    )
-    assert elsewhere.status_code == 200, elsewhere.text
+    # A zone belonging to org-other, written directly: the API would not offer
+    # it, which is the point — the boundary is the server's, not the form's.
+    async with admin.state.database.session_scope() as session:
+        session.add(
+            Zone(id="zone-elsewhere", organization_id="org-other", name="Somebody else's kitchen")
+        )
 
     refused = await client.post(
         "/api/v1/cameras",
         json={
-            "restaurant_id": first.json()["id"],
-            "zone_id": elsewhere.json()["id"],
+            "zone_id": "zone-elsewhere",
             "camera_key": "cam-90",
             "name": "Misplaced",
             "channel": 90,
@@ -510,20 +501,29 @@ async def test_a_camera_cannot_be_placed_in_another_sites_zone(client: AsyncClie
         },
         headers=headers,
     )
-    assert refused.status_code == 422
-    assert "zone" in refused.text.lower()
+    # Not found, never forbidden: that the zone exists at all is another
+    # customer's business.
+    assert refused.status_code == 404, refused.text
 
 
-async def test_a_camera_cannot_be_created_without_an_address(client: AsyncClient, admin):
+async def test_a_camera_cannot_be_created_without_an_address(
+    client: AsyncClient, admin, monkeypatch
+):
     """A camera with no host is skipped by the runtime, so it would be created,
-    listed, and permanently inert with nothing ever saying why."""
+    listed, and permanently inert with nothing ever saying why.
+
+    The address now falls back to the deployment's own DVR, so the only way to
+    reach this refusal is a deployment that has none configured — which is
+    exactly when a camera created without one would be inert.
+    """
+    monkeypatch.setattr(admin.state.settings, "cctv_host", "")
     headers = await bearer(client, "admin@example.com")
-    site = await client.post("/api/v1/restaurants", json={"name": "Hostless"}, headers=headers)
+    site = await client.post("/api/v1/zones", json={"name": "Hostless"}, headers=headers)
 
     response = await client.post(
         "/api/v1/cameras",
         json={
-            "restaurant_id": site.json()["id"],
+            "zone_id": site.json()["id"],
             "camera_key": "cam-91",
             "name": "No Address",
             "channel": 91,
@@ -539,12 +539,12 @@ async def test_a_camera_never_returns_its_credential_reference(client: AsyncClie
     The scheme is useful to an administrator; the reference is not, and it
     names something an attacker who reaches the process can go and read."""
     headers = await bearer(client, "admin@example.com")
-    site = await client.post("/api/v1/restaurants", json={"name": "Credentialed"}, headers=headers)
+    site = await client.post("/api/v1/zones", json={"name": "Credentialed"}, headers=headers)
 
     created = await client.post(
         "/api/v1/cameras",
         json={
-            "restaurant_id": site.json()["id"],
+            "zone_id": site.json()["id"],
             "camera_key": "cam-92",
             "name": "Watched",
             "channel": 92,
@@ -562,14 +562,21 @@ async def test_a_camera_never_returns_its_credential_reference(client: AsyncClie
     assert "CCTV_PASSWORD" not in created.text
 
 
-async def test_a_literal_credential_can_no_longer_be_written(client: AsyncClient, admin):
+async def test_a_client_cannot_choose_which_secret_a_camera_reads(client: AsyncClient, admin):
+    """Stronger than refusing a literal: the field is not client input at all.
+
+    `credential_ref` used to be accepted from the request and validated, which
+    made it a channel that could carry the secret itself. It is now always the
+    deployment's own reference, so a caller can neither write a password nor
+    point a camera at a different one to make the server read it.
+    """
     headers = await bearer(client, "admin@example.com")
-    site = await client.post("/api/v1/restaurants", json={"name": "Literal"}, headers=headers)
+    zone = await client.post("/api/v1/zones", json={"name": "Literal"}, headers=headers)
 
     response = await client.post(
         "/api/v1/cameras",
         json={
-            "restaurant_id": site.json()["id"],
+            "zone_id": zone.json()["id"],
             "camera_key": "cam-93",
             "name": "Plaintext",
             "channel": 93,
@@ -578,8 +585,16 @@ async def test_a_literal_credential_can_no_longer_be_written(client: AsyncClient
         },
         headers=headers,
     )
-    assert response.status_code == 422
-    assert "hunter2" not in response.text, "the refusal echoed the secret back"
+    assert response.status_code == 200, response.text
+    assert "hunter2" not in response.text, "the response echoed the secret back"
+    # The deployment's reference, not the one the caller asked for.
+    assert response.json()["credential_scheme"] == "env"
+
+    async with admin.state.database.session_scope() as session:
+        stored = (
+            await session.execute(select(Camera).where(Camera.camera_key == "cam-93"))
+        ).scalar_one()
+    assert stored.credential_ref == "env:CCTV_PASSWORD"
 
 
 async def test_a_connection_test_refuses_a_loopback_address(client: AsyncClient, admin):
@@ -614,11 +629,11 @@ async def test_another_organizations_site_is_not_found(client: AsyncClient, admi
     headers = await bearer(client, "admin@example.com")
     outsider = await bearer(client, "outsider@example.com")
 
-    site = await client.post("/api/v1/restaurants", json={"name": "Ours"}, headers=headers)
+    site = await client.post("/api/v1/zones", json={"name": "Ours"}, headers=headers)
     assert site.status_code == 200
 
     response = await client.patch(
-        f"/api/v1/restaurants/{site.json()['id']}",
+        f"/api/v1/zones/{site.json()['id']}",
         json={"name": "Theirs"},
         headers=outsider,
     )

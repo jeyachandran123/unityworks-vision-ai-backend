@@ -97,7 +97,7 @@ async def test_an_entered_platform_admin_can_create_a_user(estate, client: Async
 async def test_an_entered_platform_admin_can_change_a_members_access(estate, client: AsyncClient):
     inside = await _entered(client, "org-test")
     granted = await client.put(
-        f"{BASE}/user-manager@example.com/permissions/manage_sites",
+        f"{BASE}/user-manager@example.com/permissions/manage_zones",
         json={"state": "grant"},
         headers=inside,
     )
@@ -147,7 +147,7 @@ async def test_the_role_filter_reads_only_this_organizations_roles(estate, clien
 async def test_access_changed_in_the_second_organization_stays_there(estate, client: AsyncClient):
     inside = await _inside(client, "admin@example.com", "org-other")
     granted = await client.put(
-        f"{BASE}/user-outsider@example.com/permissions/manage_sites",
+        f"{BASE}/user-outsider@example.com/permissions/manage_zones",
         json={"state": "grant"},
         headers=inside,
     )

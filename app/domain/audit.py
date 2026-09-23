@@ -49,6 +49,12 @@ class AuditAction(enum.Enum):
     CAMERA_CREATED = "camera.created"
     CAMERA_UPDATED = "camera.updated"
     CAMERA_ENABLED = "camera.enabled"
+    #: A camera was dialled, or hung up, from the product. Distinct from
+    #: `CAMERA_ENABLED`, which records the durable decision: starting is what
+    #: actually opens a connection to a DVR and begins processing pictures of
+    #: people, and that is the act somebody later asks about.
+    CAMERA_STARTED = "camera.started"
+    CAMERA_STOPPED = "camera.stopped"
     CAMERA_DISABLED = "camera.disabled"
     #: Removing a camera destroys its observation partition, so this row
     #: always sits beside an `observation.truncated` one. A deletion that
@@ -97,6 +103,7 @@ class AuditAction(enum.Enum):
     RESTAURANT_UPDATED = "restaurant.updated"
     ZONE_CREATED = "zone.created"
     ZONE_UPDATED = "zone.updated"
+    ZONE_DELETED = "zone.deleted"
 
     # ── user administration (Stage 5) ─────────────────────────────────────
     #

@@ -63,7 +63,7 @@ async def _camera(session, key: str, *, channel: int, enabled: bool, analysed: b
     service = CameraService(session)
     camera = await service.create(
         organization_id=ORG,
-        restaurant_id="rest-01",
+        zone_id="zone-01",
         camera_key=key,
         name=f"Channel {channel}",
         channel=channel,
@@ -234,9 +234,7 @@ class TestAnalysisScheduling:
         assert started == 2
 
     @pytest.mark.asyncio
-    async def test_a_camera_off_analysis_is_suppressed_not_merely_unlisted(
-        self, estate
-    ):
+    async def test_a_camera_off_analysis_is_suppressed_not_merely_unlisted(self, estate):
         """The corridors are enabled and streaming. They must reach the wall and
         not the model — the whole point of separating the two flags."""
         live = _Live()
@@ -259,9 +257,7 @@ class TestAnalysisScheduling:
             assert {"cam-63", "cam-64"} <= {r.camera_key for r in rows}
 
     @pytest.mark.asyncio
-    async def test_turning_analysis_off_removes_a_camera_from_the_next_start(
-        self, estate
-    ):
+    async def test_turning_analysis_off_removes_a_camera_from_the_next_start(self, estate):
         """The durable decision governs. This is the contract the runtime
         actually offers: the row is read at start, so a change takes effect on
         the next start rather than on the running process."""
@@ -285,9 +281,7 @@ class TestAnalysisScheduling:
         assert live.started == [f"{ORG}:cam-62"]
 
     @pytest.mark.asyncio
-    async def test_no_analysed_camera_is_reported_as_zero_not_as_a_read_failure(
-        self, app
-    ):
+    async def test_no_analysed_camera_is_reported_as_zero_not_as_a_read_failure(self, app):
         """`0` and `None` are different facts. A site that has narrowed analysis
         to nothing has not failed to read its roster, and the bootstrap
         supervisor must not retry forever as though it had."""

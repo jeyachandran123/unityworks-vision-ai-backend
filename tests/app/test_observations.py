@@ -21,8 +21,8 @@ import pytest
 from httpx import AsyncClient
 
 from app.api.product import _observation_window
-from app.domain.observations import query_observations
 from app.authorization.model import AccessDecision, CameraScope, Role, ScopeBreadth
+from app.domain.observations import query_observations
 from app.errors import ValidationError
 
 from .conftest import bearer
@@ -63,7 +63,9 @@ def _attribute(key: str, value: str, ns: int):
         value=value,
         observed_at=SimpleNamespace(ns=ns),
         valid_until=None,
-        confidence=SimpleNamespace(value=0.9, semantics=SimpleNamespace(value="self_reported"), calibrated=False),
+        confidence=SimpleNamespace(
+            value=0.9, semantics=SimpleNamespace(value="self_reported"), calibrated=False
+        ),
     )
 
 

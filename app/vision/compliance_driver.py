@@ -126,13 +126,28 @@ class ComplianceDriver:
     """Evaluates confirmed objects on a timer and moves the incident queue."""
 
     __slots__ = (
-        "_database", "_evaluator", "_interval_s", "_last", "_notifier",
-        "_reader", "_settings", "_task", "_vision", "_wall",
+        "_database",
+        "_evaluator",
+        "_interval_s",
+        "_last",
+        "_notifier",
+        "_reader",
+        "_settings",
+        "_task",
+        "_vision",
+        "_wall",
     )
 
     def __init__(
-        self, *, settings: Any, vision: Any, database: Any, rules: Any,
-        interval_s: float = 5.0, wall: Any = None, notifier: Any = None,
+        self,
+        *,
+        settings: Any,
+        vision: Any,
+        database: Any,
+        rules: Any,
+        interval_s: float = 5.0,
+        wall: Any = None,
+        notifier: Any = None,
     ) -> None:
         from compliance import ComplianceEvaluator
 
@@ -198,9 +213,9 @@ class ComplianceDriver:
         return self._reader
 
     async def cameras(self) -> dict[str, str | None]:
-        """`camera_key → restaurant_id` for this tenant's enabled cameras.
+        """`camera_key → zone_id` for this tenant's enabled cameras.
 
-        From the database, because the incident needs the restaurant and the
+        From the database, because the incident needs the placement and the
         camera row is the only place that mapping is durable.
         """
         from sqlalchemy import select
@@ -209,7 +224,7 @@ class ComplianceDriver:
 
         async with self._database.session_scope() as session:
             rows = await session.execute(
-                select(Camera.camera_key, Camera.restaurant_id).where(
+                select(Camera.camera_key, Camera.zone_id).where(
                     Camera.organization_id == self._settings.default_tenant_id,
                     Camera.enabled.is_(True),
                 )
@@ -292,7 +307,9 @@ class ComplianceDriver:
                 # a decision frame. If nothing suitable was retained, the
                 # caller stores a context frame and says so.
                 return DECISION_FRAMES.nearest_before(
-                    camera_key, object_id, observed_at,
+                    camera_key,
+                    object_id,
+                    observed_at,
                     tolerance_ns=self.DECISION_FRAME_TOLERANCE_NS,
                 )
             # No observation instant at all. The newest frame this object was
@@ -300,14 +317,10 @@ class ComplianceDriver:
             # frame containing the subject rather than a photograph of the room.
             return DECISION_FRAMES.latest_for_object(camera_key, object_id)
         except Exception as exc:  # noqa: BLE001 - evidence is not the incident
-            logger.debug(
-                "decision frame lookup failed: {}: {}", type(exc).__name__, exc
-            )
+            logger.debug("decision frame lookup failed: {}: {}", type(exc).__name__, exc)
             return None
 
-    async def _capture_evidence(
-        self, session: Any, *, camera_key: str, finding: Any
-    ) -> str:
+    async def _capture_evidence(self, session: Any, *, camera_key: str, finding: Any) -> str:
         """Store **the frame the decision was made on** as durable evidence.
 
         **Off unless the deployment turns it on.** Storing images of
@@ -350,9 +363,7 @@ class ComplianceDriver:
         decision = self._decision_frame(camera_key=camera_key, finding=finding)
         if decision is not None:
             jpeg = decision.jpeg
-            captured_at = datetime.fromtimestamp(
-                decision.captured_at_ns / 1_000_000_000, tz=UTC
-            )
+            captured_at = datetime.fromtimestamp(decision.captured_at_ns / 1_000_000_000, tz=UTC)
             frame_ref = decision.frame_ref
             kind = "decision-frame"
         else:
@@ -394,7 +405,10 @@ class ComplianceDriver:
         except Exception as exc:  # noqa: BLE001 - evidence is not the incident
             logger.warning(
                 "evidence capture failed for {} on {}: {}: {}",
-                finding.rule_id, camera_key, type(exc).__name__, exc,
+                finding.rule_id,
+                camera_key,
+                type(exc).__name__,
+                exc,
             )
             return ""
 
@@ -419,7 +433,9 @@ class ComplianceDriver:
             except Exception as exc:  # noqa: BLE001 - one exhibit, not the set
                 logger.warning(
                     "decision crop {} not stored: {}: {}",
-                    exhibit.evidence_ref, type(exc).__name__, exc,
+                    exhibit.evidence_ref,
+                    type(exc).__name__,
+                    exc,
                 )
         return ref
 
@@ -439,7 +455,9 @@ class ComplianceDriver:
             run.notifications_failed += 1
             logger.warning(
                 "notification failed for incident {}: {}: {}",
-                getattr(incident, "id", "?"), type(exc).__name__, exc,
+                getattr(incident, "id", "?"),
+                type(exc).__name__,
+                exc,
             )
 
     # -- writing ------------------------------------------------------------
@@ -482,7 +500,7 @@ class ComplianceDriver:
                     if finding.state is ComplianceState.VIOLATION:
                         incident, created = await service.open(
                             organization_id=self._settings.default_tenant_id,
-                            restaurant_id=cameras.get(camera_key),
+                            zone_id=cameras.get(camera_key),
                             camera_key=camera_key,
                             rule_id=finding.rule_id,
                             object_id=str(finding.subject.object_id),
@@ -610,8 +628,7 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
     relevant = {
         object_id: entry
         for object_id, entry in subjects.items()
-        if object_id == subject_id
-        or (subject_class and entry.object_class == subject_class)
+        if object_id == subject_id or (subject_class and entry.object_class == subject_class)
     }
     if subject_id not in relevant:
         # The subject was not cut from this frame. Nothing here can be said to
@@ -637,11 +654,7 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
 
     # The subject's crop first, so the cap never spends its budget on
     # bystanders and drops the one image the alert is actually about.
-    with_pixels = [
-        (object_id, entry)
-        for object_id, entry in ordered
-        if entry.crop_jpeg
-    ]
+    with_pixels = [(object_id, entry) for object_id, entry in ordered if entry.crop_jpeg]
     with_pixels.sort(key=lambda item: item[0] != subject_id)
 
     crops: list[_CropExhibit] = []
@@ -654,9 +667,7 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
                 evidence_ref=ref,
                 object_id=object_id,
                 jpeg=bytes(entry.crop_jpeg),
-                geometry=json.dumps(
-                    {"kind": "decision-crop", **_describe(object_id, entry)}
-                ),
+                geometry=json.dumps({"kind": "decision-crop", **_describe(object_id, entry)}),
             )
         )
 
@@ -674,9 +685,7 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
         },
         "subject": _entry(subject_id, relevant[subject_id]),
         "context": [
-            _entry(object_id, entry)
-            for object_id, entry in ordered
-            if object_id != subject_id
+            _entry(object_id, entry) for object_id, entry in ordered if object_id != subject_id
         ],
     }
     return _Exhibits(manifest=json.dumps(manifest), crops=tuple(crops))
@@ -710,8 +719,12 @@ def _observed_at_ns(finding: Any) -> int:
     one would quietly reintroduce the "later room state" this exists to stop.
     """
     conditions = tuple(getattr(finding, "conditions", ()))
-    failed = [c for c in conditions if getattr(c, "outcome", None) is not None
-              and str(getattr(c.outcome, "value", c.outcome)) == "failed"]
+    failed = [
+        c
+        for c in conditions
+        if getattr(c, "outcome", None) is not None
+        and str(getattr(c.outcome, "value", c.outcome)) == "failed"
+    ]
     for condition in failed or conditions:
         observed = getattr(condition, "observed_at_ns", None)
         if observed:
@@ -763,9 +776,9 @@ def _finding_wire(finding: Any) -> dict[str, Any]:
                 # `null` mean entirely different things to whoever reads this
                 # record later and JSON makes them easy to confuse.
                 "outcome": (
-                    "held" if c.satisfied is True
-                    else "failed" if c.satisfied is False
-                    else "unresolved"
+                    "held"
+                    if c.satisfied is True
+                    else "failed" if c.satisfied is False else "unresolved"
                 ),
                 "unknown_reason": getattr(c.unknown_reason, "value", None),
                 "observed_at_ns": getattr(c.observed_at, "ns", None),

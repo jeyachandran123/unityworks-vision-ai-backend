@@ -24,7 +24,7 @@ from sqlalchemy import select
 
 from app.authorization.model import Permission
 from app.domain.audit import AuditAction
-from app.domain.models import AuditEvent, Restaurant
+from app.domain.models import AuditEvent, Zone
 from app.users.models import (
     AccessGrant,
     Organization,
@@ -55,14 +55,7 @@ async def estate(app):
         session.add(operator)
 
         session.add(Organization(id="org-borden", name="Borden Foods", slug="borden"))
-        session.add(
-            Restaurant(
-                id="rest-acme-1",
-                organization_id="org-acme",
-                name="Acme Kitchen",
-                slug="acme-kitchen",
-            )
-        )
+        session.add(Zone(id="zone-acme-1", organization_id="org-acme", name="Acme Kitchen"))
 
         _, solo = make_user(
             org_id="org-acme",
@@ -166,7 +159,7 @@ async def test_overview_counts_what_exists_and_scores_nothing(estate, client: As
 
     assert body["organizations"]["total"] == 2
     assert body["organizations"]["active"] == 2
-    assert body["estate"]["sites"] == 1
+    assert body["estate"]["zones"] == 1
     # operator@, solo@, both@ — the fixture's three.
     assert body["people"]["users"] == 3
     # `both@` is the only account with two memberships.

@@ -52,7 +52,7 @@ from app.authorization.model import (
     Role,
 )
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
-from app.domain.models import AuditEvent, Camera, Restaurant
+from app.domain.models import AuditEvent, Camera, Zone
 from app.errors import ConflictError, NotFoundError, ValidationError
 from app.users.models import (
     AccessGrant,
@@ -122,7 +122,7 @@ async def overview(
         key = str(organization.status or "").strip().lower()
         by_status[key] = by_status.get(key, 0) + 1
 
-    sites = await _group_count(session, Restaurant.organization_id)
+    zones = await _group_count(session, Zone.organization_id)
     cameras = await _group_count(session, Camera.organization_id)
 
     users_total = int((await session.execute(select(func.count()).select_from(User))).scalar_one())
@@ -163,18 +163,18 @@ async def overview(
         ).scalar_one()
     )
 
-    # Onboarding that stalled. An organization with no sites or no cameras is
+    # Onboarding that stalled. An organization with no zones or no cameras is
     # not broken — it is unfinished, and nobody is currently told about it.
     stalled = [
         {
             "id": organization.id,
             "name": organization.name,
-            "site_count": sites.get(organization.id, 0),
+            "zone_count": zones.get(organization.id, 0),
             "camera_count": cameras.get(organization.id, 0),
         }
         for organization in organizations
         if str(organization.status or "").strip().lower() == OrganizationStatus.ACTIVE.value
-        and (sites.get(organization.id, 0) == 0 or cameras.get(organization.id, 0) == 0)
+        and (zones.get(organization.id, 0) == 0 or cameras.get(organization.id, 0) == 0)
     ]
 
     return {
@@ -185,7 +185,7 @@ async def overview(
             "archived": by_status.get(OrganizationStatus.ARCHIVED.value, 0),
         },
         "estate": {
-            "sites": sum(sites.values()),
+            "zones": sum(zones.values()),
             "cameras": sum(cameras.values()),
             # What the runtime is actually streaming, platform-wide. Read from
             # the wall registry rather than the camera table, so it reports

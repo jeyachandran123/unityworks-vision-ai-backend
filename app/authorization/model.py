@@ -97,9 +97,11 @@ class Permission(enum.Enum):
     # same role where one may edit the estate and the other may only look at
     # it. Neither is implied by the other, and neither is implied by
     # MANAGE_ORGANIZATION.
+    #
+    # `view_sites` / `manage_sites` lived here until 2026-09-23. Zones replaced
+    # sites, so the pair named nothing; a permission that guards no surface is
+    # worse than none, because somebody grants it and believes it did something.
 
-    VIEW_SITES = "view_sites"
-    MANAGE_SITES = "manage_sites"
     VIEW_ZONES = "view_zones"
     MANAGE_ZONES = "manage_zones"
 
@@ -250,13 +252,10 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.VIEW_EVIDENCE,
             Permission.VIEW_CAMERA_HEALTH,
             Permission.VIEW_CAMERAS,
-            # Read the estate, do not change it. This is exactly what the role
-            # could do before these keys existed — it held VIEW_USERS, which
-            # gated site and zone reads — and deliberately no more. A manager
-            # who should be able to edit sites gets MANAGE_SITES as a
-            # per-user GRANT override; that difference between two managers on
-            # one role is the whole point of the override engine.
-            Permission.VIEW_SITES,
+            # Read the estate, do not change it. A manager who should be
+            # able to edit zones gets MANAGE_ZONES as a per-user GRANT
+            # override; that difference between two managers on one role is
+            # the whole point of the override engine.
             Permission.VIEW_ZONES,
             Permission.VIEW_INCIDENTS,
             Permission.ACKNOWLEDGE_INCIDENTS,
@@ -532,7 +531,7 @@ class AccessDecision:
         bug, and the safe failure is loud.
         """
         from vision_os.core.model.api import Scope
-        from vision_os.core.model.ids import CameraId, SiteId
+        from vision_os.core.model.ids import SiteId
 
         if not self.cameras.grants_anything:
             raise ScopeError(
@@ -591,9 +590,8 @@ class AccessDecision:
         written since, and a grant naming another tenant's key would be a
         cross-tenant read waiting for a collision.
         """
-        from vision_os.core.model.ids import CameraId
-
         from app.domain.runtime_identity import runtime_camera_id
+        from vision_os.core.model.ids import CameraId
 
         return tuple(
             CameraId(runtime_camera_id(self.tenant_id, key)) for key in self.cameras.camera_ids

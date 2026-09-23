@@ -32,12 +32,12 @@ from fastapi.responses import JSONResponse, Response
 from loguru import logger
 
 from app.api.administration import router as administration_router
-from app.api.platform import router as platform_router
-from app.api.platform_administration import router as platform_administration_router
 from app.api.analytics import router as analytics_router
 from app.api.evaluation import router as evaluation_router
 from app.api.integrations import router as integrations_router
 from app.api.patron import router as patron_router
+from app.api.platform import router as platform_router
+from app.api.platform_administration import router as platform_administration_router
 from app.api.product import router as product_router
 from app.api.reports import router as reports_router
 from app.api.routes import build_router, devtools_router
@@ -395,7 +395,6 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
     """
     from app.domain.cameras import CameraService, to_rtsp_config
 
-    cfg: Settings = app.state.settings
     database: Database = app.state.database
     live: LiveRuntime = app.state.live
 

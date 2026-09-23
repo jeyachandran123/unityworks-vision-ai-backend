@@ -69,7 +69,7 @@ class TestCameraConfiguration:
         service = CameraService(session)
         camera = await service.create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-09",
             name="Prep bench",
             channel=9,
@@ -87,7 +87,7 @@ class TestCameraConfiguration:
         for channel in range(1, 5):
             await service.create(
                 organization_id=ORG,
-                restaurant_id="rest-01",
+                zone_id="zone-01",
                 camera_key=f"cam-{channel:02d}",
                 name=f"Camera {channel}",
                 channel=channel,
@@ -105,7 +105,7 @@ class TestCameraConfiguration:
         with pytest.raises(ValidationError):
             await CameraService(session).create(
                 organization_id=ORG,
-                restaurant_id="rest-01",
+                zone_id="zone-01",
                 camera_key="cam-99",
                 name="Bad",
                 channel=99,
@@ -117,7 +117,7 @@ class TestCameraConfiguration:
     async def test_a_reference_is_accepted_and_never_resolved_here(self, session):
         camera = await CameraService(session).create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-10",
             name="Wash",
             channel=10,
@@ -137,7 +137,7 @@ class TestCameraConfiguration:
     async def test_the_row_translates_to_runtime_config_without_resolving(self, session):
         camera = await CameraService(session).create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-11",
             name="Line",
             channel=11,
@@ -161,7 +161,7 @@ class TestCameraConfiguration:
         service = CameraService(session)
         await service.create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-12",
             name="A",
             channel=12,
@@ -171,7 +171,7 @@ class TestCameraConfiguration:
         with pytest.raises(ConflictError):
             await service.create(
                 organization_id=ORG,
-                restaurant_id="rest-01",
+                zone_id="zone-01",
                 camera_key="cam-12",
                 name="B",
                 channel=12,
@@ -184,7 +184,7 @@ class TestCameraConfiguration:
         service = CameraService(session)
         await service.create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-13",
             name="A",
             channel=13,
@@ -200,7 +200,7 @@ class TestCameraConfiguration:
         service = CameraService(session)
         await service.create(
             organization_id=ORG,
-            restaurant_id="rest-01",
+            zone_id="zone-01",
             camera_key="cam-14",
             name="A",
             channel=14,
@@ -735,7 +735,7 @@ class TestProductApi:
         created = await client.post(
             "/api/v1/cameras",
             headers=headers,
-            json={"camera_key": "cam-20", "name": "X", "channel": 20, "restaurant_id": "r"},
+            json={"camera_key": "cam-20", "name": "X", "channel": 20, "zone_id": "r"},
         )
         assert created.status_code == 403
 
@@ -767,7 +767,7 @@ class TestProductApi:
     ):
         headers = admin_headers
         restaurant = (
-            await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
+            await client.post("/api/v1/zones", json={"name": "Site"}, headers=headers)
         ).json()
         response = await client.post(
             "/api/v1/cameras",
@@ -776,7 +776,7 @@ class TestProductApi:
                 "camera_key": "cam-21",
                 "name": "New",
                 "channel": 21,
-                "restaurant_id": restaurant["id"],
+                "zone_id": restaurant["id"],
                 "host": "10.0.0.5",
                 "credential_ref": "env:CCTV_PASSWORD",
             },
@@ -789,7 +789,7 @@ class TestProductApi:
     async def test_enabling_a_camera_gets_its_own_audit_action(self, seeded, client, admin_headers):
         headers = admin_headers
         restaurant = (
-            await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
+            await client.post("/api/v1/zones", json={"name": "Site"}, headers=headers)
         ).json()
         await client.post(
             "/api/v1/cameras",
@@ -798,7 +798,7 @@ class TestProductApi:
                 "camera_key": "cam-22",
                 "name": "New",
                 "channel": 22,
-                "restaurant_id": restaurant["id"],
+                "zone_id": restaurant["id"],
                 "host": "10.0.0.5",
             },
         )
@@ -820,9 +820,7 @@ class TestProductApi:
     ):
         """The same ownership guard zone creation already applies (`app/api/administration.py:325`)."""
         mine = (
-            await client.post(
-                "/api/v1/restaurants", json={"name": "Mine"}, headers=admin_headers
-            )
+            await client.post("/api/v1/zones", json={"name": "Mine"}, headers=admin_headers)
         ).json()
 
         outsider = await bearer(client, "outsider@example.com")
@@ -833,7 +831,7 @@ class TestProductApi:
                 "camera_key": "cam-trespass",
                 "name": "Trespass",
                 "channel": 1,
-                "restaurant_id": mine["id"],
+                "zone_id": mine["id"],
             },
         )
         assert response.status_code == 404, response.text
@@ -855,7 +853,7 @@ class TestProductApi:
                 "camera_key": "cam-orphan",
                 "name": "Orphan",
                 "channel": 1,
-                "restaurant_id": "does-not-exist",
+                "zone_id": "does-not-exist",
             },
         )
         assert response.status_code == 404
@@ -936,7 +934,7 @@ class TestRestartRecovery:
             cameras = CameraService(session)
             await cameras.create(
                 organization_id=ORG,
-                restaurant_id="rest-01",
+                zone_id="zone-01",
                 camera_key="cam-01",
                 name="Prep",
                 channel=1,
@@ -945,7 +943,7 @@ class TestRestartRecovery:
             )
             await cameras.create(
                 organization_id=ORG,
-                restaurant_id="rest-01",
+                zone_id="zone-01",
                 camera_key="cam-02",
                 name="Wash",
                 channel=2,
@@ -1038,7 +1036,7 @@ class TestRestartRecovery:
             for channel in range(1, 5):
                 await service.create(
                     organization_id=ORG,
-                    restaurant_id="rest-01",
+                    zone_id="zone-01",
                     camera_key=f"cam-{channel:02d}",
                     name=f"Camera {channel}",
                     channel=channel,

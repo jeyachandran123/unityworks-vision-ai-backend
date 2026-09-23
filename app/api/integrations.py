@@ -122,12 +122,9 @@ async def list_pos_connectors(access: CurrentAccess, session: DbSession) -> dict
                 "connector_key": row.connector_key,
                 "vendor": row.vendor,
                 "display_name": row.display_name,
-                "restaurant_id": row.restaurant_id,
                 "is_active": bool(row.is_active),
                 "capabilities": [c for c in row.capabilities.split(",") if c],
-                "last_success_at": row.last_success_at.isoformat()
-                if row.last_success_at
-                else None,
+                "last_success_at": row.last_success_at.isoformat() if row.last_success_at else None,
                 "last_error_at": row.last_error_at.isoformat() if row.last_error_at else None,
                 "last_error": row.last_error,
             }

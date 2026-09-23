@@ -49,7 +49,7 @@ from app.auth.cookies import set_refresh_cookie
 from app.authorization.model import OrganizationStatus
 from app.authorization.platform import PlatformOperator, entry_decision
 from app.domain.audit import AuditAction, AuditTrail
-from app.domain.models import Camera, Restaurant
+from app.domain.models import Camera, Zone
 from app.domain.runtime_identity import validate_organization_id
 from app.errors import ConflictError, NotFoundError, ValidationError
 from app.users.models import Organization, OrganizationMembership
@@ -76,7 +76,7 @@ def _iso(value: datetime | None) -> str | None:
 def organization_to_wire(
     organization: Organization,
     *,
-    site_count: int = 0,
+    zone_count: int = 0,
     camera_count: int = 0,
     user_count: int = 0,
     running_cameras: int = 0,
@@ -84,7 +84,7 @@ def organization_to_wire(
     """One organization, with the counts an operator console actually reads.
 
     Counts rather than nested collections: a list of customers wants to know
-    one has four sites, not to carry all four on every row.
+    one has four zones, not to carry all four on every row.
     """
     status = str(organization.status or "").strip().lower()
     return {
@@ -95,7 +95,7 @@ def organization_to_wire(
         "status_changed_at": _iso(organization.status_changed_at),
         "status_reason": organization.status_reason or "",
         "created_at": _iso(organization.created_at),
-        "site_count": site_count,
+        "zone_count": zone_count,
         "camera_count": camera_count,
         "user_count": user_count,
         # What the runtime is *actually* doing, as distinct from what the
@@ -107,7 +107,7 @@ def organization_to_wire(
 
 
 async def _counts(session: DbSession) -> dict[str, dict[str, int]]:
-    """Site, camera and user counts for every organization, in three queries."""
+    """Zone, camera and user counts for every organization, in three queries."""
     out: dict[str, dict[str, int]] = {}
 
     async def tally(statement, key: str) -> None:
@@ -115,8 +115,8 @@ async def _counts(session: DbSession) -> dict[str, dict[str, int]]:
             out.setdefault(organization_id, {})[key] = int(count)
 
     await tally(
-        select(Restaurant.organization_id, func.count()).group_by(Restaurant.organization_id),
-        "site_count",
+        select(Zone.organization_id, func.count()).group_by(Zone.organization_id),
+        "zone_count",
     )
     await tally(
         select(Camera.organization_id, func.count()).group_by(Camera.organization_id),
@@ -266,7 +266,7 @@ async def create_organization(
         slug=slug,
         # Every organization starts ACTIVE. There is no "provisioning" state,
         # because there is nothing asynchronous to wait for: a tenant with no
-        # sites and no cameras is already coherent.
+        # zones and no cameras is already coherent.
         status=OrganizationStatus.ACTIVE.value,
         is_active=True,
     )

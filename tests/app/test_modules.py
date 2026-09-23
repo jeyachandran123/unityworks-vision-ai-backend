@@ -359,21 +359,19 @@ async def test_moving_a_camera_does_not_rewrite_where_past_readings_happened(
     from datetime import UTC, datetime, timedelta
 
     from app.domain.cameras import CameraService
-    from app.domain.models import Restaurant, Zone
+    from app.domain.models import Zone
     from app.domain.zone_attribution import ZoneHistory
 
     database = admin.state.database
     async with database.session_scope() as session:
-        restaurant = Restaurant(id="rest-1", organization_id="org-test", name="Site", slug="site")
-        prep = Zone(id="zone-prep", restaurant_id="rest-1", name="Prep line")
-        wash = Zone(id="zone-wash", restaurant_id="rest-1", name="Wash station")
-        session.add_all([restaurant, prep, wash])
+        prep = Zone(id="zone-prep", organization_id="org-test", name="Prep line")
+        wash = Zone(id="zone-wash", organization_id="org-test", name="Wash station")
+        session.add_all([prep, wash])
         await session.flush()
 
         service = CameraService(session)
         await service.create(
             organization_id="org-test",
-            restaurant_id="rest-1",
             camera_key="cam-move",
             name="Camera",
             channel=1,
@@ -426,11 +424,10 @@ async def test_an_instant_before_any_assignment_has_no_recorded_zone(admin) -> N
     database = admin.state.database
     async with database.session_scope() as session:
         session.add(Restaurant(id="rest-2", organization_id="org-test", name="S", slug="s"))
-        session.add(Zone(id="zone-a", restaurant_id="rest-2", name="A"))
+        session.add(Zone(id="zone-a", organization_id="org-test", name="A"))
         await session.flush()
         await CameraService(session).create(
             organization_id="org-test",
-            restaurant_id="rest-2",
             camera_key="cam-old",
             name="Camera",
             channel=1,
@@ -456,11 +453,10 @@ async def test_reassigning_to_the_same_zone_opens_no_second_interval(admin) -> N
     database = admin.state.database
     async with database.session_scope() as session:
         session.add(Restaurant(id="rest-3", organization_id="org-test", name="S", slug="s3"))
-        session.add(Zone(id="zone-b", restaurant_id="rest-3", name="B"))
+        session.add(Zone(id="zone-b", organization_id="org-test", name="B"))
         await session.flush()
         await CameraService(session).create(
             organization_id="org-test",
-            restaurant_id="rest-3",
             camera_key="cam-same",
             name="Camera",
             channel=1,
@@ -546,7 +542,7 @@ async def test_the_retention_sweep_truncates_the_observation_log(admin) -> None:
         session.add(
             Camera(
                 organization_id="org-test",
-                restaurant_id="rest-x",
+                zone_id="zone-x",
                 camera_key="cam-sweep",
                 name="Camera",
                 channel=1,
@@ -617,7 +613,7 @@ def test_every_event_table_freezes_where_it_happened() -> None:
     )
     for model in located_events:
         columns = {c.name for c in model.__table__.columns}
-        assert {"restaurant_id", "zone_id", "zone_name"} <= columns, model.__tablename__
+        assert {"zone_id", "zone_name"} <= columns, model.__tablename__
 
 
 def test_demography_has_no_column_that_could_name_a_person() -> None:

@@ -1,7 +1,7 @@
 """Identity tables — the authentication and authorization foundation.
 
 Four tables, and no more. This is deliberately **not** the restaurant domain:
-there is no Restaurant, Zone, Camera, Incident or Notification here, because
+there is no Zone, Camera, Incident or Notification here, because
 those belong to Phase 4 and a table created early is a schema decision made
 without the feature that would have informed it.
 
@@ -64,6 +64,12 @@ class Organization(Base):
     #: across two systems. Defaults to "active" so every row that predates this
     #: column — including `org-unityworks` — reads as unchanged behavior with no
     #: manual backfill step; see the migration's `server_default`.
+    #: Where this customer's day starts and ends. Report periods are local:
+    #: September for a Singapore kitchen begins at 16:00 UTC on 31 August, and a
+    #: month computed on UTC boundaries misattributes eight hours of every one.
+    #: It used to live on the site; zones do not carry one, because a kitchen
+    #: and its dine hall are in the same place.
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     #: When the status last changed, and why. Nullable and empty by default
     #: rather than backfilled: an organization that has never changed status

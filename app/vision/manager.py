@@ -220,8 +220,18 @@ class LiveRuntime:
                 )
         return started
 
-    async def start_live(self, config: RtspCameraConfig) -> VisionSession:
-        """Start one live camera."""
+    async def start_live(
+        self, config: RtspCameraConfig, *, tenant_id: str | None = None
+    ) -> VisionSession:
+        """Start one live camera.
+
+        `tenant_id` is the organization the camera belongs to. It defaults to
+        the deployment's own tenant for the boot path, which reads a single
+        configured deployment; a camera started from the product passes its
+        own, because `visible()` and `get()` filter sessions on it and a
+        session filed under the wrong organization is invisible to the people
+        who own the camera.
+        """
         source = LiveRtspSource(
             config,
             secrets=self._secrets,
@@ -235,11 +245,35 @@ class LiveRuntime:
             source,
             SessionSpec(
                 camera_id=config.camera_id,
-                tenant_id=self._settings.default_tenant_id,
+                tenant_id=tenant_id or self._settings.default_tenant_id,
                 queue_capacity=self._settings.cctv_queue_capacity,
                 analysis_fps=config.analysis_fps,
             ),
         )
+
+    async def start_one(self, config: RtspCameraConfig, *, tenant_id: str) -> VisionSession:
+        """Start one camera now, on behalf of the organization that owns it.
+
+        The gap this fills: until 2026-09-23 the only thing that ever dialled a
+        camera was `start_from_records` at boot. A camera added through the
+        product was written to the database and then sat there, connected to
+        nothing, until somebody restarted the process — and nothing anywhere
+        said so.
+        """
+        return await self.start_live(config, tenant_id=tenant_id)
+
+    async def stop_camera(self, camera_id: str, *, tenant_id: str) -> bool:
+        """Stop this camera's session. `False` when it was not running.
+
+        Not an error: "stop something already stopped" asks for a state, and
+        that state is the end state either way. The caller reports what
+        happened rather than raising over a race with a reconnect.
+        """
+        stopped = False
+        for session in self.visible(tenant_id=tenant_id, camera_ids=(camera_id,)):
+            await self.stop(session.session_id, tenant_id=tenant_id)
+            stopped = True
+        return stopped
 
     async def start_replay(
         self,

@@ -57,18 +57,28 @@ def _finding(state: ComplianceState, *, object_id: str = "obj-1", camera: str = 
     )
     if state is ComplianceState.VIOLATION:
         condition = ConditionOutcome(
-            attribute_key="head_covering", operator="ne", expected="none",
-            observed="none", satisfied=False, message="is not wearing a head covering",
+            attribute_key="head_covering",
+            operator="ne",
+            expected="none",
+            observed="none",
+            satisfied=False,
+            message="is not wearing a head covering",
         )
     elif state is ComplianceState.COMPLIANT:
         condition = ConditionOutcome(
-            attribute_key="head_covering", operator="ne", expected="none",
-            observed="hairnet", satisfied=True,
+            attribute_key="head_covering",
+            operator="ne",
+            expected="none",
+            observed="hairnet",
+            satisfied=True,
         )
     else:
         condition = ConditionOutcome(
-            attribute_key="head_covering", operator="ne", expected="none",
-            observed="not_visible", unknown_reason=UnknownReason.NOT_OBSERVABLE,
+            attribute_key="head_covering",
+            operator="ne",
+            expected="none",
+            observed="not_visible",
+            unknown_reason=UnknownReason.NOT_OBSERVABLE,
         )
 
     return Finding(
@@ -103,7 +113,7 @@ async def apply(app, findings, cameras=None):
         database=app.state.database,
         rules=_rules(),
     )
-    return await driver.apply(findings, cameras=cameras or {"cam-12": "rest-01"})
+    return await driver.apply(findings, cameras=cameras or {"cam-12": "zone-01"})
 
 
 async def _incidents(app, organization_id: str = "org-test"):
@@ -129,7 +139,7 @@ class TestViolationBecomesIncident:
         assert incident.severity == "high"
         assert incident.status == "active"
         assert incident.ruleset_version == "test-2026.1"
-        assert incident.restaurant_id == "rest-01"
+        assert incident.zone_id == "zone-01"
         # The reasoning is frozen with the incident, so a later rule change
         # cannot rewrite what was decided about this person.
         assert "head_covering" in incident.finding_snapshot
@@ -149,10 +159,13 @@ class TestViolationBecomesIncident:
     @pytest.mark.asyncio
     async def test_two_people_get_their_own_incidents(self, app):
         """Deduplication is per subject, not per camera."""
-        await apply(app, [
-            _finding(ComplianceState.VIOLATION, object_id="obj-1"),
-            _finding(ComplianceState.VIOLATION, object_id="obj-2"),
-        ])
+        await apply(
+            app,
+            [
+                _finding(ComplianceState.VIOLATION, object_id="obj-1"),
+                _finding(ComplianceState.VIOLATION, object_id="obj-2"),
+            ],
+        )
         assert len({i.object_id for i in await _incidents(app)}) == 2
 
 
@@ -219,9 +232,7 @@ class TestSeverityGate:
     async def test_an_informational_violation_is_not_persisted_as_an_incident(self, app):
         import dataclasses
 
-        finding = dataclasses.replace(
-            _finding(ComplianceState.VIOLATION), severity="informational"
-        )
+        finding = dataclasses.replace(_finding(ComplianceState.VIOLATION), severity="informational")
         run = await apply(app, [finding])
         assert run.incidents_opened == 0
         assert await _incidents(app) == []
@@ -280,7 +291,9 @@ class TestPassCounters:
         assert (run.violations, run.compliant, run.unknown) == (2, 1, 1)
         assert run.findings == 4
         assert run.by_rule["kitchen.person.ppe.v1"] == {
-            "compliant": 1, "violation": 2, "unknown": 1
+            "compliant": 1,
+            "violation": 2,
+            "unknown": 1,
         }
 
     def test_the_wire_form_carries_every_counter(self):

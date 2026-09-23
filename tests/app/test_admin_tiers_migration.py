@@ -57,6 +57,9 @@ INSERT INTO access_grants (id, user_id, organization_id, camera_breadth, camera_
 VALUES ('a-op', 'op', 'org-gayathri', 'all_in_tenant', '', '', CURRENT_TIMESTAMP),
        ('a-mgr', 'mgr', 'org-borden', 'listed', 'cam-01', 'site-01', CURRENT_TIMESTAMP);
 
+-- `manage_sites` is deliberate: the permission was removed from the
+-- application on 2026-09-23, and a migration must still carry the row
+-- across unchanged. `parse_overrides` drops it at read time.
 INSERT INTO permission_overrides (id, user_id, organization_id, permission, state, granted_at)
 VALUES ('o-op', 'op', 'org-gayathri', 'view_live', 'revoke', CURRENT_TIMESTAMP),
        ('o-mgr', 'mgr', 'org-borden', 'manage_sites', 'grant', CURRENT_TIMESTAMP);

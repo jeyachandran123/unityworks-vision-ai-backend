@@ -73,30 +73,33 @@ class Restaurant(Base):
         DateTime(timezone=True), nullable=False, default=_now
     )
 
-    zones: Mapped[list[Zone]] = relationship(back_populates="restaurant")
-
 
 class Zone(Base):
-    """A named area — "prep line", "wash station".
+    """A named area in an organization — "kitchen", "dine hall", "billing".
 
-    Worth modelling from the start even while v1 renders one zone per camera: it
-    is what lets an operator say "the prep line had four violations this week"
+    The estate's one placement level since 2026-09-23. It used to hang off a
+    site, and a camera named both; the people running a restaurant describe
+    where a camera is in exactly one step, so now the model does too.
+
+    It is what lets somebody say "the prep line had four violations this week"
     without naming a camera.
     """
 
     __tablename__ = "zones"
-    __table_args__ = (Index("ix_zones_restaurant", "restaurant_id"),)
+    __table_args__ = (Index("ix_zones_organization", "organization_id"),)
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
-    restaurant_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=False
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    #: Deactivated rather than deleted once it holds cameras: a zone that has
+    #: watched people is part of the record of what was watched.
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
     )
 
-    restaurant: Mapped[Restaurant] = relationship(back_populates="zones")
     cameras: Mapped[list[Camera]] = relationship(back_populates="zone")
 
 
@@ -117,18 +120,17 @@ class Camera(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", "camera_key", name="uq_camera_key"),
         Index("ix_cameras_org_enabled", "organization_id", "enabled"),
-        Index("ix_cameras_restaurant", "restaurant_id"),
+        Index("ix_cameras_zone", "zone_id"),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    restaurant_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=False
-    )
-    zone_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("zones.id", ondelete="SET NULL"), nullable=True
+    #: Where the camera is. The estate's one placement level, and required: a
+    #: camera nobody can locate is a camera nobody can act on.
+    zone_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("zones.id", ondelete="RESTRICT"), nullable=False
     )
 
     #: The stable identity the pipeline partitions on — `cam-01`. Never inferred
@@ -242,7 +244,6 @@ class CameraZoneAssignment(Base):
     #: same reason the finding is: renaming a zone must not rewrite what a past
     #: reading was labelled.
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
-    restaurant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     effective_from: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_now
@@ -384,7 +385,7 @@ class Incident(Base):
     __tablename__ = "incidents"
     __table_args__ = (
         Index("ix_incidents_org_status", "organization_id", "status"),
-        Index("ix_incidents_restaurant_time", "restaurant_id", "created_at"),
+        Index("ix_incidents_zone_time", "zone_id", "created_at"),
         Index("ix_incidents_camera_time", "camera_key", "created_at"),
         Index("ix_incidents_status_time", "status", "created_at"),
         # Supports the de-duplication lookup: one OPEN incident per subject per
@@ -408,9 +409,9 @@ class Incident(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
+    #: The zone this happened in. Nullable because a past incident's placement
+    #: is read from `CameraZoneAssignment` intervals, and "unrecorded" is a
+    #: truthful answer the product renders as such.
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     camera_key: Mapped[str] = mapped_column(String(64), nullable=False)
 

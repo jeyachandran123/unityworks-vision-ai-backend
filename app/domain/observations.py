@@ -86,11 +86,10 @@ def query_observations(
     platform imports stay inside the function rather than at module import time,
     matching how every other boundary in this application reaches Vision OS.
     """
+    from app.domain.runtime_identity import runtime_camera_id
     from vision_os.core.model.api import Principal, Scope, TimeWindow
     from vision_os.core.model.ids import CameraId, TenantId
     from vision_os.core.model.timebase import Instant
-
-    from app.domain.runtime_identity import runtime_camera_id
 
     tenant = TenantId(access.tenant_id)
     principal = Principal(
@@ -103,9 +102,7 @@ def query_observations(
     # pipeline published them with, and that id carries the tenant.
     scope = Scope(
         tenant_id=tenant,
-        camera_ids=tuple(
-            CameraId(runtime_camera_id(access.tenant_id, key)) for key in cameras
-        ),
+        camera_ids=tuple(CameraId(runtime_camera_id(access.tenant_id, key)) for key in cameras),
     )
     window = TimeWindow(
         start=Instant(int(start.timestamp() * 1_000_000_000)),

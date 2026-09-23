@@ -57,7 +57,7 @@ class IncidentNotice:
 
     incident_id: str
     organization_id: str
-    restaurant_id: str | None
+    zone_id: str | None
     camera_key: str
     rule_id: str
     severity: str
@@ -74,7 +74,7 @@ class IncidentNotice:
             "type": "incident.opened",
             "incident_id": self.incident_id,
             "organization_id": self.organization_id,
-            "restaurant_id": self.restaurant_id,
+            "zone_id": self.zone_id,
             "camera_key": self.camera_key,
             "rule_id": self.rule_id,
             "severity": self.severity,
@@ -203,8 +203,10 @@ class Notifier:
             self.audit.last_error = f"{type(exc).__name__}: {exc}"
             logger.warning(
                 "notification channel '{}' failed for incident {}: {}: {}",
-                self._channel.channel_id, notice.incident_id,
-                type(exc).__name__, exc,
+                self._channel.channel_id,
+                notice.incident_id,
+                type(exc).__name__,
+                exc,
             )
             return False
 
@@ -226,7 +228,7 @@ def _notice_from(incident: Any, finding: Any) -> IncidentNotice:
     return IncidentNotice(
         incident_id=str(getattr(incident, "id", "")),
         organization_id=str(getattr(incident, "organization_id", "")),
-        restaurant_id=getattr(incident, "restaurant_id", None),
+        zone_id=getattr(incident, "zone_id", None),
         camera_key=str(getattr(incident, "camera_key", "")),
         rule_id=str(getattr(incident, "rule_id", "")),
         severity=str(getattr(incident, "severity", "")),

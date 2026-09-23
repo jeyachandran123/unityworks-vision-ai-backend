@@ -266,7 +266,7 @@ class ReportRequest:
     #: `None` is a tenant-wide grant; an **empty tuple is none** and matches
     #: nothing — the same three-state rule the rest of the application uses.
     camera_keys: tuple[str, ...] | None
-    restaurant_id: str = ""
+    zone_id: str = ""
     #: Hard ceiling per section. A read that hits it reports `truncated`.
     row_limit: int = 5000
 

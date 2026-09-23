@@ -30,7 +30,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain import observations as observation_fold
-from app.domain.models import AuditEvent, Camera, CameraZoneAssignment, Incident, Restaurant, Zone
+from app.domain.models import AuditEvent, Camera, CameraZoneAssignment, Incident, Zone
 from app.reporting.model import Column, ReportRequest, Section, SourceCoverage
 from app.reporting.periods import ResolvedZone, buckets
 
@@ -46,8 +46,8 @@ def _scope_incidents(statement, request: ReportRequest):
         # An empty tuple matches nothing, which is the correct answer for an
         # account granted no cameras — never a wildcard.
         statement = statement.where(Incident.camera_key.in_(request.camera_keys))
-    if request.restaurant_id:
-        statement = statement.where(Incident.restaurant_id == request.restaurant_id)
+    if request.zone_id:
+        statement = statement.where(Incident.zone_id == request.zone_id)
     return statement
 
 
@@ -103,9 +103,7 @@ async def collect_incidents(
     zone_labels = dict(
         (
             await session.execute(
-                select(Zone.id, Zone.name)
-                .join(Restaurant, Restaurant.id == Zone.restaurant_id)
-                .where(Restaurant.organization_id == request.organization_id)
+                select(Zone.id, Zone.name).where(Zone.organization_id == request.organization_id)
             )
         ).all()
     )
@@ -147,9 +145,7 @@ async def collect_incidents(
     return (period, severity, zones, rules), coverage
 
 
-def _incidents_by_period(
-    rows, request: ReportRequest, zone: ResolvedZone
-) -> Section:
+def _incidents_by_period(rows, request: ReportRequest, zone: ResolvedZone) -> Section:
     windows = buckets(request.since, request.until, request.granularity, zone)
     tallied: list[dict[str, Any]] = []
 
@@ -190,7 +186,9 @@ def _incidents_by_period(
     )
 
 
-def _incidents_by_key(rows, *, key, column: Column, title: str, note: str, empty_note: str) -> Section:
+def _incidents_by_key(
+    rows, *, key, column: Column, title: str, note: str, empty_note: str
+) -> Section:
     tally: dict[str, int] = {}
     for row in rows:
         tally[key(row)] = tally.get(key(row), 0) + 1
@@ -410,26 +408,15 @@ async def collect_cameras(
     statement = select(Camera).where(Camera.organization_id == request.organization_id)
     if request.camera_keys is not None:
         statement = statement.where(Camera.camera_key.in_(request.camera_keys))
-    if request.restaurant_id:
-        statement = statement.where(Camera.restaurant_id == request.restaurant_id)
+    if request.zone_id:
+        statement = statement.where(Camera.zone_id == request.zone_id)
 
     cameras = (await session.execute(statement.order_by(Camera.camera_key))).scalars().all()
 
     zone_names = dict(
         (
             await session.execute(
-                select(Zone.id, Zone.name).join(
-                    Restaurant, Restaurant.id == Zone.restaurant_id
-                ).where(Restaurant.organization_id == request.organization_id)
-            )
-        ).all()
-    )
-    site_names = dict(
-        (
-            await session.execute(
-                select(Restaurant.id, Restaurant.name).where(
-                    Restaurant.organization_id == request.organization_id
-                )
+                select(Zone.id, Zone.name).where(Zone.organization_id == request.organization_id)
             )
         ).all()
     )
@@ -440,7 +427,6 @@ async def collect_cameras(
         columns=(
             Column("camera_key", "Camera"),
             Column("name", "Name"),
-            Column("site", "Site"),
             Column("zone", "Zone (current)"),
             Column("enabled", "Processing"),
         ),
@@ -448,7 +434,6 @@ async def collect_cameras(
             {
                 "camera_key": camera.camera_key,
                 "name": camera.name,
-                "site": site_names.get(camera.restaurant_id, "—"),
                 "zone": zone_names.get(camera.zone_id or "", UNRECORDED_ZONE),
                 "enabled": "Yes" if camera.enabled else "No",
             }
@@ -469,9 +454,7 @@ async def collect_cameras(
             await session.execute(
                 select(CameraZoneAssignment)
                 .where(CameraZoneAssignment.organization_id == request.organization_id)
-                .order_by(
-                    CameraZoneAssignment.camera_key, CameraZoneAssignment.effective_from
-                )
+                .order_by(CameraZoneAssignment.camera_key, CameraZoneAssignment.effective_from)
                 .limit(request.row_limit)
             )
         )
@@ -513,9 +496,7 @@ async def collect_cameras(
         ),
     )
 
-    return (roster, history), SourceCoverage(
-        source="cameras", available=True, rows=len(cameras)
-    )
+    return (roster, history), SourceCoverage(source="cameras", available=True, rows=len(cameras))
 
 
 # ── Audit ────────────────────────────────────────────────────────────────────
@@ -532,19 +513,16 @@ async def collect_audit(
     employee, outliving the 730-day policy that governs the original.
     """
     rows = (
-        (
-            await session.execute(
-                select(AuditEvent.action, AuditEvent.actor, AuditEvent.outcome)
-                .where(
-                    AuditEvent.organization_id == request.organization_id,
-                    AuditEvent.occurred_at >= request.since,
-                    AuditEvent.occurred_at < request.until,
-                )
-                .limit(request.row_limit + 1)
+        await session.execute(
+            select(AuditEvent.action, AuditEvent.actor, AuditEvent.outcome)
+            .where(
+                AuditEvent.organization_id == request.organization_id,
+                AuditEvent.occurred_at >= request.since,
+                AuditEvent.occurred_at < request.until,
             )
+            .limit(request.row_limit + 1)
         )
-        .all()
-    )
+    ).all()
 
     truncated = len(rows) > request.row_limit
     if truncated:

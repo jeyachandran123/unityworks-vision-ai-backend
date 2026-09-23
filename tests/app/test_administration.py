@@ -13,6 +13,10 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
+
+from app.domain.audit import AuditAction
+from app.domain.models import AuditEvent
 
 from .conftest import bearer, make_user
 
@@ -34,213 +38,55 @@ async def admin(seeded):
     return seeded
 
 
-# ── restaurants ──────────────────────────────────────────────────────────────
+# ── the estate ───────────────────────────────────────────────────────────────
+#
+# Zones replaced sites on 2026-09-23, and their own behaviour — listing,
+# creating, renaming, deleting only while empty — is covered by
+# `tests/app/test_zones.py`. What stays here is the split this module exists
+# for: reading the estate and changing it are different permissions.
 
 
-async def test_listing_restaurants_is_empty_before_any_exist(
-    client: AsyncClient, seeded
-) -> None:
-    headers = await bearer(client, "manager@example.com")
-    response = await client.get("/api/v1/restaurants", headers=headers)
-
-    assert response.status_code == 200
-    body = response.json()
-    assert body["restaurants"] == []
-    assert body["count"] == 0
-    # The list is paginated, so it says how many there are in total as well as
-    # how many this page holds. Zero and zero, here.
-    assert body["total"] == 0
-
-
-async def test_a_manager_may_read_structure_but_not_change_it(
-    client: AsyncClient, admin
-) -> None:
-    """Reading is `VIEW_USERS`; writing is `MANAGE_ORGANIZATION`. Not the same."""
+async def test_a_manager_may_read_structure_but_not_change_it(client: AsyncClient, admin) -> None:
+    """`view_zones` without `manage_zones` is a routine state, not an error."""
     headers = await bearer(client, "manager@example.com")
 
-    assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 200
-    created = await client.post(
-        "/api/v1/restaurants", json={"name": "Nowhere"}, headers=headers
-    )
-    assert created.status_code == 403
-
-
-async def test_an_admin_creates_a_restaurant_and_it_is_audited(
-    client: AsyncClient, admin
-) -> None:
-    headers = await bearer(client, "admin@example.com")
-
-    response = await client.post(
-        "/api/v1/restaurants",
-        json={"name": "Harbour Kitchen", "timezone": "Asia/Singapore"},
-        headers=headers,
-    )
-    assert response.status_code == 200, response.text
-    body = response.json()
-    assert body["name"] == "Harbour Kitchen"
-    assert body["slug"] == "harbour-kitchen"
-    assert body["timezone"] == "Asia/Singapore"
-    assert body["zone_count"] == 0
-
-    trail = await client.get("/api/v1/audit", headers=headers)
-    actions = [e["action"] for e in trail.json()["events"]]
-    assert "restaurant.created" in actions
-
-
-async def test_a_restaurant_cannot_be_created_into_another_organization(
-    client: AsyncClient, admin
-) -> None:
-    """`organization_id` in the body is ignored; tenancy comes from the session."""
-    headers = await bearer(client, "admin@example.com")
-    await client.post(
-        "/api/v1/restaurants",
-        json={"name": "Smuggled", "organization_id": "org-other"},
-        headers=headers,
-    )
-
-    outsider = await bearer(client, "outsider@example.com")
-    theirs = await client.get("/api/v1/restaurants", headers=outsider)
-    assert theirs.json()["count"] == 0, "the row must not have landed in org-other"
-
-    ours = await client.get("/api/v1/restaurants", headers=headers)
-    assert [r["name"] for r in ours.json()["restaurants"]] == ["Smuggled"]
-
-
-async def test_a_nameless_restaurant_is_refused(client: AsyncClient, admin) -> None:
-    headers = await bearer(client, "admin@example.com")
-    response = await client.post("/api/v1/restaurants", json={"name": "   "}, headers=headers)
-    assert response.status_code == 422
-
-
-async def test_updating_a_restaurant_records_which_fields_changed(
-    client: AsyncClient, admin
-) -> None:
-    headers = await bearer(client, "admin@example.com")
-    created = (
-        await client.post("/api/v1/restaurants", json={"name": "Old"}, headers=headers)
-    ).json()
-
-    updated = await client.patch(
-        f"/api/v1/restaurants/{created['id']}",
-        json={"name": "New", "is_active": False},
-        headers=headers,
-    )
-    assert updated.status_code == 200
-    assert updated.json()["name"] == "New"
-    assert updated.json()["is_active"] is False
-    # The slug is the stable handle and deliberately does not follow the name.
-    assert updated.json()["slug"] == "old"
-
-
-async def test_another_organizations_restaurant_is_not_found(
-    client: AsyncClient, admin
-) -> None:
-    headers = await bearer(client, "admin@example.com")
-    mine = (
-        await client.post("/api/v1/restaurants", json={"name": "Mine"}, headers=headers)
-    ).json()
-
-    outsider = await bearer(client, "outsider@example.com")
-    response = await client.patch(
-        f"/api/v1/restaurants/{mine['id']}", json={"name": "Theirs"}, headers=outsider
-    )
-    assert response.status_code == 404, "existence must not be confirmed to a stranger"
-
-
-# ── zones ────────────────────────────────────────────────────────────────────
-
-
-async def test_a_zone_belongs_to_a_restaurant_in_the_callers_tenant(
-    client: AsyncClient, admin
-) -> None:
-    headers = await bearer(client, "admin@example.com")
-    restaurant = (
-        await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
-    ).json()
-
-    created = await client.post(
-        "/api/v1/zones",
-        json={"restaurant_id": restaurant["id"], "name": "Prep line"},
-        headers=headers,
-    )
-    assert created.status_code == 200, created.text
-    assert created.json()["name"] == "Prep line"
-
-    listed = await client.get("/api/v1/zones", headers=headers)
-    assert listed.json()["count"] == 1
-
-    # And the parent now reports it.
-    restaurants = await client.get("/api/v1/restaurants", headers=headers)
-    assert restaurants.json()["restaurants"][0]["zone_count"] == 1
-
-
-async def test_a_zone_cannot_be_attached_to_another_organizations_restaurant(
-    client: AsyncClient, admin
-) -> None:
-    headers = await bearer(client, "admin@example.com")
-    mine = (
-        await client.post("/api/v1/restaurants", json={"name": "Mine"}, headers=headers)
-    ).json()
-
-    outsider = await bearer(client, "outsider@example.com")
-    response = await client.post(
-        "/api/v1/zones",
-        json={"restaurant_id": mine["id"], "name": "Trespass"},
-        headers=outsider,
-    )
-    assert response.status_code == 404
-
-
-async def test_zones_can_be_filtered_to_one_restaurant(client: AsyncClient, admin) -> None:
-    headers = await bearer(client, "admin@example.com")
-    first = (
-        await client.post("/api/v1/restaurants", json={"name": "First"}, headers=headers)
-    ).json()
-    second = (
-        await client.post("/api/v1/restaurants", json={"name": "Second"}, headers=headers)
-    ).json()
-    await client.post(
-        "/api/v1/zones", json={"restaurant_id": first["id"], "name": "A"}, headers=headers
-    )
-    await client.post(
-        "/api/v1/zones", json={"restaurant_id": second["id"], "name": "B"}, headers=headers
-    )
-
-    filtered = await client.get(
-        "/api/v1/zones", params={"restaurant_id": first["id"]}, headers=headers
-    )
-    assert [z["name"] for z in filtered.json()["zones"]] == ["A"]
+    assert (await client.get("/api/v1/zones", headers=headers)).status_code == 200
+    refused = await client.post("/api/v1/zones", json={"name": "Nope"}, headers=headers)
+    assert refused.status_code == 403, refused.text
 
 
 async def test_renaming_a_zone_is_audited(client: AsyncClient, admin) -> None:
+    """A rename is a change to how every past reading is labelled on screen,
+    so it is recorded with what it was before."""
     headers = await bearer(client, "admin@example.com")
-    restaurant = (
-        await client.post("/api/v1/restaurants", json={"name": "Site"}, headers=headers)
-    ).json()
-    zone = (
-        await client.post(
-            "/api/v1/zones",
-            json={"restaurant_id": restaurant["id"], "name": "Old"},
-            headers=headers,
-        )
-    ).json()
+    created = await client.post("/api/v1/zones", json={"name": "Prep"}, headers=headers)
+    assert created.status_code == 200, created.text
+    zone_id = created.json()["id"]
 
     renamed = await client.patch(
-        f"/api/v1/zones/{zone['id']}", json={"name": "New"}, headers=headers
+        f"/api/v1/zones/{zone_id}", json={"name": "Prep line"}, headers=headers
     )
-    assert renamed.status_code == 200
-    assert renamed.json()["name"] == "New"
+    assert renamed.status_code == 200, renamed.text
+    assert renamed.json()["name"] == "Prep line"
 
-    trail = await client.get("/api/v1/audit", headers=headers)
-    assert "zone.updated" in [e["action"] for e in trail.json()["events"]]
+    async with admin.state.database.session_scope() as session:
+        rows = (
+            await session.execute(
+                select(AuditEvent.action, AuditEvent.detail).where(
+                    AuditEvent.resource_id == zone_id
+                )
+            )
+        ).all()
+    actions = [row[0] for row in rows]
+    assert AuditAction.ZONE_CREATED.value in actions
+    assert AuditAction.ZONE_UPDATED.value in actions
+    assert "Prep" in str(rows[-1][1])
 
 
 # ── users ────────────────────────────────────────────────────────────────────
 
 
-async def test_the_user_list_names_roles_and_never_a_credential(
-    client: AsyncClient, admin
-) -> None:
+async def test_the_user_list_names_roles_and_never_a_credential(client: AsyncClient, admin) -> None:
     headers = await bearer(client, "admin@example.com")
     response = await client.get("/api/v1/users", headers=headers)
 

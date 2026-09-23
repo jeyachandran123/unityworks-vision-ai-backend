@@ -176,9 +176,7 @@ async def issue_ticket(
         raise NotFoundError("no such camera")
 
     # Proves the camera is real and in this tenant before minting anything.
-    await CameraService(session).get(
-        organization_id=access.tenant_id, camera_key=camera_id
-    )
+    await CameraService(session).get(organization_id=access.tenant_id, camera_key=camera_id)
 
     settings = settings_of(request)
     ticket = mint_ticket(
@@ -265,8 +263,7 @@ async def stream_camera(
                 yield (
                     b"--" + BOUNDARY.encode() + b"\r\n"
                     b"Content-Type: image/jpeg\r\n"
-                    b"Content-Length: " + str(len(jpeg)).encode() + b"\r\n\r\n"
-                    + jpeg + b"\r\n"
+                    b"Content-Length: " + str(len(jpeg)).encode() + b"\r\n\r\n" + jpeg + b"\r\n"
                 )
                 await asyncio.sleep(interval)
         finally:
@@ -295,19 +292,21 @@ async def camera_detail(
     camera = await CameraService(session).get(
         organization_id=access.tenant_id, camera_key=camera_id
     )
-    stream = request.app.state.wall.get(
-        runtime_camera_id(access.tenant_id, camera_id)
+    stream = request.app.state.wall.get(runtime_camera_id(access.tenant_id, camera_id))
+    detail = (
+        stream.to_wire()
+        if stream is not None
+        else {
+            "camera_id": camera.camera_key,
+            "name": camera.name,
+            "channel": camera.channel,
+            "stream_type": camera.stream_type,
+            "enabled": camera.enabled,
+            "state": "disabled" if not camera.enabled else "offline",
+        }
     )
-    detail = stream.to_wire() if stream is not None else {
-        "camera_id": camera.camera_key,
-        "name": camera.name,
-        "channel": camera.channel,
-        "stream_type": camera.stream_type,
-        "enabled": camera.enabled,
-        "state": "disabled" if not camera.enabled else "offline",
-    }
     detail["purpose"] = camera.purpose
-    detail["restaurant_id"] = camera.restaurant_id
+    detail["zone_id"] = camera.zone_id
     return detail
 
 

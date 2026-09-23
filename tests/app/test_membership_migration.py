@@ -42,6 +42,12 @@ REPO = Path(__file__).resolve().parents[2]
 #: of this test to somewhere the backfill has already happened.
 BEFORE = "e1b7c4d92f30"
 
+#: This module is about one migration, so it stops there rather than at `head`.
+#: Later revisions have their own tests, and one of them — the zone fold — is
+#: deliberately irreversible, which would make the downgrade below fail for a
+#: reason that has nothing to do with memberships.
+AFTER = "f2a9c4e18b73"
+
 #: A live-looking database, written through the schema as it stood before this
 #: change: two organizations (one of them suspended), three users, several
 #: roles, all three camera breadths, and both override states.
@@ -66,6 +72,9 @@ VALUES ('g1', 'u1', 'all_in_tenant', '', '', CURRENT_TIMESTAMP),
        ('g2', 'u2', 'listed', 'cam-01,cam-02', 'site-01', CURRENT_TIMESTAMP),
        ('g3', 'u3', 'none', '', '', CURRENT_TIMESTAMP);
 
+-- `manage_sites` is deliberate: the permission was removed from the
+-- application on 2026-09-23, and a migration must still carry the row
+-- across unchanged. `parse_overrides` drops it at read time.
 INSERT INTO permission_overrides (id, user_id, permission, state, granted_at)
 VALUES ('o1', 'u2', 'manage_sites', 'grant', CURRENT_TIMESTAMP),
        ('o2', 'u3', 'view_live', 'revoke', CURRENT_TIMESTAMP);
@@ -139,7 +148,7 @@ def before(migrated: Path) -> dict[str, list[tuple]]:
 
 @pytest.fixture(scope="module")
 def after(migrated: Path, before: dict[str, list[tuple]]) -> dict[str, list[tuple]]:
-    _alembic(migrated, "upgrade", "head")
+    _alembic(migrated, "upgrade", AFTER)
     return _access(migrated)
 
 

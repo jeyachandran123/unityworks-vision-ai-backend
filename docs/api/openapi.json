@@ -1122,6 +1122,32 @@
         ]
       }
     },
+    "/api/v1/cameras/next-key": {
+      "get": {
+        "description": "The identifier the next camera should take.\n\nProposed by the server because the key is what the pipeline partitions on:\nit names observation files on disk and appears in every runtime identity.\nAsking a person to invent one invites a collision with a camera they cannot\nsee.",
+        "operationId": "next_camera_key_api_v1_cameras_next_key_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Next Camera Key Api V1 Cameras Next Key Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Next Camera Key",
+        "tags": [
+          "product"
+        ]
+      }
+    },
     "/api/v1/cameras/test-connection": {
       "post": {
         "description": "Is anything listening at this address?\n\nTwo ways to ask, and the first is the one to prefer:\n\n* `{\"camera_key\": \"cam-01\"}` \u2014 the address comes from the database, is\n  already tenant-scoped, and the caller cannot choose it. No part of the\n  request influences where the socket goes.\n* `{\"host\": ..., \"rtsp_port\": ...}` \u2014 for the onboarding wizard, which\n  needs to check an address *before* the row exists. Gated on\n  `MANAGE_CAMERAS` and refused for reserved ranges; see\n  `app.domain.connectivity` for why that is sufficient.\n\nNever returns a credential, and never resolves one: the test is a TCP\nconnect, so there is no authentication step for a secret to be needed by.",
@@ -1334,6 +1360,96 @@
           }
         },
         "summary": "List Frames",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_key}/start": {
+      "post": {
+        "description": "Dial this camera now, and say what happened.\n\n### The gap this closes\n\n`start_from_records` runs once, at boot, from the application lifespan.\nUntil this route existed, a camera added through the product was written to\nthe database and never dialled \u2014 it appeared in every list, reported itself\nenabled, and connected to nothing until somebody restarted the process.\nNothing said so, which made a working camera and a dead one look identical.\n\n### It answers rather than failing silently\n\nA deployment with live CCTV switched off cannot start anything, and that is\na configuration fact rather than an error: the response says so, in the\nshape `app/api/capability.py` uses \u2014 `available: false` and a reason \u2014 so\nthe page can explain instead of showing a button that does nothing.\n\n`enabled` is set as well as the session being opened, so the decision\nsurvives a restart. Starting and stopping are audited separately from\n`camera.enabled`: the durable flag is a decision, and this is the act.",
+        "operationId": "start_camera_api_v1_cameras__camera_key__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_key",
+            "required": true,
+            "schema": {
+              "title": "Camera Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Start Camera Api V1 Cameras  Camera Key  Start Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Camera",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_key}/stop": {
+      "post": {
+        "description": "Stop this camera, and stop it staying stopped across a restart.\n\nClears `enabled` as well as closing the session, because a camera that came\nback by itself after a restart would be one somebody thought they had\nswitched off.",
+        "operationId": "stop_camera_api_v1_cameras__camera_key__stop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "camera_key",
+            "required": true,
+            "schema": {
+              "title": "Camera Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Stop Camera Api V1 Cameras  Camera Key  Stop Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stop Camera",
         "tags": [
           "product"
         ]
@@ -3212,11 +3328,11 @@
           },
           {
             "in": "query",
-            "name": "restaurant_id",
+            "name": "zone_id",
             "required": false,
             "schema": {
               "default": "",
-              "title": "Restaurant Id",
+              "title": "Zone Id",
               "type": "string"
             }
           }
@@ -3319,11 +3435,11 @@
           },
           {
             "in": "query",
-            "name": "restaurant_id",
+            "name": "zone_id",
             "required": false,
             "schema": {
               "default": "",
-              "title": "Restaurant Id",
+              "title": "Zone Id",
               "type": "string"
             }
           }
@@ -3351,240 +3467,6 @@
         "summary": "Export Report",
         "tags": [
           "reports"
-        ]
-      }
-    },
-    "/api/v1/restaurants": {
-      "get": {
-        "description": "Sites in the caller's organization.\n\nGated on `VIEW_SITES`: a restaurant manager needs to read the structure\ntheir incidents are attributed to, and reading it grants no ability to\nchange it. Writing is `MANAGE_SITES`, a permission this role does not hold\nby default.\n\nSearchable and paginated. A chain with four restaurants does not need it;\nthe same code with four hundred does, and the version that fetches all of\nthem works perfectly right up until the day it does not.",
-        "operationId": "list_restaurants_api_v1_restaurants_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 200,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Q"
-            }
-          },
-          {
-            "in": "query",
-            "name": "is_active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Is Active"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 100,
-              "maximum": 200,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "minimum": 0,
-              "title": "Offset",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response List Restaurants Api V1 Restaurants Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List Restaurants",
-        "tags": [
-          "administration"
-        ]
-      },
-      "post": {
-        "operationId": "create_restaurant_api_v1_restaurants_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "additionalProperties": true,
-                "title": "Payload",
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Create Restaurant Api V1 Restaurants Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Create Restaurant",
-        "tags": [
-          "administration"
-        ]
-      }
-    },
-    "/api/v1/restaurants/{restaurant_id}": {
-      "get": {
-        "description": "One site, for its own page.\n\nA detail route rather than \"find it in the list\": a site page is now a real\nsurface with zones and cameras of its own, and asking a client to fetch\nevery site to render one is how a list becomes a hidden dependency of a\ndetail view.",
-        "operationId": "get_restaurant_api_v1_restaurants__restaurant_id__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "restaurant_id",
-            "required": true,
-            "schema": {
-              "title": "Restaurant Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Restaurant Api V1 Restaurants  Restaurant Id  Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Restaurant",
-        "tags": [
-          "administration"
-        ]
-      },
-      "patch": {
-        "operationId": "update_restaurant_api_v1_restaurants__restaurant_id__patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "restaurant_id",
-            "required": true,
-            "schema": {
-              "title": "Restaurant Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "additionalProperties": true,
-                "title": "Payload",
-                "type": "object"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Update Restaurant Api V1 Restaurants  Restaurant Id  Patch",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Update Restaurant",
-        "tags": [
-          "administration"
         ]
       }
     },
@@ -3843,23 +3725,47 @@
     },
     "/api/v1/zones": {
       "get": {
-        "description": "Zones, optionally for one site. Always narrowed to the caller's tenant.\n\nThe join onto `Restaurant` is what enforces tenancy: `zones` carries no\norganization column of its own, so filtering on the parent is the only\nconstruction that cannot leak another organization's areas.",
+        "description": "Zones in the caller's organization, with how many cameras each holds.\n\nGated on `VIEW_ZONES`: somebody reading incidents needs to know the places\nthey are attributed to, and reading grants no ability to change them.",
         "operationId": "list_zones_api_v1_zones_get",
         "parameters": [
           {
             "in": "query",
-            "name": "restaurant_id",
+            "name": "q",
             "required": false,
             "schema": {
               "anyOf": [
                 {
+                  "maxLength": 200,
                   "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
-              "title": "Restaurant Id"
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
             }
           }
         ],
@@ -3893,6 +3799,7 @@
         ]
       },
       "post": {
+        "description": "Create a zone: a name, and nothing else to decide.\n\nEverything a zone needs is its name \u2014 kitchen, dine hall, billing. The\norganization comes from the session, never from the request.",
         "operationId": "create_zone_api_v1_zones_post",
         "requestBody": {
           "content": {
@@ -3937,7 +3844,93 @@
       }
     },
     "/api/v1/zones/{zone_id}": {
+      "delete": {
+        "description": "Delete a zone that holds no cameras.\n\nA zone with cameras is refused with the count and the alternative, because\nit is part of the record of what was watched and where. Deactivating keeps\nthat record; deleting would lose it.",
+        "operationId": "delete_zone_api_v1_zones__zone_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "zone_id",
+            "required": true,
+            "schema": {
+              "title": "Zone Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Zone Api V1 Zones  Zone Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Zone",
+        "tags": [
+          "administration"
+        ]
+      },
+      "get": {
+        "operationId": "get_zone_api_v1_zones__zone_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "zone_id",
+            "required": true,
+            "schema": {
+              "title": "Zone Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Zone Api V1 Zones  Zone Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Zone",
+        "tags": [
+          "administration"
+        ]
+      },
       "patch": {
+        "description": "Rename a zone, or take it out of use.\n\nRenaming does not rewrite history: `CameraZoneAssignment` froze the name a\npast reading was labelled with, deliberately.",
         "operationId": "update_zone_api_v1_zones__zone_id__patch",
         "parameters": [
           {

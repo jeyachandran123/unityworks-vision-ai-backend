@@ -118,7 +118,7 @@ async def test_a_single_organization_user_reaches_their_application_immediately(
     estate, client: AsyncClient
 ):
     headers = await bearer(client, "solo@example.com")
-    assert (await client.get("/api/v1/restaurants", headers=headers)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=headers)).status_code == 200
 
 
 # ── Scenario 2: several organizations, and only the ones they hold ───────────
@@ -162,7 +162,7 @@ async def test_the_list_contains_only_organizations_the_account_belongs_to(
             "name",
             "slug",
             "status",
-            "site_count",
+            "zone_count",
             "camera_count",
         }
 
@@ -197,7 +197,7 @@ async def test_a_role_in_one_organization_confers_nothing_in_another(estate, cli
     selected = await client.post(f"{AUTH}/organizations/org-borden/select", headers=headers)
     borden = {"Authorization": f"Bearer {selected.json()['access_token']}"}
 
-    created = await client.post("/api/v1/restaurants", json={"name": "New site"}, headers=borden)
+    created = await client.post("/api/v1/zones", json={"name": "New site"}, headers=borden)
     assert created.status_code == 403, created.text
 
 
@@ -229,7 +229,7 @@ async def test_an_unknown_organization_is_refused_the_same_way_as_a_forbidden_on
 async def test_a_token_for_one_organization_cannot_reach_another(estate, client: AsyncClient):
     """URL and id tampering, from the only angle that could work.
 
-    There is no organization parameter on `/api/v1/restaurants` to tamper with —
+    There is no organization parameter on `/api/v1/zones` to tamper with —
     the tenant comes from the token — so the strongest available attack is to
     hold a legitimate token for one organization and try it against another's
     data. It reaches the first organization's data and nothing else, because
@@ -247,9 +247,9 @@ async def test_a_token_for_one_organization_cannot_reach_another(estate, client:
             )
         )
 
-    listed = await client.get("/api/v1/restaurants", headers=headers)
+    listed = await client.get("/api/v1/zones", headers=headers)
     assert listed.status_code == 200
-    names = [restaurant["name"] for restaurant in listed.json()["restaurants"]]
+    names = [zone["name"] for zone in listed.json()["zones"]]
     assert "Borden Kitchen" not in names
 
 
@@ -328,7 +328,7 @@ async def test_entering_an_organization_grants_full_reach(estate, client: AsyncC
     assert identity["roles"] == []
 
     # The read works.
-    assert (await client.get("/api/v1/restaurants", headers=inside)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=inside)).status_code == 200
 
 
 async def test_an_entered_platform_admin_may_write(estate, client: AsyncClient):
@@ -336,7 +336,7 @@ async def test_an_entered_platform_admin_may_write(estate, client: AsyncClient):
     entered = await client.post(f"{PLATFORM}/organizations/org-borden/enter", headers=headers)
     inside = {"Authorization": f"Bearer {entered.json()['access_token']}"}
 
-    created = await client.post("/api/v1/restaurants", json={"name": "Anna Nagar"}, headers=inside)
+    created = await client.post("/api/v1/zones", json={"name": "Anna Nagar"}, headers=inside)
     assert created.status_code in (200, 201), created.text
 
 
@@ -362,8 +362,8 @@ async def test_entry_into_a_suspended_organization_still_cannot_write(estate, cl
     assert not granted & {p.value for p in SUSPENDED_FORBIDDEN}
 
     inside = {"Authorization": f"Bearer {entered.json()['access_token']}"}
-    assert (await client.get("/api/v1/restaurants", headers=inside)).status_code == 200
-    refused = await client.post("/api/v1/restaurants", json={"name": "Nope"}, headers=inside)
+    assert (await client.get("/api/v1/zones", headers=inside)).status_code == 200
+    refused = await client.post("/api/v1/zones", json={"name": "Nope"}, headers=inside)
     assert refused.status_code == 403, refused.text
 
 
@@ -433,13 +433,13 @@ async def test_revoking_the_grant_ends_an_entry_session(estate, client: AsyncCli
     entered = await client.post(f"{PLATFORM}/organizations/org-borden/enter", headers=headers)
     inside = {"Authorization": f"Bearer {entered.json()['access_token']}"}
 
-    assert (await client.get("/api/v1/restaurants", headers=inside)).status_code == 200
+    assert (await client.get("/api/v1/zones", headers=inside)).status_code == 200
 
     async with estate.state.database.session_scope() as session:
         grant = (await session.execute(select(PlatformOperatorGrant))).scalar_one()
         await session.delete(grant)
 
-    refused = await client.get("/api/v1/restaurants", headers=inside)
+    refused = await client.get("/api/v1/zones", headers=inside)
     assert refused.status_code == 401, refused.text
 
 

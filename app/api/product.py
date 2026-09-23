@@ -28,8 +28,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query, Request, Response
 
-from app.api.administration import _restaurant_in_tenant
-from app.api.dependencies import CurrentAccess, DbSession, requires, settings_of
+from app.api.dependencies import CurrentAccess, DbSession, live_of, requires, settings_of
 from app.authorization.model import AccessDecision, Permission, ScopeBreadth
 from app.domain import cameras as camera_domain
 from app.domain import evidence as evidence_domain
@@ -37,6 +36,7 @@ from app.domain import incidents as incident_domain
 from app.domain import observations as observation_fold
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.audit import to_wire as audit_to_wire
+from app.domain.runtime_identity import runtime_camera_id
 from app.errors import AppError, EvidenceForbiddenError, ValidationError
 
 router = APIRouter(prefix="/api/v1", tags=["product"])
@@ -73,60 +73,32 @@ async def list_cameras(access: CurrentAccess, session: DbSession) -> dict[str, A
     }
 
 
-async def _placement(
-    session, organization_id: str, restaurant_id: str, zone_id: Any
-) -> str | None:
+async def _placement(session, organization_id: str, zone_id: Any) -> str:
     """Validate where a camera is being put, and refuse anything else.
 
-    Two checks, and the second is the one that was missing.
+    One check, since zones moved under the organization: the zone belongs to
+    this organization. It used to take two — the site is the caller's, and the
+    zone is that site's — and the second was missing for a while, which let a
+    `PATCH` attach a camera to any zone in the database, including another
+    customer's, with every later observation attributed there.
 
-    **The site belongs to this organization.** Already enforced; a camera could
-    not be attached to another customer's restaurant by naming its id.
-
-    **The zone belongs to that site.** Not enforced anywhere until now. The
-    route accepted `zone_id` from the request body and passed it to the domain
-    service unread, so a caller could attach a camera to any zone in the
-    database — including another organization's — and every observation it
-    produced from then on would be attributed there. The join through
-    `Restaurant` is what makes this checkable at all: `zones` carries no
-    organization column of its own, so the parent is the only thing that can
-    establish tenancy.
-
-    A frontend that only offers zones from the selected site is a convenience.
-    This is the boundary.
+    A zone is **required**. A camera nobody can locate is a camera nobody can
+    act on: it shows nowhere in the estate, and its incidents have no place to
+    name. The frontend offering only this organization's zones is a
+    convenience; this is the boundary.
     """
-    from sqlalchemy import select
-
-    from app.domain.models import Restaurant, Zone
-
-    await _restaurant_in_tenant(session, organization_id, restaurant_id)
+    from app.domain.zones import ZoneService
 
     key = str(zone_id or "").strip()
     if not key:
-        # A camera with no zone is legitimate: it has been placed at a site but
-        # not yet in a room. `record_assignment` opens an interval with a null
-        # zone, so "where was this camera" still has an answer.
-        return None
-
-    found = (
-        await session.execute(
-            select(Zone)
-            .join(Restaurant, Restaurant.id == Zone.restaurant_id)
-            .where(
-                Zone.id == key,
-                Zone.restaurant_id == restaurant_id,
-                Restaurant.organization_id == organization_id,
-            )
-        )
-    ).scalar_one_or_none()
-    if found is None:
-        # Deliberately does not distinguish "no such zone" from "that zone is
-        # somewhere else": both answers would confirm something about a row the
-        # caller may not see.
         raise ValidationError(
-            "that zone is not part of the selected site",
-            details={"zone_id": key, "restaurant_id": restaurant_id},
+            "'zone_id' is required: a camera is placed in a zone — the kitchen, "
+            "the dine hall — and one placed nowhere cannot be found again"
         )
+
+    # Raises NotFoundError for another organization's zone: existence across a
+    # tenant boundary is itself a disclosure.
+    await ZoneService(session).get(organization_id=organization_id, zone_id=key)
     return key
 
 
@@ -140,11 +112,13 @@ async def create_camera(
     """Register a camera. Created **disabled** — enabling is a separate act."""
     service = camera_domain.CameraService(session)
     audit = AuditTrail(session)
+    settings = settings_of(request)
+    zone_id = await _placement(session, access.tenant_id, payload.get("zone_id"))
 
-    restaurant_id = str(payload.get("restaurant_id", ""))
-    zone_id = await _placement(session, access.tenant_id, restaurant_id, payload.get("zone_id"))
-
-    host = str(payload.get("host", "") or "").strip()
+    # The deployment already knows its DVR. Asking for the address, the port,
+    # the username and the stream type on every camera is four chances to get
+    # one wrong, so the payload only has to differ from the configured default.
+    host = str(payload.get("host", "") or settings.cctv_host or "").strip()
     if not host:
         # Required, because the runtime filters on it: `_start_cameras_from_
         # database` and `_start_camera_wall` both skip rows with no host. A
@@ -160,15 +134,18 @@ async def create_camera(
 
     camera = await service.create(
         organization_id=access.tenant_id,
-        restaurant_id=restaurant_id,
-        camera_key=str(payload.get("camera_key", "")).strip(),
+        camera_key=str(payload.get("camera_key", "")).strip()
+        or await service.next_key(organization_id=access.tenant_id),
         name=str(payload.get("name", "")),
         channel=int(payload.get("channel", 1)),
         host=host,
-        rtsp_port=int(payload.get("rtsp_port", 554)),
-        stream_type=str(payload.get("stream_type", "sub")),
-        username=str(payload.get("username", "")),
-        credential_ref=str(payload.get("credential_ref", "")),
+        rtsp_port=int(payload.get("rtsp_port", 0) or settings.cctv_rtsp_port),
+        stream_type=str(payload.get("stream_type", "") or settings.cctv_stream_type),
+        username=str(payload.get("username", "") or settings.cctv_username),
+        # Never from the client. The password is the deployment's, and a camera
+        # that could name a different secret would be a way to make the server
+        # read one it was never given.
+        credential_ref=settings.cctv_credential_ref,
         analysis_fps=float(payload.get("analysis_fps", 4.0)),
         purpose=str(payload.get("purpose", "")),
         zone_id=zone_id,
@@ -215,16 +192,13 @@ async def update_camera(
     # create. `update` passes `**payload` into the domain service, so before
     # this a camera could be moved into another organization's zone by a PATCH
     # even though it could not be created in one.
-    if "restaurant_id" in payload or "zone_id" in payload:
-        restaurant_id = str(payload.get("restaurant_id") or existing.restaurant_id)
+    if "zone_id" in payload:
         payload = dict(payload)
-        payload["restaurant_id"] = restaurant_id
         payload["zone_id"] = await _placement(
-            session,
-            access.tenant_id,
-            restaurant_id,
-            payload.get("zone_id", existing.zone_id),
+            session, access.tenant_id, payload.get("zone_id", existing.zone_id)
         )
+    # `credential_ref` is the deployment's, on update as on create.
+    payload.pop("credential_ref", None)
 
     camera = await service.update(
         organization_id=access.tenant_id,
@@ -259,6 +233,143 @@ async def update_camera(
         )
 
     return camera_domain.to_wire(camera)
+
+
+@router.post(
+    "/cameras/{camera_key}/start",
+    dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
+)
+async def start_camera(
+    camera_key: str,
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Dial this camera now, and say what happened.
+
+    ### The gap this closes
+
+    `start_from_records` runs once, at boot, from the application lifespan.
+    Until this route existed, a camera added through the product was written to
+    the database and never dialled — it appeared in every list, reported itself
+    enabled, and connected to nothing until somebody restarted the process.
+    Nothing said so, which made a working camera and a dead one look identical.
+
+    ### It answers rather than failing silently
+
+    A deployment with live CCTV switched off cannot start anything, and that is
+    a configuration fact rather than an error: the response says so, in the
+    shape `app/api/capability.py` uses — `available: false` and a reason — so
+    the page can explain instead of showing a button that does nothing.
+
+    `enabled` is set as well as the session being opened, so the decision
+    survives a restart. Starting and stopping are audited separately from
+    `camera.enabled`: the durable flag is a decision, and this is the act.
+    """
+    service = camera_domain.CameraService(session)
+    camera = await service.get(organization_id=access.tenant_id, camera_key=camera_key)
+    settings = settings_of(request)
+
+    if not settings.feature_live_cctv:
+        return {
+            "camera_key": camera_key,
+            "streaming": False,
+            "available": False,
+            "reason": (
+                "Live CCTV is switched off for this deployment (FEATURE_LIVE_CCTV). "
+                "No camera can stream until it is switched on."
+            ),
+        }
+    if not camera.host:
+        return {
+            "camera_key": camera_key,
+            "streaming": False,
+            "available": False,
+            "reason": "This camera has no address, so there is nothing to dial.",
+        }
+
+    live = live_of(request)
+    try:
+        await live.start_one(camera_domain.to_rtsp_config(camera), tenant_id=access.tenant_id)
+    except AppError as exc:
+        # Already running is the state the caller asked for, so it is reported
+        # as reached rather than raised.
+        return {
+            "camera_key": camera_key,
+            "streaming": True,
+            "available": True,
+            "reason": str(exc),
+        }
+
+    await service.set_enabled(organization_id=access.tenant_id, camera_key=camera_key, enabled=True)
+    await AuditTrail(session).record(
+        action=AuditAction.CAMERA_STARTED,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="camera",
+        resource_id=camera_key,
+        request_id=_request_id(request),
+        detail={"host": camera.host, "channel": camera.channel},
+    )
+    return {"camera_key": camera_key, "streaming": True, "available": True, "reason": ""}
+
+
+@router.post(
+    "/cameras/{camera_key}/stop",
+    dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
+)
+async def stop_camera(
+    camera_key: str,
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Stop this camera, and stop it staying stopped across a restart.
+
+    Clears `enabled` as well as closing the session, because a camera that came
+    back by itself after a restart would be one somebody thought they had
+    switched off.
+    """
+    service = camera_domain.CameraService(session)
+    await service.get(organization_id=access.tenant_id, camera_key=camera_key)
+
+    was_running = await live_of(request).stop_camera(
+        runtime_camera_id(access.tenant_id, camera_key),
+        tenant_id=access.tenant_id,
+    )
+    await service.set_enabled(
+        organization_id=access.tenant_id, camera_key=camera_key, enabled=False
+    )
+    await AuditTrail(session).record(
+        action=AuditAction.CAMERA_STOPPED,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="camera",
+        resource_id=camera_key,
+        request_id=_request_id(request),
+        detail={"was_running": was_running},
+    )
+    return {
+        "camera_key": camera_key,
+        "streaming": False,
+        "available": True,
+        "reason": "" if was_running else "This camera was not streaming.",
+    }
+
+
+@router.get("/cameras/next-key", dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))])
+async def next_camera_key(access: CurrentAccess, session: DbSession) -> dict[str, str]:
+    """The identifier the next camera should take.
+
+    Proposed by the server because the key is what the pipeline partitions on:
+    it names observation files on disk and appears in every runtime identity.
+    Asking a person to invent one invites a collision with a camera they cannot
+    see.
+    """
+    key = await camera_domain.CameraService(session).next_key(organization_id=access.tenant_id)
+    return {"camera_key": key}
 
 
 @router.post(
@@ -930,9 +1041,7 @@ async def _attribute_zones(
 
     from app.domain.zone_attribution import ZoneHistory
 
-    history = await ZoneHistory.load(
-        session, organization_id=organization_id, camera_keys=cameras
-    )
+    history = await ZoneHistory.load(session, organization_id=organization_id, camera_keys=cameras)
     for subject in subjects:
         attribution = history.resolve_ns(
             str(subject.get("camera_key", "")), subject.get("last_seen")

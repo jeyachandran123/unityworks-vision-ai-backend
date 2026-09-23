@@ -1,14 +1,14 @@
-"""The administration API — restaurants, zones, and who may see them.
+"""The administration API — zones, and who may see them.
 
 Three groups, and a deliberate asymmetry between them.
 
-### Restaurants and zones are fully writable
+### Zones are fully writable
 
-They are organizational structure: a name, a timezone, an area of a kitchen.
+They are organizational structure: the name of an area of a kitchen.
 Getting one wrong is an inconvenience, and the blast radius of a mistake is a
 mislabelled row.
 
-Each domain is gated on its own permission — `VIEW_SITES` / `MANAGE_SITES` for
+Each domain is gated on its own permission — `VIEW_ZONES` / `MANAGE_ZONES` for
 restaurants, `VIEW_ZONES` / `MANAGE_ZONES` for zones — and each write is
 audited, because renaming the site an incident is attributed to changes how that
 incident reads six months later.
@@ -47,14 +47,13 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Query, Request
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.api.dependencies import CurrentAccess, DbSession, requires
 from app.authorization.model import AccessDecision, Permission
+from app.domain import zones as zone_domain
 from app.domain.audit import AuditAction, AuditTrail
-from app.domain.models import Camera, Restaurant, Zone
-from app.errors import NotFoundError, ValidationError
+from app.errors import ValidationError
 from app.users.models import OrganizationMembership, RoleAssignment, User
 
 router = APIRouter(prefix="/api/v1", tags=["administration"])
@@ -90,292 +89,46 @@ def _slugify(name: str) -> str:
     return slug.strip("-")[:128]
 
 
-# ── Restaurants ──────────────────────────────────────────────────────────────
-
-
-def restaurant_to_wire(
-    restaurant: Restaurant, *, zone_count: int, camera_count: int
-) -> dict[str, Any]:
-    return {
-        "id": restaurant.id,
-        "name": restaurant.name,
-        "slug": restaurant.slug,
-        "timezone": restaurant.timezone,
-        "is_active": bool(restaurant.is_active),
-        "created_at": restaurant.created_at.isoformat() if restaurant.created_at else None,
-        # Counts rather than nested collections: an administration list wants to
-        # know a site has four zones, not to carry all four on every row.
-        "zone_count": zone_count,
-        "camera_count": camera_count,
-    }
-
-
-async def _counts(
-    session: AsyncSession, organization_id: str
-) -> tuple[dict[str, int], dict[str, int]]:
-    """Zone and camera counts per restaurant, in two queries rather than 2N."""
-    zones = (
-        (
-            await session.execute(
-                select(Zone.restaurant_id)
-                .join(Restaurant, Restaurant.id == Zone.restaurant_id)
-                .where(Restaurant.organization_id == organization_id)
-            )
-        )
-        .scalars()
-        .all()
-    )
-    cameras = (
-        (
-            await session.execute(
-                select(Camera.restaurant_id).where(Camera.organization_id == organization_id)
-            )
-        )
-        .scalars()
-        .all()
-    )
-
-    zone_counts: dict[str, int] = {}
-    for restaurant_id in zones:
-        zone_counts[restaurant_id] = zone_counts.get(restaurant_id, 0) + 1
-    camera_counts: dict[str, int] = {}
-    for restaurant_id in cameras:
-        if restaurant_id:
-            camera_counts[restaurant_id] = camera_counts.get(restaurant_id, 0) + 1
-    return zone_counts, camera_counts
-
-
-@router.get("/restaurants", dependencies=[Depends(requires(Permission.VIEW_SITES))])
-async def list_restaurants(
-    access: CurrentAccess,
-    session: DbSession,
-    q: Annotated[str | None, Query(max_length=200)] = None,
-    is_active: Annotated[bool | None, Query()] = None,
-    limit: Annotated[int, Query(ge=1, le=200)] = 100,
-    offset: Annotated[int, Query(ge=0)] = 0,
-) -> dict[str, Any]:
-    """Sites in the caller's organization.
-
-    Gated on `VIEW_SITES`: a restaurant manager needs to read the structure
-    their incidents are attributed to, and reading it grants no ability to
-    change it. Writing is `MANAGE_SITES`, a permission this role does not hold
-    by default.
-
-    Searchable and paginated. A chain with four restaurants does not need it;
-    the same code with four hundred does, and the version that fetches all of
-    them works perfectly right up until the day it does not.
-    """
-    statement = select(Restaurant).where(Restaurant.organization_id == access.tenant_id)
-    if q:
-        needle = f"%{q.strip().lower()}%"
-        statement = statement.where(
-            func.lower(Restaurant.name).like(needle) | func.lower(Restaurant.slug).like(needle)
-        )
-    if is_active is not None:
-        statement = statement.where(Restaurant.is_active.is_(is_active))
-
-    total = int(
-        (await session.execute(select(func.count()).select_from(statement.subquery()))).scalar_one()
-    )
-    found = (
-        (await session.execute(statement.order_by(Restaurant.name).limit(limit).offset(offset)))
-        .scalars()
-        .all()
-    )
-    zone_counts, camera_counts = await _counts(session, access.tenant_id)
-    return {
-        "restaurants": [
-            restaurant_to_wire(
-                r,
-                zone_count=zone_counts.get(r.id, 0),
-                camera_count=camera_counts.get(r.id, 0),
-            )
-            for r in found
-        ],
-        "count": len(found),
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-    }
-
-
-@router.get("/restaurants/{restaurant_id}", dependencies=[Depends(requires(Permission.VIEW_SITES))])
-async def get_restaurant(
-    restaurant_id: str, access: CurrentAccess, session: DbSession
-) -> dict[str, Any]:
-    """One site, for its own page.
-
-    A detail route rather than "find it in the list": a site page is now a real
-    surface with zones and cameras of its own, and asking a client to fetch
-    every site to render one is how a list becomes a hidden dependency of a
-    detail view.
-    """
-    restaurant = await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
-    zone_counts, camera_counts = await _counts(session, access.tenant_id)
-    return restaurant_to_wire(
-        restaurant,
-        zone_count=zone_counts.get(restaurant.id, 0),
-        camera_count=camera_counts.get(restaurant.id, 0),
-    )
-
-
-@router.post("/restaurants", dependencies=[Depends(requires(Permission.MANAGE_SITES))])
-async def create_restaurant(
-    request: Request,
-    access: CurrentAccess,
-    session: DbSession,
-    payload: Annotated[dict, Body(...)],
-) -> dict[str, Any]:
-    name = _text(payload, "name", required=True)
-    slug = _slugify(_text(payload, "slug") or name)
-    if not slug:
-        raise ValidationError("'name' must contain at least one alphanumeric character")
-
-    restaurant = Restaurant(
-        # Never from the request. Tenancy is identity, not a field.
-        organization_id=access.tenant_id,
-        name=name,
-        slug=slug,
-        timezone=_text(payload, "timezone") or "UTC",
-        is_active=bool(payload.get("is_active", True)),
-    )
-    session.add(restaurant)
-    await session.flush()
-
-    await AuditTrail(session).record(
-        action=AuditAction.RESTAURANT_CREATED,
-        organization_id=access.tenant_id,
-        actor=access.subject,
-        actor_roles=_roles(access),
-        resource_type="restaurant",
-        resource_id=restaurant.id,
-        request_id=_request_id(request),
-        detail={"name": restaurant.name, "slug": restaurant.slug},
-    )
-    return restaurant_to_wire(restaurant, zone_count=0, camera_count=0)
-
-
-@router.patch(
-    "/restaurants/{restaurant_id}",
-    dependencies=[Depends(requires(Permission.MANAGE_SITES))],
-)
-async def update_restaurant(
-    restaurant_id: str,
-    request: Request,
-    access: CurrentAccess,
-    session: DbSession,
-    payload: Annotated[dict, Body(...)],
-) -> dict[str, Any]:
-    restaurant = await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
-
-    changed: list[str] = []
-    if "name" in payload:
-        restaurant.name = _text(payload, "name", required=True)
-        changed.append("name")
-    if "timezone" in payload:
-        restaurant.timezone = _text(payload, "timezone") or "UTC"
-        changed.append("timezone")
-    if "is_active" in payload:
-        restaurant.is_active = bool(payload["is_active"])
-        changed.append("is_active")
-    # `slug` is deliberately not editable: it is the stable handle other rows
-    # and URLs are formed from, and renaming it silently orphans them.
-
-    await session.flush()
-    zone_counts, camera_counts = await _counts(session, access.tenant_id)
-
-    await AuditTrail(session).record(
-        action=AuditAction.RESTAURANT_UPDATED,
-        organization_id=access.tenant_id,
-        actor=access.subject,
-        actor_roles=_roles(access),
-        resource_type="restaurant",
-        resource_id=restaurant.id,
-        request_id=_request_id(request),
-        detail={"fields": sorted(changed)},
-    )
-    return restaurant_to_wire(
-        restaurant,
-        zone_count=zone_counts.get(restaurant.id, 0),
-        camera_count=camera_counts.get(restaurant.id, 0),
-    )
-
-
-async def _restaurant_in_tenant(
-    session: AsyncSession, organization_id: str, restaurant_id: str
-) -> Restaurant:
-    """Fetch already narrowed to the tenant.
-
-    A tenant mismatch is a 404 rather than a 403: telling a caller that a
-    restaurant exists but belongs to someone else is itself a disclosure.
-    """
-    found = (
-        await session.execute(
-            select(Restaurant).where(
-                Restaurant.id == restaurant_id,
-                Restaurant.organization_id == organization_id,
-            )
-        )
-    ).scalar_one_or_none()
-    if found is None:
-        raise NotFoundError(f"no restaurant '{restaurant_id}'")
-    return found
-
-
-# ── Zones ────────────────────────────────────────────────────────────────────
-
-
-def zone_to_wire(zone: Zone, *, camera_count: int = 0) -> dict[str, Any]:
-    return {
-        "id": zone.id,
-        "restaurant_id": zone.restaurant_id,
-        "name": zone.name,
-        "created_at": zone.created_at.isoformat() if zone.created_at else None,
-        "camera_count": camera_count,
-    }
+# ── zones ────────────────────────────────────────────────────────────────────
+#
+# The estate's one placement level. Sites were folded into zones on 2026-09-23
+# (`b4c8e1a37d90`): a zone belongs to the organization and holds cameras, which
+# is how the people running a restaurant describe where a camera is.
 
 
 @router.get("/zones", dependencies=[Depends(requires(Permission.VIEW_ZONES))])
 async def list_zones(
     access: CurrentAccess,
     session: DbSession,
-    restaurant_id: Annotated[str | None, Query()] = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 25,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> dict[str, Any]:
-    """Zones, optionally for one site. Always narrowed to the caller's tenant.
+    """Zones in the caller's organization, with how many cameras each holds.
 
-    The join onto `Restaurant` is what enforces tenancy: `zones` carries no
-    organization column of its own, so filtering on the parent is the only
-    construction that cannot leak another organization's areas.
+    Gated on `VIEW_ZONES`: somebody reading incidents needs to know the places
+    they are attributed to, and reading grants no ability to change them.
     """
-    statement = (
-        select(Zone)
-        .join(Restaurant, Restaurant.id == Zone.restaurant_id)
-        .where(Restaurant.organization_id == access.tenant_id)
-        .order_by(Zone.name)
+    service = zone_domain.ZoneService(session)
+    zones, total = await service.list(
+        organization_id=access.tenant_id, q=q or "", limit=limit, offset=offset
     )
-    if restaurant_id:
-        statement = statement.where(Zone.restaurant_id == restaurant_id)
-
-    found = (await session.execute(statement)).scalars().all()
-
-    camera_rows = (
-        (
-            await session.execute(
-                select(Camera.zone_id).where(Camera.organization_id == access.tenant_id)
-            )
-        )
-        .scalars()
-        .all()
-    )
-    per_zone: dict[str, int] = {}
-    for zone_id in camera_rows:
-        if zone_id:
-            per_zone[zone_id] = per_zone.get(zone_id, 0) + 1
-
+    counts = await service.camera_counts(organization_id=access.tenant_id)
     return {
-        "zones": [zone_to_wire(z, camera_count=per_zone.get(z.id, 0)) for z in found],
-        "count": len(found),
+        "zones": [zone_domain.to_wire(z, camera_count=counts.get(z.id, 0)) for z in zones],
+        "count": len(zones),
+        "total": total,
+        "limit": limit,
+        "offset": offset,
     }
+
+
+@router.get("/zones/{zone_id}", dependencies=[Depends(requires(Permission.VIEW_ZONES))])
+async def get_zone(zone_id: str, access: CurrentAccess, session: DbSession) -> dict[str, Any]:
+    service = zone_domain.ZoneService(session)
+    zone = await service.get(organization_id=access.tenant_id, zone_id=zone_id)
+    counts = await service.camera_counts(organization_id=access.tenant_id)
+    return zone_domain.to_wire(zone, camera_count=counts.get(zone.id, 0))
 
 
 @router.post("/zones", dependencies=[Depends(requires(Permission.MANAGE_ZONES))])
@@ -385,15 +138,14 @@ async def create_zone(
     session: DbSession,
     payload: Annotated[dict, Body(...)],
 ) -> dict[str, Any]:
-    restaurant_id = _text(payload, "restaurant_id", required=True)
-    # Checked before insert so a zone can never be attached to another
-    # organization's restaurant by naming its id.
-    await _restaurant_in_tenant(session, access.tenant_id, restaurant_id)
+    """Create a zone: a name, and nothing else to decide.
 
-    zone = Zone(restaurant_id=restaurant_id, name=_text(payload, "name", required=True))
-    session.add(zone)
-    await session.flush()
-
+    Everything a zone needs is its name — kitchen, dine hall, billing. The
+    organization comes from the session, never from the request.
+    """
+    zone = await zone_domain.ZoneService(session).create(
+        organization_id=access.tenant_id, name=_text(payload, "name", required=True)
+    )
     await AuditTrail(session).record(
         action=AuditAction.ZONE_CREATED,
         organization_id=access.tenant_id,
@@ -402,9 +154,9 @@ async def create_zone(
         resource_type="zone",
         resource_id=zone.id,
         request_id=_request_id(request),
-        detail={"name": zone.name, "restaurant_id": restaurant_id},
+        detail={"name": zone.name},
     )
-    return zone_to_wire(zone)
+    return zone_domain.to_wire(zone, camera_count=0)
 
 
 @router.patch("/zones/{zone_id}", dependencies=[Depends(requires(Permission.MANAGE_ZONES))])
@@ -415,19 +167,25 @@ async def update_zone(
     session: DbSession,
     payload: Annotated[dict, Body(...)],
 ) -> dict[str, Any]:
-    zone = (
-        await session.execute(
-            select(Zone)
-            .join(Restaurant, Restaurant.id == Zone.restaurant_id)
-            .where(Zone.id == zone_id, Restaurant.organization_id == access.tenant_id)
-        )
-    ).scalar_one_or_none()
-    if zone is None:
-        raise NotFoundError(f"no zone '{zone_id}'")
+    """Rename a zone, or take it out of use.
+
+    Renaming does not rewrite history: `CameraZoneAssignment` froze the name a
+    past reading was labelled with, deliberately.
+    """
+    service = zone_domain.ZoneService(session)
+    zone = await service.get(organization_id=access.tenant_id, zone_id=zone_id)
+    before = {"name": zone.name, "is_active": zone.is_active}
 
     if "name" in payload:
-        zone.name = _text(payload, "name", required=True)
-    await session.flush()
+        zone = await service.rename(
+            organization_id=access.tenant_id, zone_id=zone_id, name=_text(payload, "name")
+        )
+    if "is_active" in payload:
+        zone = await service.set_active(
+            organization_id=access.tenant_id,
+            zone_id=zone_id,
+            active=bool(payload.get("is_active")),
+        )
 
     await AuditTrail(session).record(
         action=AuditAction.ZONE_UPDATED,
@@ -437,12 +195,39 @@ async def update_zone(
         resource_type="zone",
         resource_id=zone.id,
         request_id=_request_id(request),
+        detail={"before": before, "after": {"name": zone.name, "is_active": zone.is_active}},
+    )
+    counts = await service.camera_counts(organization_id=access.tenant_id)
+    return zone_domain.to_wire(zone, camera_count=counts.get(zone.id, 0))
+
+
+@router.delete("/zones/{zone_id}", dependencies=[Depends(requires(Permission.MANAGE_ZONES))])
+async def delete_zone(
+    zone_id: str,
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+) -> dict[str, Any]:
+    """Delete a zone that holds no cameras.
+
+    A zone with cameras is refused with the count and the alternative, because
+    it is part of the record of what was watched and where. Deactivating keeps
+    that record; deleting would lose it.
+    """
+    zone = await zone_domain.ZoneService(session).delete(
+        organization_id=access.tenant_id, zone_id=zone_id
+    )
+    await AuditTrail(session).record(
+        action=AuditAction.ZONE_DELETED,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles(access),
+        resource_type="zone",
+        resource_id=zone_id,
+        request_id=_request_id(request),
         detail={"name": zone.name},
     )
-    return zone_to_wire(zone)
-
-
-# ── Users ────────────────────────────────────────────────────────────────────
+    return {"zone_id": zone_id, "deleted": True}
 
 
 @router.get("/users", dependencies=[Depends(requires(Permission.VIEW_USERS))])

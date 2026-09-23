@@ -87,7 +87,7 @@ async def test_a_platform_session_reaches_the_console(platform, client: AsyncCli
 
 async def test_a_platform_session_reaches_no_tenant_route(platform, client: AsyncClient):
     headers = await bearer(client, "platform@example.com")
-    refused = await client.get("/api/v1/restaurants", headers=headers)
+    refused = await client.get("/api/v1/zones", headers=headers)
     assert refused.status_code == 403, refused.text
 
 

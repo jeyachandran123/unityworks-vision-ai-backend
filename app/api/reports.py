@@ -46,7 +46,6 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from app.api.dependencies import CurrentAccess, DbSession, requires, settings_of
 from app.authorization.model import AccessDecision, Permission, ScopeBreadth
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
-from app.domain.models import Restaurant
 from app.errors import (
     AppError,
     AuthorizationError,
@@ -65,6 +64,7 @@ from app.reporting.model import (
 )
 from app.reporting.periods import parse_instant, resolve_timezone, resolve_window
 from app.reporting.render import format_available, render
+from app.users.models import Organization
 
 router = APIRouter(prefix="/api/v1/reports", tags=["reports"])
 
@@ -84,30 +84,29 @@ def _scope_cameras(access: AccessDecision) -> tuple[str, ...] | None:
     return access.cameras.camera_ids
 
 
-async def _site_timezone(session, organization_id: str, restaurant_id: str) -> tuple[str, str]:
-    """The site's own zone, and its name. UTC when no site was named.
+async def _organization_timezone(session, organization_id: str) -> tuple[str, str]:
+    """The organization's own zone, and its name.
 
     Period boundaries are a local question: "September" for a Singapore kitchen
     begins at 16:00 UTC on 31 August, and a monthly report computed on UTC
     boundaries misattributes eight hours of every month.
+
+    It was read from the site until zones replaced them (`b4c8e1a37d90`). A zone
+    does not carry a timezone and should not: a kitchen and its dine hall are in
+    the same place, and giving each one would let a single report disagree with
+    itself.
     """
-    if not restaurant_id:
-        return "UTC", ""
     from sqlalchemy import select
 
     row = (
         await session.execute(
-            select(Restaurant.timezone, Restaurant.name).where(
-                Restaurant.id == restaurant_id,
-                # Tenancy from the session, never from the request body — asking
-                # for another organization's site is a 404, not a 403, because
-                # "it exists but is not yours" is itself a disclosure.
-                Restaurant.organization_id == organization_id,
+            select(Organization.timezone, Organization.name).where(
+                Organization.id == organization_id
             )
         )
     ).first()
     if row is None:
-        raise NotFoundError(f"no restaurant '{restaurant_id}'")
+        raise NotFoundError(f"no organization '{organization_id}'")
     return (row[0] or "UTC"), (row[1] or "")
 
 
@@ -120,7 +119,7 @@ async def _prepare(
     since: str | None,
     until: str | None,
     granularity: str,
-    restaurant_id: str,
+    zone_id: str,
 ) -> tuple[catalogue.ReportType, ReportRequest, Any]:
     """Resolve and validate everything before a single row is read."""
     report = catalogue.report_for(report_id)
@@ -140,7 +139,7 @@ async def _prepare(
             details={"supported": [g.value for g in report.granularities]},
         )
 
-    tz_name, _site = await _site_timezone(session, access.tenant_id, restaurant_id)
+    tz_name, _organization = await _organization_timezone(session, access.tenant_id)
     zone = resolve_timezone(tz_name)
     start, end = resolve_window(
         since=parse_instant(since), until=parse_instant(until), zone=zone, granularity=grain
@@ -157,7 +156,7 @@ async def _prepare(
             timezone_resolved=zone.resolved,
             organization_id=access.tenant_id,
             camera_keys=_scope_cameras(access),
-            restaurant_id=restaurant_id,
+            zone_id=zone_id,
             row_limit=DEFAULT_ROW_LIMIT,
         ),
         zone,
@@ -240,9 +239,7 @@ async def list_report_types(access: CurrentAccess) -> dict[str, Any]:
     """
     exports = {
         fmt.value: {"available": available, "reason": reason}
-        for fmt, available, reason in (
-            (fmt, *format_available(fmt)) for fmt in ExportFormat
-        )
+        for fmt, available, reason in ((fmt, *format_available(fmt)) for fmt in ExportFormat)
     }
     return {
         "reports": [
@@ -268,7 +265,7 @@ async def generate_report(
     since: Annotated[str | None, Query()] = None,
     until: Annotated[str | None, Query()] = None,
     granularity: Annotated[str, Query()] = "total",
-    restaurant_id: Annotated[str, Query()] = "",
+    zone_id: Annotated[str, Query()] = "",
 ) -> dict[str, Any]:
     """Run a report and return it as JSON. **Audited.**"""
     report, report_request, zone = await _prepare(
@@ -279,7 +276,7 @@ async def generate_report(
         since=since,
         until=until,
         granularity=granularity,
-        restaurant_id=restaurant_id,
+        zone_id=zone_id,
     )
     await _authorize(request, access, session, report, action=AuditAction.REPORT_GENERATED)
 
@@ -300,7 +297,7 @@ async def generate_report(
             "since": report_request.since.isoformat(),
             "until": report_request.until.isoformat(),
             "granularity": report_request.granularity.value,
-            "restaurant_id": restaurant_id,
+            "zone_id": zone_id,
             "complete": data.coverage.complete,
             "sources": [s.source for s in data.coverage.sources],
         },
@@ -322,7 +319,7 @@ async def export_report(
     since: Annotated[str | None, Query()] = None,
     until: Annotated[str | None, Query()] = None,
     granularity: Annotated[str, Query()] = "total",
-    restaurant_id: Annotated[str, Query()] = "",
+    zone_id: Annotated[str, Query()] = "",
 ) -> Response:
     """Produce a file. **Audited separately from generation.**
 
@@ -351,7 +348,7 @@ async def export_report(
         since=since,
         until=until,
         granularity=granularity,
-        restaurant_id=restaurant_id,
+        zone_id=zone_id,
     )
     await _authorize(request, access, session, report, action=AuditAction.REPORT_EXPORTED)
 

@@ -16,9 +16,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 
 from app.authorization.model import Permission, Role, permissions_for
-from app.domain.models import AuditEvent, Camera, Incident, Restaurant, Zone
+from app.domain.models import AuditEvent, Camera, Incident, Zone
 from app.reporting import catalogue
 from app.reporting.model import (
     Column,
@@ -38,6 +39,7 @@ from app.reporting.periods import (
     resolve_window,
 )
 from app.reporting.render import format_available, render
+from app.users.models import Organization
 
 from .conftest import bearer, make_user
 
@@ -59,24 +61,23 @@ async def admin(seeded):
 
 @pytest.fixture
 async def with_incidents(admin):
-    """A site in Singapore, a zone, a camera and five incidents over five days."""
+    """An organization in Singapore, a zone, a camera and five incidents.
+
+    The timezone lives on the organization since zones replaced sites: period
+    boundaries are local, and a kitchen and its dine hall are in one place.
+    """
     now = datetime.now(UTC)
     database = admin.state.database
     async with database.session_scope() as session:
-        session.add(
-            Restaurant(
-                id="rest-1",
-                organization_id="org-test",
-                name="Harbour Kitchen",
-                slug="harbour",
-                timezone="Asia/Singapore",
-            )
-        )
-        session.add(Zone(id="zone-prep", restaurant_id="rest-1", name="Prep line"))
+        organization = (
+            await session.execute(select(Organization).where(Organization.id == "org-test"))
+        ).scalar_one()
+        organization.timezone = "Asia/Singapore"
+        session.add(Zone(id="zone-prep", organization_id="org-test", name="Prep line"))
         session.add(
             Camera(
                 organization_id="org-test",
-                restaurant_id="rest-1",
+                zone_id="zone-1",
                 camera_key="cam-01",
                 name="Prep camera",
                 channel=1,
@@ -87,7 +88,6 @@ async def with_incidents(admin):
                 Incident(
                     id=f"inc-{index}",
                     organization_id="org-test",
-                    restaurant_id="rest-1",
                     # Frozen zone attribution: two recorded, three not.
                     zone_id="zone-prep" if index < 2 else None,
                     camera_key="cam-01",
@@ -282,7 +282,7 @@ async def test_an_incident_report_aggregates_real_rows(client: AsyncClient, with
     body = (
         await client.get(
             "/api/v1/reports/incident_summary",
-            params={"since": since, "granularity": "day", "restaurant_id": "rest-1"},
+            params={"since": since, "granularity": "day"},
             headers=headers,
         )
     ).json()
@@ -318,7 +318,7 @@ async def test_frozen_zone_attribution_is_read_as_stored(
 
     database = with_incidents.state.database
     async with database.session_scope() as session:
-        session.add(Zone(id="zone-wash", restaurant_id="rest-1", name="Wash station"))
+        session.add(Zone(id="zone-wash", organization_id="org-test", name="Wash station"))
         await session.flush()
         await CameraService(session).update(
             organization_id="org-test", camera_key="cam-01", zone_id="zone-wash"
@@ -329,7 +329,7 @@ async def test_frozen_zone_attribution_is_read_as_stored(
     body = (
         await client.get(
             "/api/v1/reports/incident_summary",
-            params={"since": since, "restaurant_id": "rest-1"},
+            params={"since": since},
             headers=headers,
         )
     ).json()

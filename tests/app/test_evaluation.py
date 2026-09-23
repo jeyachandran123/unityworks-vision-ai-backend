@@ -33,7 +33,6 @@ from app.evaluation.model import (
     Freshness,
     MetricEntry,
     MetricKind,
-    Provenance,
 )
 
 from .conftest import bearer, make_user

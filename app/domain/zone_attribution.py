@@ -48,13 +48,11 @@ class ZoneAttribution:
 
     zone_id: str | None
     zone_name: str
-    restaurant_id: str | None
 
     def as_dict(self) -> dict[str, object]:
         return {
             "zone_id": self.zone_id,
             "zone_name": self.zone_name,
-            "restaurant_id": self.restaurant_id,
         }
 
 
@@ -64,7 +62,6 @@ async def record_assignment(
     organization_id: str,
     camera_key: str,
     zone_id: str | None,
-    restaurant_id: str | None = None,
     assigned_by: str = "",
     at: datetime | None = None,
 ) -> CameraZoneAssignment | None:
@@ -98,12 +95,9 @@ async def record_assignment(
 
     zone_name = ""
     if zone_id:
-        zone = (
-            await session.execute(select(Zone).where(Zone.id == zone_id))
-        ).scalar_one_or_none()
+        zone = (await session.execute(select(Zone).where(Zone.id == zone_id))).scalar_one_or_none()
         if zone is not None:
             zone_name = zone.name
-            restaurant_id = restaurant_id or zone.restaurant_id
 
     if open_row is not None:
         # Closed, never rewritten. The old row keeps its zone forever, which is
@@ -115,7 +109,6 @@ async def record_assignment(
         camera_key=camera_key,
         zone_id=zone_id,
         zone_name=zone_name,
-        restaurant_id=restaurant_id,
         effective_from=moment,
         assigned_by=assigned_by,
     )
@@ -137,7 +130,9 @@ class ZoneHistory:
         for row in rows:
             by_camera.setdefault(row.camera_key, []).append(row)
         for intervals in by_camera.values():
-            intervals.sort(key=lambda r: _aware(r.effective_from) or datetime.min.replace(tzinfo=UTC))
+            intervals.sort(
+                key=lambda r: _aware(r.effective_from) or datetime.min.replace(tzinfo=UTC)
+            )
         self._by_camera = by_camera
 
     @classmethod
@@ -194,7 +189,6 @@ class ZoneHistory:
             return ZoneAttribution(
                 zone_id=interval.zone_id,
                 zone_name=interval.zone_name,
-                restaurant_id=interval.restaurant_id,
             )
         return None
 

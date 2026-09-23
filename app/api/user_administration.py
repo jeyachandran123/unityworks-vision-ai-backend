@@ -10,7 +10,7 @@ that already-tested domain logic. It does not reimplement any of it:
 role/permission mutation always goes through `RoleAssignment` rows or
 `app.authorization.overrides.set_permission_override` /
 `clear_permission_override`, exactly as `app/api/administration.py` calls into
-`Restaurant`/`Zone` rather than re-deriving their invariants.
+`Zone` rather than re-deriving its invariants.
 
 ### Tenant scope
 

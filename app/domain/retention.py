@@ -275,7 +275,6 @@ class RetentionService:
         )
         return int(result.rowcount or 0)
 
-
     # -- observations ---------------------------------------------------------
 
     async def _truncate_observations(self) -> tuple[int, list[str]]:
@@ -319,10 +318,9 @@ class RetentionService:
             )
             return 0, []
 
+        from app.domain.runtime_identity import runtime_camera_id
         from vision_os.core.model.ids import CameraId
         from vision_os.core.model.timebase import Instant
-
-        from app.domain.runtime_identity import runtime_camera_id
 
         cutoff = datetime.now(UTC) - timedelta(days=self._observation_days)
         before = Instant(int(cutoff.timestamp() * 1_000_000_000))

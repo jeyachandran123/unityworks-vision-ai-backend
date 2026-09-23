@@ -152,7 +152,6 @@ SUSPENDED_FORBIDDEN: frozenset[Permission] = frozenset(
     {
         Permission.MANAGE_ORGANIZATION,
         Permission.MANAGE_USERS,
-        Permission.MANAGE_SITES,
         Permission.MANAGE_ZONES,
         Permission.MANAGE_CAMERAS,
         Permission.RETIRE_CAMERAS,

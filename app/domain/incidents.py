@@ -65,7 +65,6 @@ class IncidentService:
         summary: str = "",
         ruleset_version: str = "",
         finding: dict[str, Any] | None = None,
-        restaurant_id: str | None = None,
         zone_id: str | None = None,
         track_id: str = "",
         evidence_refs: tuple[str, ...] = (),
@@ -106,7 +105,6 @@ class IncidentService:
             # from the request that raised it — would read `None`.
             id=uuid.uuid4().hex,
             organization_id=organization_id,
-            restaurant_id=restaurant_id,
             zone_id=zone_id,
             camera_key=camera_key,
             object_id=object_id,
@@ -229,7 +227,7 @@ class IncidentService:
         organization_id: str,
         status: str | None = None,
         camera_keys: tuple[str, ...] | None = None,
-        restaurant_id: str | None = None,
+        zone_id: str | None = None,
         limit: int = 100,
     ) -> list[Incident]:
         """List incidents, scoped by tenant and by the caller's camera reach.
@@ -246,8 +244,8 @@ class IncidentService:
             statement = statement.where(Incident.status == status)
         if camera_keys is not None:
             statement = statement.where(Incident.camera_key.in_(camera_keys))
-        if restaurant_id:
-            statement = statement.where(Incident.restaurant_id == restaurant_id)
+        if zone_id:
+            statement = statement.where(Incident.zone_id == zone_id)
 
         statement = statement.order_by(Incident.created_at.desc()).limit(min(max(limit, 1), 500))
         result = await self._session.execute(statement)
@@ -312,7 +310,6 @@ def to_wire(incident: Incident) -> dict[str, Any]:
         "rule_id": incident.rule_id,
         "ruleset_version": incident.ruleset_version,
         # WHERE
-        "restaurant_id": incident.restaurant_id,
         "zone_id": incident.zone_id,
         "camera_key": incident.camera_key,
         # WHEN

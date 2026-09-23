@@ -51,7 +51,6 @@ class CameraService:
         self,
         *,
         organization_id: str,
-        restaurant_id: str,
         camera_key: str,
         name: str,
         channel: int,
@@ -62,7 +61,7 @@ class CameraService:
         credential_ref: str = "",
         analysis_fps: float = 4.0,
         purpose: str = "",
-        zone_id: str | None = None,
+        zone_id: str = "",
         enabled: bool = False,
         assigned_by: str = "",
     ) -> Camera:
@@ -86,7 +85,6 @@ class CameraService:
 
         camera = Camera(
             organization_id=organization_id,
-            restaurant_id=restaurant_id,
             zone_id=zone_id,
             camera_key=camera_key,
             name=name,
@@ -112,7 +110,6 @@ class CameraService:
             organization_id=organization_id,
             camera_key=camera_key,
             zone_id=zone_id,
-            restaurant_id=restaurant_id,
             assigned_by=assigned_by,
         )
         return camera
@@ -148,8 +145,7 @@ class CameraService:
         analysis_flag = changes.get("analysis_enabled")
         if analysis_flag is not None and not isinstance(analysis_flag, bool):
             raise ValidationError(
-                f"analysis_enabled must be true or false, got "
-                f"{type(analysis_flag).__name__}"
+                f"analysis_enabled must be true or false, got " f"{type(analysis_flag).__name__}"
             )
 
         zone_before = camera.zone_id
@@ -167,7 +163,6 @@ class CameraService:
                 organization_id=organization_id,
                 camera_key=camera.camera_key,
                 zone_id=camera.zone_id,
-                restaurant_id=camera.restaurant_id,
                 assigned_by=assigned_by,
             )
 
@@ -289,6 +284,28 @@ class CameraService:
         await self._session.delete(camera)
         return removed
 
+    async def next_key(self, *, organization_id: str) -> str:
+        """The first free `cam-NN` in this organization.
+
+        Proposed by the server because the key is what the pipeline partitions
+        on: it names observation files on disk and appears in every runtime
+        identity. Asking a person to invent one is asking them to collide with
+        a camera they cannot see.
+        """
+        used = set(
+            (
+                await self._session.execute(
+                    select(Camera.camera_key).where(Camera.organization_id == organization_id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        number = 1
+        while f"cam-{number:02d}" in used:
+            number += 1
+        return f"cam-{number:02d}"
+
     async def get(self, *, organization_id: str, camera_key: str) -> Camera:
         camera = await self._by_key(organization_id, camera_key)
         if camera is None:
@@ -404,7 +421,6 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "runtime_id": for_camera(camera),
         "name": camera.name,
         "purpose": camera.purpose,
-        "restaurant_id": camera.restaurant_id,
         "zone_id": camera.zone_id,
         "channel": camera.channel,
         "stream_type": camera.stream_type,

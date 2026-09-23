@@ -23,7 +23,7 @@ stored only `camera_key` and left the zone to a join would have its history
 rewritten the moment a camera moved or a table was renumbered — a whole quarter
 of prep-line readings silently relocating because of one dropdown. So every row
 describing something that happened at a place and a time carries
-`restaurant_id`, `zone_id` and `zone_name` as they were **then**, exactly as
+`zone_id` and `zone_name` as they were **then**, exactly as
 `Incident.finding_snapshot` freezes the finding and `CameraZoneAssignment`
 freezes the camera's zone.
 
@@ -105,9 +105,6 @@ class PeopleCountInterval(Base):
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: Frozen at write time. See the module docstring.
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     camera_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -188,9 +185,6 @@ class DemographySnapshot(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     camera_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -253,15 +247,12 @@ class DiningTable(Base):
     __tablename__ = "dining_tables"
     __table_args__ = (
         UniqueConstraint("organization_id", "table_code", name="uq_dining_table_code"),
-        Index("ix_dining_tables_restaurant", "restaurant_id"),
+        Index("ix_dining_tables_zone", "zone_id"),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
-    )
-    restaurant_id: Mapped[str] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=False
     )
     zone_id: Mapped[str | None] = mapped_column(
         String(64), ForeignKey("zones.id", ondelete="SET NULL"), nullable=True
@@ -320,9 +311,6 @@ class TableStatusEvent(Base):
     #: Frozen at write time — the whole reason this column duplicates the one on
     #: `dining_tables`.
     table_code: Mapped[str] = mapped_column(String(64), nullable=False, default="")
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     camera_key: Mapped[str] = mapped_column(String(64), nullable=False, default="")
@@ -368,7 +356,6 @@ class CuttingBoardPolicy(Base):
     __table_args__ = (
         UniqueConstraint(
             "organization_id",
-            "restaurant_id",
             "policy_version",
             "board_colour",
             name="uq_board_policy_colour",
@@ -380,15 +367,9 @@ class CuttingBoardPolicy(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    #: `None` is the organization-wide default; a row with a restaurant overrides
-    #: it for that site. Sites genuinely differ, and forcing one scheme would
-    #: mean a site silently evaluated against somebody else's kitchen.
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="CASCADE"), nullable=True
-    )
     policy_version: Mapped[str] = mapped_column(String(64), nullable=False)
 
-    #: The colour as the site names it. Not an enum: "duck egg blue" is a real
+    #: The colour as the organization names it. Not an enum: "duck egg blue" is a real
     #: answer in a real kitchen, and an enum would force a lossy mapping at the
     #: one point where the mapping is the whole subject.
     board_colour: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -434,9 +415,6 @@ class BoardUsageEvent(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
-    )
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
     )
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
@@ -505,9 +483,6 @@ class DishDetection(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
-    )
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
     )
     zone_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     zone_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
@@ -598,9 +573,6 @@ class PatronToken(Base):
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: Frozen at write time, like every other located record here.
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
 
     #: Hex SHA-256 of a site-scoped pepper concatenated with a template digest.
     #: 64 characters, and the width is load-bearing: it cannot hold a template,
@@ -666,9 +638,6 @@ class PosConnector(Base):
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
     #: `None` when one connector serves the whole organization.
-    restaurant_id: Mapped[str | None] = mapped_column(
-        String(64), ForeignKey("restaurants.id", ondelete="SET NULL"), nullable=True
-    )
     connector_key: Mapped[str] = mapped_column(String(64), nullable=False)
     #: Which vendor's adapter serves this row. The adapter is chosen by this
     #: value, so a new vendor is a sibling adapter and a new row — never a
@@ -682,9 +651,7 @@ class PosConnector(Base):
     capabilities: Mapped[str] = mapped_column(Text, nullable=False, default="")
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    last_success_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     #: The last failure, in words an operator can act on. Never a stack trace and
     #: never a response body — a POS error body can echo a ticket.
@@ -727,7 +694,6 @@ class PosSyncRun(Base):
     #: Frozen, like every other historical attribution here: which vendor and
     #: which site this run belonged to when it ran.
     vendor: Mapped[str] = mapped_column(String(64), nullable=False, default="")
-    restaurant_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     #: `pull` reads from the POS; `push` sends to it. Named rather than inferred
     #: from counts, because a push that sent nothing is not a pull.

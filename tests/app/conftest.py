@@ -68,6 +68,15 @@ def settings() -> Settings:
         redis_enabled=False,
         vision_autostart=False,
         feature_devtools=True,
+        # The DVR this deployment is configured against. Camera creation fills
+        # what the caller omits from these, so a suite that left them empty
+        # would be testing a deployment nobody runs — and would have missed
+        # that `credential_ref` is the server's, never the client's.
+        cctv_host="dvr.example",
+        cctv_rtsp_port=554,
+        cctv_username="admin",
+        cctv_stream_type="main",
+        cctv_credential_ref="env:CCTV_PASSWORD",
         metrics_enabled=False,
         cors_origins="http://localhost:5273",
     )
