@@ -266,6 +266,22 @@ class Settings(BaseSettings):
     #: exactly how sixteen cameras sat at CONNECTING with a correct password on
     #: disk. `secret_environment()` closes that gap.
     cctv_password: SecretStr = SecretStr("")
+    #: Base64 of 32 bytes. Seals the passwords of recorders that keep their
+    #: credential in the database rather than in the environment.
+    #:
+    #: Deliberately *not* derived from `secret_key`: that one signs access
+    #: tokens and is rotated when a token leaks, which would be a routine act
+    #: that silently made every recorder password unreadable. These two secrets
+    #: have different lifetimes, so they are different settings.
+    #:
+    #: The row and this key are two halves. A database dump on its own recovers
+    #: nothing, which is the property that makes storing the password acceptable
+    #: at all.
+    recorder_secret_key: SecretStr = SecretStr("")
+    #: Names which key sealed a row, so a later rotation can tell them apart.
+    #: Without it, rotating means re-typing every password, which in practice
+    #: means never rotating.
+    recorder_secret_key_id: str = "k1"
     #: Independent of the camera's own frame rate: a 25 fps stream must not
     #: become 25 fps of detection and VLM work.
     cctv_analysis_fps: float = 4.0

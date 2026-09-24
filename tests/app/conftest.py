@@ -77,6 +77,10 @@ def settings() -> Settings:
         cctv_username="admin",
         cctv_stream_type="main",
         cctv_credential_ref="env:CCTV_PASSWORD",
+        # A real key, so the sealing path is exercised rather than skipped.
+        # Fixed rather than random: a test that fails only on some runs
+        # because its key happened to be rejected is worse than no test.
+        recorder_secret_key="AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
         metrics_enabled=False,
         cors_origins="http://localhost:5273",
     )

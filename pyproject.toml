@@ -37,6 +37,10 @@ dependencies = [
     "redis[hiredis]>=5.2,<6",
     "PyJWT[crypto]>=2.10,<3",
     "bcrypt>=4.2,<5",
+    # Seals recorder passwords at rest (AES-GCM). Declared explicitly rather
+    # than relied on transitively: a secret that stops being decryptable
+    # after an unrelated dependency bump is the worst failure available here.
+    "cryptography>=44,<51",
     "prometheus-client>=0.21,<0.22",
     "loguru>=0.7.3,<0.8",
     # Reporting resolves period boundaries in each site's own timezone —
