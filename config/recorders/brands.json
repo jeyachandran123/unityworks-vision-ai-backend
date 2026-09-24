@@ -1,0 +1,45 @@
+{
+  "_comment": [
+    "How to build an RTSP path for each family of recorder.",
+    "",
+    "Two facts per brand, not one. `path_template` is the shape; `main` and",
+    "`sub` are the integers that brand uses to mean full-resolution and",
+    "reduced-resolution. They differ between vendors, so a template alone",
+    "would leave whoever adds a recorder supplying the number from memory.",
+    "",
+    "Data, not code: supporting another device is an edit here. Placeholders",
+    "are {channel} (1-based, as every device here numbers them) and {subtype}."
+  ],
+
+  "dahua": {
+    "label": "Dahua / Amcrest",
+    "path_template": "/cam/realmonitor?channel={channel}&subtype={subtype}",
+    "main": 0,
+    "sub": 1,
+    "default_port": 554
+  },
+
+  "hikvision": {
+    "label": "Hikvision",
+    "path_template": "/Streaming/Channels/{channel}0{subtype}",
+    "main": 1,
+    "sub": 2,
+    "default_port": 554
+  },
+
+  "axis": {
+    "label": "Axis",
+    "path_template": "/axis-media/media.amp?camera={channel}&streamprofile=stream{subtype}",
+    "main": 1,
+    "sub": 2,
+    "default_port": 554
+  },
+
+  "onvif": {
+    "label": "Generic ONVIF",
+    "path_template": "/onvif-media/media.amp?profile=profile_{subtype}&channel={channel}",
+    "main": 1,
+    "sub": 2,
+    "default_port": 554
+  }
+}
