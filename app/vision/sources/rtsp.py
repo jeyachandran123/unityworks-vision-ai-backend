@@ -96,8 +96,14 @@ class RtspCameraConfig:
     #: become 25 fps of detection and VLM work.
     analysis_fps: float = 4.0
     enabled: bool = True
-    #: Overrides the Dahua default when a device wants a different path.
+    #: Overrides the Dahua default when a device wants a different path. Set
+    #: from the recorder's brand by `app.domain.cameras.to_rtsp_config`.
     path_template: str = DAHUA_PATH
+    #: The integers this device uses for (main, sub). Dahua's are (0, 1) and
+    #: Hikvision's (1, 2): the brand decides, so the same camera setting means
+    #: the right thing on either. Defaults to Dahua's, which is what every
+    #: config meant before brands existed.
+    stream_values: tuple[int, int] = (STREAM_SUBTYPE["main"], STREAM_SUBTYPE["sub"])
 
     def __post_init__(self) -> None:
         if not self.camera_id:
@@ -113,7 +119,8 @@ class RtspCameraConfig:
 
     @property
     def subtype(self) -> int:
-        return STREAM_SUBTYPE[self.stream_type]
+        main, sub = self.stream_values
+        return main if self.stream_type == "main" else sub
 
     def path(self) -> str:
         return self.path_template.format(channel=self.channel, subtype=self.subtype)

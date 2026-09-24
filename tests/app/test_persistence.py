@@ -28,7 +28,7 @@ from app.domain.retention import RetentionService
 from app.errors import ConflictError, EvidenceForbiddenError, NotFoundError, ValidationError
 from app.infrastructure.database import create_all_for_tests
 from app.main import create_app
-from tests.app.conftest import bearer, make_user
+from tests.app.conftest import bearer, make_recorder, make_user
 
 ORG = "org-test"
 OTHER = "org-other"
@@ -36,8 +36,15 @@ OTHER = "org-other"
 
 @pytest_asyncio.fixture
 async def session(app):
-    """A session against the suite's in-memory database."""
+    """A session against the suite's in-memory database.
+
+    Carries the organization's recorder, at the address these tests assert on,
+    because a camera is a channel of one. `merge` rather than `add`, so a test
+    that also asks for `seeded` finds one recorder and not a duplicate.
+    """
     async with app.state.database.session_scope() as active:
+        await active.merge(make_recorder(ORG, host="10.0.0.5"))
+        await active.flush()
         yield active
 
 
@@ -73,7 +80,7 @@ class TestCameraConfiguration:
             camera_key="cam-09",
             name="Prep bench",
             channel=9,
-            host="10.0.0.5",
+            recorder_id="rec-org-test",
         )
         assert camera.enabled is False
 
@@ -91,7 +98,7 @@ class TestCameraConfiguration:
                 camera_key=f"cam-{channel:02d}",
                 name=f"Camera {channel}",
                 channel=channel,
-                host="10.0.0.5",
+                recorder_id="rec-org-test",
             )
         await session.flush()
         await service.set_enabled(organization_id=ORG, camera_key="cam-02", enabled=True)
@@ -100,18 +107,36 @@ class TestCameraConfiguration:
         assert [c.camera_key for c in running] == ["cam-02"]
 
     @pytest.mark.asyncio
-    async def test_a_password_cannot_be_stored_in_the_camera_row(self, session):
-        """A database dump must not be a credential dump."""
-        with pytest.raises(ValidationError):
-            await CameraService(session).create(
-                organization_id=ORG,
-                zone_id="zone-01",
-                camera_key="cam-99",
-                name="Bad",
-                channel=99,
-                host="10.0.0.5",
-                credential_ref="hunter2",  # a value, not a reference
-            )
+    async def test_a_password_cannot_be_stored_as_a_credential_reference(self, session, settings):
+        """A database dump must not be a credential dump.
+
+        The reference lives on the recorder now, and the rule moved with it: a
+        bare value where a reference belongs is refused, as is `literal:`, whose
+        reference *is* the password. A typed password is sealed instead.
+        """
+        from app.domain.recorders import RecorderService
+
+        for bad in ("hunter2", "literal:hunter2"):
+            with pytest.raises(ValidationError):
+                await RecorderService(session).create(
+                    organization_id=ORG,
+                    name=f"Bad {bad}",
+                    host="10.0.0.6",
+                    rtsp_port=554,
+                    username="admin",
+                    brand="dahua",
+                    settings=settings,
+                    credential_ref=bad,
+                )
+
+    @pytest.mark.asyncio
+    async def test_a_camera_row_holds_no_connection_details_at_all(self, session):
+        """Address, account and credential are the recorder's. A camera that
+        carried its own copy could disagree with the box it is plugged into."""
+        from app.domain.models import Camera
+
+        columns = {column.name for column in Camera.__table__.columns}
+        assert columns.isdisjoint({"host", "rtsp_port", "username", "credential_ref"})
 
     @pytest.mark.asyncio
     async def test_a_reference_is_accepted_and_never_resolved_here(self, session):
@@ -121,11 +146,9 @@ class TestCameraConfiguration:
             camera_key="cam-10",
             name="Wash",
             channel=10,
-            host="10.0.0.5",
-            username="admin",
-            credential_ref="env:CCTV_PASSWORD",
+            recorder_id="rec-org-test",
         )
-        assert camera.credential_ref == "env:CCTV_PASSWORD"
+        assert camera.recorder.credential_ref == "env:CCTV_PASSWORD"
 
         wire = camera_to_wire(camera)
         assert wire["credential_configured"] is True
@@ -141,9 +164,7 @@ class TestCameraConfiguration:
             camera_key="cam-11",
             name="Line",
             channel=11,
-            host="10.0.0.5",
-            username="admin",
-            credential_ref="env:CCTV_PASSWORD",
+            recorder_id="rec-org-test",
             analysis_fps=2.0,
         )
         config = to_rtsp_config(camera)
@@ -165,7 +186,7 @@ class TestCameraConfiguration:
             camera_key="cam-12",
             name="A",
             channel=12,
-            host="10.0.0.5",
+            recorder_id="rec-org-test",
         )
         await session.flush()
         with pytest.raises(ConflictError):
@@ -175,7 +196,7 @@ class TestCameraConfiguration:
                 camera_key="cam-12",
                 name="B",
                 channel=12,
-                host="10.0.0.5",
+                recorder_id="rec-org-test",
             )
 
     @pytest.mark.asyncio
@@ -188,7 +209,7 @@ class TestCameraConfiguration:
             camera_key="cam-13",
             name="A",
             channel=13,
-            host="10.0.0.5",
+            recorder_id="rec-org-test",
         )
         await session.flush()
 
@@ -204,7 +225,7 @@ class TestCameraConfiguration:
             camera_key="cam-14",
             name="A",
             channel=14,
-            host="10.0.0.5",
+            recorder_id="rec-org-test",
         )
         await session.flush()
         with pytest.raises(NotFoundError):
@@ -777,8 +798,10 @@ class TestProductApi:
                 "name": "New",
                 "channel": 21,
                 "zone_id": restaurant["id"],
-                "host": "10.0.0.5",
-                "credential_ref": "env:CCTV_PASSWORD",
+                "recorder_id": "rec-org-test",
+                # Sent to prove it is ignored: a client naming a reference could
+                # make the server read a secret it was never given.
+                "credential_ref": "literal:hunter2",
             },
         )
         assert response.status_code == 200, response.text
@@ -799,7 +822,7 @@ class TestProductApi:
                 "name": "New",
                 "channel": 22,
                 "zone_id": restaurant["id"],
-                "host": "10.0.0.5",
+                "recorder_id": "rec-org-test",
             },
         )
         patched = await client.patch(
@@ -929,6 +952,7 @@ class TestRestartRecovery:
             org, user = make_user(email="manager@example.com")
             session.add(org)
             session.add(user)
+            session.add(make_recorder(ORG, host="10.0.0.5"))
 
         async with first.state.database.session_scope() as session:
             cameras = CameraService(session)
@@ -938,8 +962,7 @@ class TestRestartRecovery:
                 camera_key="cam-01",
                 name="Prep",
                 channel=1,
-                host="10.0.0.5",
-                credential_ref="env:CCTV_PASSWORD",
+                recorder_id="rec-org-test",
             )
             await cameras.create(
                 organization_id=ORG,
@@ -947,7 +970,7 @@ class TestRestartRecovery:
                 camera_key="cam-02",
                 name="Wash",
                 channel=2,
-                host="10.0.0.5",
+                recorder_id="rec-org-test",
             )
             await session.flush()
             await cameras.set_enabled(organization_id=ORG, camera_key="cam-01", enabled=True)
@@ -996,7 +1019,7 @@ class TestRestartRecovery:
             # And the one left disabled is still disabled.
             assert (await cameras.get(organization_id=ORG, camera_key="cam-02")).enabled is False
             # The credential is still a reference, not a value.
-            assert running[0].credential_ref == "env:CCTV_PASSWORD"
+            assert running[0].recorder.credential_ref == "env:CCTV_PASSWORD"
 
             # The incident is still open, and still explicable.
             incident = await IncidentService(session).get(
@@ -1032,6 +1055,8 @@ class TestRestartRecovery:
         await create_all_for_tests(app.state.database)
 
         async with app.state.database.session_scope() as session:
+            session.add(make_recorder(ORG, host="10.0.0.5"))
+            await session.flush()
             service = CameraService(session)
             for channel in range(1, 5):
                 await service.create(
@@ -1040,7 +1065,7 @@ class TestRestartRecovery:
                     camera_key=f"cam-{channel:02d}",
                     name=f"Camera {channel}",
                     channel=channel,
-                    host="10.0.0.5",
+                    recorder_id="rec-org-test",
                 )
             await session.flush()
             for key in ("cam-01", "cam-03"):

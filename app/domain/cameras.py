@@ -5,12 +5,16 @@ DVR has 16 channels, and **only rows that are `enabled` create a session**. A
 disabled camera opens no socket, decodes nothing and reaches no model. Cost
 follows configuration, not hardware.
 
-### The credential is still a reference
+### A camera is a channel of a recorder
 
-`Camera.credential_ref` holds `env:CCTV_PASSWORD`, never a password. Moving
-camera config into the database changed where the *pointer* lives; it did not
-change what the row is allowed to contain. A database dump must not be a
-credential dump.
+How to *reach* a camera — address, port, account, password, and the URL
+convention of its vendor — belongs to its `Recorder`, because it is the same for
+every channel on that box. A camera row holds what genuinely differs: which
+channel, which stream, where it is, and how it is analysed. See
+`app/domain/recorders.py`.
+
+The credential is still a reference, and still never a password. It lives on
+the recorder now.
 
 ### Frame metadata
 
@@ -22,13 +26,15 @@ design, which is a smaller privacy surface and the whole point.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from app.domain.models import Camera, CameraZoneAssignment, FrameRecord
+from app.domain.models import Camera, CameraZoneAssignment, FrameRecord, Recorder
 from app.domain.runtime_identity import for_camera, runtime_camera_id, validate_camera_key
 from app.domain.zone_attribution import record_assignment
 from app.errors import ConfigurationInvalidError, ConflictError, NotFoundError, ValidationError
@@ -54,11 +60,8 @@ class CameraService:
         camera_key: str,
         name: str,
         channel: int,
-        host: str = "",
-        rtsp_port: int = 554,
+        recorder_id: str,
         stream_type: str = "sub",
-        username: str = "",
-        credential_ref: str = "",
         analysis_fps: float = 4.0,
         purpose: str = "",
         zone_id: str = "",
@@ -76,7 +79,6 @@ class CameraService:
             channel=channel,
             stream_type=stream_type,
             analysis_fps=analysis_fps,
-            credential_ref=credential_ref,
         )
 
         existing = await self._by_key(organization_id, camera_key)
@@ -86,19 +88,20 @@ class CameraService:
         camera = Camera(
             organization_id=organization_id,
             zone_id=zone_id,
+            recorder_id=recorder_id,
             camera_key=camera_key,
             name=name,
             purpose=purpose,
-            host=host,
-            rtsp_port=rtsp_port,
             channel=channel,
             stream_type=stream_type,
-            username=username,
-            credential_ref=credential_ref,
             analysis_fps=analysis_fps,
             enabled=enabled,
         )
         self._session.add(camera)
+        # Loaded now, so the camera returned from here can be turned into a
+        # runtime config or a wire shape without a second round trip.
+        await self._session.flush()
+        await self._session.refresh(camera, attribute_names=["recorder"])
 
         # Open the first zone interval. Recorded here rather than left to the
         # caller because "where was this camera" must be answerable for every
@@ -119,15 +122,14 @@ class CameraService:
     ) -> Camera:
         camera = await self.get(organization_id=organization_id, camera_key=camera_key)
 
+        # How to reach the camera is the recorder's. A camera can be moved to
+        # another recorder, but never handed an address of its own.
         allowed = {
             "name",
             "purpose",
-            "host",
-            "rtsp_port",
+            "recorder_id",
             "channel",
             "stream_type",
-            "username",
-            "credential_ref",
             "analysis_fps",
             "zone_id",
             "enabled",
@@ -149,10 +151,14 @@ class CameraService:
             )
 
         zone_before = camera.zone_id
+        recorder_before = camera.recorder_id
         for field, value in changes.items():
             if field not in allowed or value is None:
                 continue
             setattr(camera, field, value)
+        if camera.recorder_id != recorder_before:
+            await self._session.flush()
+            await self._session.refresh(camera, attribute_names=["recorder"])
 
         # A zone change closes the interval in force and opens a new one. The
         # old row keeps its zone forever, so every reading this camera produced
@@ -171,7 +177,6 @@ class CameraService:
             channel=camera.channel,
             stream_type=camera.stream_type,
             analysis_fps=camera.analysis_fps,
-            credential_ref=camera.credential_ref,
         )
         camera.updated_at = datetime.now(UTC)
         return camera
@@ -253,8 +258,14 @@ class CameraService:
             # Everything before this instant, which is everything. `truncate` is
             # the only shortening operation P20 offers and its own contract says
             # it exists "for retention alone"; this is a retention act.
+            # On a worker thread, and awaited, so it still happens before the
+            # row is deleted. `truncate` takes the log's lock, which the
+            # analysis pipeline and whole-file readers also hold; under load it
+            # waits. Waiting on the API loop froze every other request with it
+            # — 10.9 s measured on 2026-09-24, over a minute once.
             removed = int(
-                observation_log.truncate(
+                await asyncio.to_thread(
+                    observation_log.truncate,
                     # The tenant-qualified partition, never the bare key. A bare
                     # key here would truncate whichever organization's partition
                     # happened to be named that.
@@ -318,6 +329,7 @@ class CameraService:
         organization_id: str,
         camera_keys: tuple[str, ...] | None = None,
         enabled_only: bool = False,
+        recorder_id: str | None = None,
     ) -> list[Camera]:
         """Cameras this caller may see.
 
@@ -326,28 +338,42 @@ class CameraService:
         if camera_keys is not None and len(camera_keys) == 0:
             return []
 
-        statement = select(Camera).where(Camera.organization_id == organization_id)
+        statement = (
+            select(Camera)
+            .where(Camera.organization_id == organization_id)
+            .options(selectinload(Camera.recorder))
+        )
         if camera_keys is not None:
             statement = statement.where(Camera.camera_key.in_(camera_keys))
         if enabled_only:
             statement = statement.where(Camera.enabled.is_(True))
+        if recorder_id is not None:
+            statement = statement.where(Camera.recorder_id == recorder_id)
 
         result = await self._session.execute(statement.order_by(Camera.camera_key))
         return list(result.scalars().all())
 
     async def enabled_for_runtime(self, *, organization_id: str) -> list[Camera]:
-        """What the live runtime should start. **Enabled rows only.**
+        """What the live runtime should start. **Enabled rows on active recorders.**
 
-        The one query that decides whether a DVR channel becomes a pipeline.
+        The one query that decides whether a DVR channel becomes a pipeline. A
+        deactivated recorder keeps every camera configured on it, and starts
+        none of them.
         """
-        return await self.list(organization_id=organization_id, enabled_only=True)
+        return [
+            camera
+            for camera in await self.list(organization_id=organization_id, enabled_only=True)
+            if is_dialable(camera)
+        ]
 
     async def _by_key(self, organization_id: str, camera_key: str) -> Camera | None:
         result = await self._session.execute(
-            select(Camera).where(
+            select(Camera)
+            .where(
                 Camera.organization_id == organization_id,
                 Camera.camera_key == camera_key,
             )
+            .options(selectinload(Camera.recorder))
         )
         return result.scalar_one_or_none()
 
@@ -358,7 +384,6 @@ def _validate(
     channel: int,
     stream_type: str,
     analysis_fps: float,
-    credential_ref: str,
 ) -> None:
     # Charset, not merely non-emptiness. The key is one half of the camera's
     # runtime identity, and `app.domain.runtime_identity` depends on this
@@ -371,49 +396,19 @@ def _validate(
     if analysis_fps <= 0:
         raise ValidationError("analysis_fps must be positive")
 
-    if credential_ref.startswith("literal:"):
-        # `literal:` is the one scheme whose value *is* the secret, and it was
-        # accepted here while `to_wire` returned `credential_ref` verbatim — so
-        # a camera saved with one would hand its password back to every caller
-        # of the camera list. Closing only the response would leave the
-        # database holding plaintext passwords; closing only the write would
-        # leave existing ones readable. Both are closed.
-        #
-        # Deliberately refused at the write boundary rather than deleted from
-        # the resolver: `app.vision.secrets` still resolves an existing
-        # `literal:` row so no deployment that has one stops connecting, and
-        # `to_wire` no longer returns the reference at all so none can leak
-        # while it is migrated away. New ones cannot be created.
-        raise ValidationError(
-            "credential_ref may no longer be 'literal:'; that scheme stores the "
-            "password itself in the database. Use 'env:' or 'file:', which "
-            "store a pointer the secret provider resolves at connect time",
-            details={"hint": "env:CCTV_PASSWORD"},
-        )
-    if credential_ref and not any(
-        credential_ref.startswith(scheme) for scheme in ("env:", "file:")
-    ):
-        # A bare value here is a password in the database. Refused at the
-        # boundary rather than discovered in a backup.
-        raise ValidationError(
-            "credential_ref must be a reference (env: or file:), never a "
-            "password; the secret provider resolves it at connect time",
-            details={"hint": "env:CCTV_PASSWORD"},
-        )
-
 
 def to_wire(camera: Camera) -> dict[str, Any]:
     """A camera for the API.
 
-    Never carries `credential_ref`. It is nominally a pointer rather than a
-    secret, but `literal:` made it a channel that could carry the value itself,
-    and a field whose safety depends on every writer having chosen the right
-    scheme is not a safe field to return. `credential_configured` answers "is
-    this camera able to authenticate" — which is the only thing any caller
-    needed from it — and `credential_scheme` says how the secret is stored, so
-    an administrator can still see that a camera points at an environment
-    variable rather than a file without learning which variable.
+    Names its recorder rather than repeating the recorder's address: how to
+    reach the camera is the recorder's, and a camera page that showed an address
+    would invite editing it in the one place it cannot be changed.
+    `credential_configured` answers "can this camera authenticate" from the
+    recorder, and never carries the credential or its reference.
     """
+    from app.domain.recorders import brand_label, credential_configured, credential_scheme
+
+    recorder = camera.recorder
     return {
         "camera_key": camera.camera_key,
         # Globally unique. The key alone is not, and a client that keys its own
@@ -424,11 +419,12 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "zone_id": camera.zone_id,
         "channel": camera.channel,
         "stream_type": camera.stream_type,
-        "host": camera.host,
-        "rtsp_port": camera.rtsp_port,
-        "username": camera.username,
-        "credential_configured": bool(camera.credential_ref),
-        "credential_scheme": _credential_scheme(camera.credential_ref),
+        "recorder_id": camera.recorder_id,
+        "recorder_name": recorder.name if recorder is not None else "",
+        "recorder_brand": brand_label(recorder) if recorder is not None else "",
+        "recorder_active": bool(recorder is not None and recorder.is_active),
+        "credential_configured": bool(recorder is not None and credential_configured(recorder)),
+        "credential_scheme": credential_scheme(recorder.credential_ref) if recorder else "",
         "analysis_fps": camera.analysis_fps,
         "enabled": camera.enabled,
         # Two decisions, not one. `enabled` is "this camera streams"; this is
@@ -442,26 +438,31 @@ def to_wire(camera: Camera) -> dict[str, Any]:
     }
 
 
-def _credential_scheme(credential_ref: str) -> str:
-    """`env` or `file` — how the secret is stored, never where or what.
+def is_dialable(camera: Camera) -> bool:
+    """Whether the runtime may open this camera at all.
 
-    Deliberately not the reference itself. `env:CCTV_PASSWORD` names a
-    variable that anyone who reaches the process can then go and read, and the
-    scheme alone is what an administration screen actually needs to show.
+    Its recorder exists, is active, and has an address. A camera failing any of
+    these is kept exactly as configured and simply not started — which is what
+    "deactivate the recorder" means.
     """
-    scheme, separator, _ = (credential_ref or "").partition(":")
-    return scheme if separator else ""
+    recorder = getattr(camera, "recorder", None)
+    return bool(recorder is not None and recorder.is_active and recorder.host)
 
 
 def _redacted_uri(camera: Camera) -> str:
-    if not camera.host:
+    """The URL this camera dials, with the account and password replaced.
+
+    Built by the same code that builds the real one, so it cannot drift from
+    what is actually dialled — the old version hardcoded the Dahua path and
+    would have shown a Hikvision camera a URL it never used.
+    """
+    recorder = getattr(camera, "recorder", None)
+    if recorder is None or not recorder.host:
         return ""
-    subtype = 0 if camera.stream_type == "main" else 1
-    credential = "***:***@" if (camera.username or camera.credential_ref) else ""
-    return (
-        f"rtsp://{credential}{camera.host}:{camera.rtsp_port}"
-        f"/cam/realmonitor?channel={camera.channel}&subtype={subtype}"
-    )
+    try:
+        return to_rtsp_config(camera).redacted_uri()
+    except Exception:  # noqa: BLE001 - a display string must never break a listing
+        return ""
 
 
 class FrameService:
@@ -549,29 +550,45 @@ def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
 
 
-def to_rtsp_config(camera: Camera) -> RtspCameraConfig:
+def to_rtsp_config(camera: Camera, *, recorder: Recorder | None = None) -> RtspCameraConfig:
     """A durable camera row, as live-runtime configuration.
 
     The one translation between the persisted record and the thing that opens a
-    socket. `credential_ref` crosses unchanged and unresolved — the secret
-    provider resolves it at connect time, inside the source, and the resolved
-    value never returns here.
+    socket. The address, account and credential reference come from the
+    camera's recorder, and the path and stream numbering from the recorder's
+    brand — so a Hikvision camera and a Dahua camera with identical settings
+    each dial what their own device expects.
+
+    `credential_ref` crosses unchanged and unresolved: the secret provider
+    resolves it at connect time, inside the source, and the resolved value never
+    returns here.
+
+    `recorder` may be passed explicitly for a caller holding one that is not
+    attached to the camera object; otherwise the camera's own is used.
     """
+    from app.domain.recorders import brand_of
     from app.vision.sources.rtsp import RtspCameraConfig
+
+    box = recorder if recorder is not None else camera.recorder
+    if box is None:
+        raise ValueError(f"camera '{camera.camera_key}' has no recorder, so it cannot be dialled")
+    brand = brand_of(box)
 
     return RtspCameraConfig(
         # The runtime identity, not the tenant-scoped key: this id names the
         # session in every process-wide registry it reaches, and two tenants
         # may legitimately both call a camera `cam-01`.
         camera_id=for_camera(camera),
-        host=camera.host,
+        host=box.host,
         channel=camera.channel,
-        port=camera.rtsp_port,
+        port=box.rtsp_port,
         stream_type=camera.stream_type,
-        username=camera.username,
-        credential_ref=camera.credential_ref,
+        username=box.username,
+        credential_ref=box.credential_ref,
         analysis_fps=camera.analysis_fps,
         enabled=camera.enabled,
+        path_template=brand.path_template,
+        stream_values=(brand.main, brand.sub),
     )
 
 
@@ -579,6 +596,7 @@ __all__ = [
     "CameraService",
     "FrameService",
     "frame_to_wire",
+    "is_dialable",
     "to_rtsp_config",
     "to_wire",
 ]

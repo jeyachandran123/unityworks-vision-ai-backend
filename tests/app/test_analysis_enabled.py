@@ -34,7 +34,7 @@ from app.domain.cameras import to_wire as camera_to_wire
 from app.domain.models import Camera
 from app.errors import ValidationError
 from app.users.models import Organization
-from tests.app.conftest import bearer, make_user
+from tests.app.conftest import bearer, make_recorder, make_user
 
 ORG = "org-test"
 
@@ -42,6 +42,10 @@ ORG = "org-test"
 @pytest_asyncio.fixture
 async def session(app):
     async with app.state.database.session_scope() as active:
+        # The recorder these cameras are channels of. `merge`, so a test that
+        # also asks for `seeded` finds one recorder rather than a duplicate.
+        await active.merge(make_recorder(ORG, host="10.0.0.5"))
+        await active.flush()
         yield active
 
 
@@ -67,7 +71,7 @@ async def _camera(session, key: str, *, channel: int, enabled: bool, analysed: b
         camera_key=key,
         name=f"Channel {channel}",
         channel=channel,
-        host="10.0.0.5",
+        recorder_id="rec-org-test",
     )
     camera.enabled = enabled
     if analysed is not None:
@@ -209,6 +213,9 @@ class TestAnalysisScheduling:
         """
         async with app.state.database.session_scope() as active:
             active.add(Organization(id=ORG, name="Test Org", slug=f"{ORG}-slug"))
+            # The recorder the four cameras are channels of. Active, with an
+            # address, so selection is decided by the camera flags under test.
+            await active.merge(make_recorder(ORG, host="10.0.0.5"))
             await active.flush()
             await _camera(active, "cam-61", channel=61, enabled=True, analysed=True)
             await _camera(active, "cam-62", channel=62, enabled=True, analysed=True)

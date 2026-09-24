@@ -13,6 +13,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.auth.passwords import hash_password
 from app.configuration.settings import Settings
+from app.domain.models import Recorder
 from app.infrastructure.database import create_all_for_tests
 from app.main import create_app
 from app.users.models import (
@@ -235,7 +236,37 @@ async def seeded(app):
         )
         session.add(outsider)
 
+        # One recorder per organization, shaped like a migrated one: its password
+        # comes from the environment, so tests that do not care about sealed
+        # credentials need no master key and type no password. Cameras built by
+        # later fixtures name these ids.
+        session.add(make_recorder("org-test"))
+        session.add(make_recorder("org-other"))
+
     return app
+
+
+def make_recorder(
+    org_id: str = "org-test",
+    *,
+    recorder_id: str | None = None,
+    host: str = "dvr.example",
+    brand: str = "dahua",
+    active: bool = True,
+    credential_ref: str = "env:CCTV_PASSWORD",
+) -> Recorder:
+    """A recorder row for a fixture. Its id defaults to `rec-<org>`."""
+    return Recorder(
+        id=recorder_id or f"rec-{org_id}",
+        organization_id=org_id,
+        name=f"{org_id} recorder" if recorder_id is None else recorder_id,
+        host=host,
+        rtsp_port=554,
+        username="admin",
+        credential_ref=credential_ref,
+        brand=brand,
+        is_active=active,
+    )
 
 
 async def login(client: AsyncClient, email: str, password: str = "correct-horse-battery"):

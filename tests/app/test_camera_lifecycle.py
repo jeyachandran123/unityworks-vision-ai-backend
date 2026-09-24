@@ -21,7 +21,7 @@ from sqlalchemy import select
 from app.domain.audit import AuditAction
 from app.domain.models import AuditEvent, Camera, Zone
 from app.domain.runtime_identity import runtime_camera_id
-from tests.app.conftest import bearer, make_user
+from tests.app.conftest import bearer, make_recorder, make_user
 
 pytestmark = pytest.mark.asyncio
 
@@ -48,6 +48,9 @@ async def estate(seeded, monkeypatch):
         )
         session.add(admin)
         session.add(Zone(id="zone-kitchen", organization_id="org-test", name="Kitchen"))
+        # The "not addressable" case lives on the recorder now: a box whose
+        # address was never filled in, with a camera plugged into it.
+        session.add(make_recorder("org-test", recorder_id="rec-no-address", host=""))
         session.add(
             Camera(
                 id="cam-row-1",
@@ -55,12 +58,9 @@ async def estate(seeded, monkeypatch):
                 zone_id="zone-kitchen",
                 camera_key="cam-01",
                 name="Prep line",
-                host="dvr.example",
-                rtsp_port=554,
+                recorder_id="rec-org-test",
                 channel=1,
                 stream_type="main",
-                username="admin",
-                credential_ref="env:CCTV_PASSWORD",
                 enabled=False,
             )
         )
@@ -71,8 +71,7 @@ async def estate(seeded, monkeypatch):
                 zone_id="zone-kitchen",
                 camera_key="cam-02",
                 name="No address",
-                host="",
-                rtsp_port=554,
+                recorder_id="rec-no-address",
                 channel=2,
                 stream_type="main",
                 enabled=False,

@@ -1078,7 +1078,7 @@
         ]
       },
       "post": {
-        "description": "Register a camera. Created **disabled** \u2014 enabling is a separate act.",
+        "description": "Register a camera on a recorder. Created **disabled** \u2014 enabling is a separate act.\n\nThe camera names its recorder and its channel. How to reach it \u2014 address,\naccount, password, URL convention \u2014 is the recorder's, so it is never asked\nfor here and never accepted if sent.",
         "operationId": "create_camera_api_v1_cameras_post",
         "requestBody": {
           "content": {
@@ -1150,7 +1150,7 @@
     },
     "/api/v1/cameras/test-connection": {
       "post": {
-        "description": "Is anything listening at this address?\n\nTwo ways to ask, and the first is the one to prefer:\n\n* `{\"camera_key\": \"cam-01\"}` \u2014 the address comes from the database, is\n  already tenant-scoped, and the caller cannot choose it. No part of the\n  request influences where the socket goes.\n* `{\"host\": ..., \"rtsp_port\": ...}` \u2014 for the onboarding wizard, which\n  needs to check an address *before* the row exists. Gated on\n  `MANAGE_CAMERAS` and refused for reserved ranges; see\n  `app.domain.connectivity` for why that is sufficient.\n\nNever returns a credential, and never resolves one: the test is a TCP\nconnect, so there is no authentication step for a secret to be needed by.",
+        "description": "Will this camera stream? Or, before a camera exists, is anything listening?\n\n* `{\"camera_key\": \"cam-01\"}` \u2014 the real test. Opens this camera's stream on\n  its recorder, with the recorder's stored password, and decodes a picture,\n  through the same code the runtime dials with. The answer says which thing\n  is wrong: the password, the channel, the address, or no picture coming\n  back. Nothing in the request chooses where the connection goes.\n* `{\"host\": ..., \"rtsp_port\": ...}` \u2014 a TCP check only, kept for clients\n  that test an address before anything is saved. Refused for reserved\n  ranges; see `app.domain.connectivity`.\n\nNeither ever returns a credential, a URL or the decoder's own error text.",
         "operationId": "test_camera_connection_api_v1_cameras_test_connection_post",
         "requestBody": {
           "content": {
@@ -3243,6 +3243,524 @@
         "summary": "List Pos Connectors",
         "tags": [
           "integrations"
+        ]
+      }
+    },
+    "/api/v1/recorder-brands": {
+      "get": {
+        "description": "The brands the dropdown offers, plus the custom escape hatch.\n\nLabels and default ports only. A person choosing a brand is answering \"what\ndoes it say on the box\"; the URL it implies is the server's business.",
+        "operationId": "list_recorder_brands_api_v1_recorder_brands_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Recorder Brands Api V1 Recorder Brands Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Recorder Brands",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders": {
+      "get": {
+        "operationId": "list_recorders_api_v1_recorders_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Recorders Api V1 Recorders Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Recorders",
+        "tags": [
+          "recorders"
+        ]
+      },
+      "post": {
+        "description": "Add a recorder \u2014 and, optionally, its cameras \u2014 in one transaction.\n\n`cameras` is a list of `{channel, name, zone_id, stream_type?, purpose?}`.\nEach camera is created **switched off**, as every camera is: adding one and\nbeginning to process video of people are two decisions.",
+        "operationId": "create_recorder_api_v1_recorders_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Recorder Api V1 Recorders Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Recorder",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/test": {
+      "post": {
+        "description": "Test a recorder that has not been saved yet, with the password just typed.\n\nNothing is stored. The password is used for this one connection and then\ndropped; it is never logged, echoed or written anywhere.",
+        "operationId": "test_new_recorder_api_v1_recorders_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Test New Recorder Api V1 Recorders Test Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test New Recorder",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/{recorder_id}": {
+      "delete": {
+        "description": "Delete a recorder that holds no cameras. Refused, with the count, otherwise.",
+        "operationId": "delete_recorder_api_v1_recorders__recorder_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Delete Recorder Api V1 Recorders  Recorder Id  Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Recorder",
+        "tags": [
+          "recorders"
+        ]
+      },
+      "get": {
+        "description": "One recorder, with the cameras on it and whether each is running.",
+        "operationId": "get_recorder_api_v1_recorders__recorder_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Recorder Api V1 Recorders  Recorder Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recorder",
+        "tags": [
+          "recorders"
+        ]
+      },
+      "patch": {
+        "description": "Change how a recorder is reached. The password is a separate route.\n\nCameras already running keep their current connection until restarted \u2014\nthe page says so, rather than this route silently reconnecting a\nkitchen's worth of cameras mid-shift.",
+        "operationId": "update_recorder_api_v1_recorders__recorder_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Recorder Api V1 Recorders  Recorder Id  Patch",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Recorder",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/{recorder_id}/activate": {
+      "post": {
+        "description": "Allow this recorder's cameras to run again, and restart the switched-on ones.",
+        "operationId": "activate_recorder_api_v1_recorders__recorder_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Activate Recorder Api V1 Recorders  Recorder Id  Activate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate Recorder",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/{recorder_id}/credential": {
+      "put": {
+        "description": "Replace the recorder's password. The old one is overwritten, never read.",
+        "operationId": "set_recorder_credential_api_v1_recorders__recorder_id__credential_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Recorder Credential Api V1 Recorders  Recorder Id  Credential Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Recorder Credential",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/{recorder_id}/deactivate": {
+      "post": {
+        "description": "Stop every camera on this recorder, and start none until it is reactivated.\n\nNothing is deleted. Each camera keeps its configuration and its own\nswitched-on flag, so reactivating brings back exactly what was running.",
+        "operationId": "deactivate_recorder_api_v1_recorders__recorder_id__deactivate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Deactivate Recorder Api V1 Recorders  Recorder Id  Deactivate Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate Recorder",
+        "tags": [
+          "recorders"
+        ]
+      }
+    },
+    "/api/v1/recorders/{recorder_id}/test": {
+      "post": {
+        "description": "Test a saved recorder with its stored password, on one channel.\n\nThe password is resolved through the same provider the runtime uses, so this\nanswers the question \"will a camera on this recorder start\" and not a\nneighbouring one.",
+        "operationId": "test_saved_recorder_api_v1_recorders__recorder_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recorder_id",
+            "required": true,
+            "schema": {
+              "title": "Recorder Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Test Saved Recorder Api V1 Recorders  Recorder Id  Test Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Saved Recorder",
+        "tags": [
+          "recorders"
         ]
       }
     },

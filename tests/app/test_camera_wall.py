@@ -40,6 +40,24 @@ def wall_key(camera_key: str, *, org: str = ORG) -> str:
     return runtime_camera_id(org, camera_key)
 
 
+class FakeRecorder:
+    """A recorder row, without a database. The box the fake cameras plug into."""
+
+    def __init__(self, org: str = ORG, *, active: bool = True, host: str = "10.0.0.5") -> None:
+        self.id = f"rec-{org}"
+        self.organization_id = org
+        self.name = "Fake DVR"
+        self.host = host
+        self.rtsp_port = 554
+        self.username = "admin"
+        self.credential_ref = "env:CCTV_PASSWORD"
+        self.brand = "dahua"
+        self.path_template = ""
+        self.stream_main = None
+        self.stream_sub = None
+        self.is_active = active
+
+
 class FakeCamera:
     """A camera row, without a database."""
 
@@ -51,13 +69,11 @@ class FakeCamera:
         self.stream_type = "main"
         self.enabled = enabled
         self.organization_id = org
-        self.zone_id = "rest-01"
-        self.host = "10.0.0.5"
-        self.rtsp_port = 554
-        self.username = "admin"
-        self.credential_ref = "env:CCTV_PASSWORD"
         self.analysis_fps = 4.0
         self.zone_id = None
+        # How to reach it is the recorder's, as it is for a real row.
+        self.recorder = FakeRecorder(org)
+        self.recorder_id = self.recorder.id
 
 
 class TestStreamState:
@@ -117,8 +133,9 @@ class TestFailureIsolation:
         """Section 15: never take down the wall for one camera."""
         wall = CameraWall(settings)
         cameras = [FakeCamera(n) for n in range(1, 5)]
-        # Channel 3 cannot build a source config — an empty host is refused.
-        cameras[2].host = ""
+        # Channel 3 cannot build a source config — an unknown stream type is
+        # refused by the config itself.
+        cameras[2].stream_type = "highest"
 
         started = await wall.start_cameras(cameras)
         try:
@@ -206,7 +223,7 @@ class TestWallApi:
                     camera_key=f"cam-{channel:02d}",
                     name=f"Channel {channel:02d}",
                     channel=channel,
-                    host="10.0.0.5",
+                    recorder_id="rec-org-test",
                 )
             await session.flush()
             # Two enabled, two left dark.
@@ -252,7 +269,7 @@ class TestWallApi:
                     camera_key=f"cam-{channel:02d}",
                     name=f"Channel {channel:02d}",
                     channel=channel,
-                    host="10.0.0.5",
+                    recorder_id="rec-org-test",
                 )
 
         # The manager fixture is granted cam-01 and cam-02 only.
@@ -271,14 +288,19 @@ class TestWallApi:
                 camera_key="cam-01",
                 name="Channel 01",
                 channel=1,
-                host="10.0.0.5",
-                username="admin",
-                credential_ref="env:CCTV_PASSWORD",
+                recorder_id="rec-org-test",
             )
 
         headers = await bearer(client, "manager@example.com")
         text = (await client.get("/api/v1/wall/cameras", headers=headers)).text
-        for forbidden in ("admin", "CCTV_PASSWORD", "credential_ref", "rtsp://", "10.0.0.5"):
+        for forbidden in (
+            "admin",
+            "CCTV_PASSWORD",
+            "credential_ref",
+            "rtsp://",
+            "10.0.0.5",
+            "dvr.example",
+        ):
             assert forbidden not in text, f"'{forbidden}' reached the browser"
 
     @pytest.mark.asyncio
@@ -303,7 +325,7 @@ class TestWallApi:
                 camera_key="cam-16",
                 name="Channel 16",
                 channel=16,
-                host="10.0.0.5",
+                recorder_id="rec-org-test",
             )
 
         # The manager fixture is granted cam-01 and cam-02 only.

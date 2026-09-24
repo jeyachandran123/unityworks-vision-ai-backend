@@ -373,6 +373,7 @@ async def test_moving_a_camera_does_not_rewrite_where_past_readings_happened(
         await service.create(
             organization_id="org-test",
             camera_key="cam-move",
+            recorder_id="rec-org-test",
             name="Camera",
             channel=1,
             zone_id="zone-prep",
@@ -429,6 +430,7 @@ async def test_an_instant_before_any_assignment_has_no_recorded_zone(admin) -> N
         await CameraService(session).create(
             organization_id="org-test",
             camera_key="cam-old",
+            recorder_id="rec-org-test",
             name="Camera",
             channel=1,
             zone_id="zone-a",
@@ -458,6 +460,7 @@ async def test_reassigning_to_the_same_zone_opens_no_second_interval(admin) -> N
         await CameraService(session).create(
             organization_id="org-test",
             camera_key="cam-same",
+            recorder_id="rec-org-test",
             name="Camera",
             channel=1,
             zone_id="zone-b",
@@ -543,6 +546,7 @@ async def test_the_retention_sweep_truncates_the_observation_log(admin) -> None:
             Camera(
                 organization_id="org-test",
                 zone_id="zone-x",
+                recorder_id="rec-org-test",
                 camera_key="cam-sweep",
                 name="Camera",
                 channel=1,

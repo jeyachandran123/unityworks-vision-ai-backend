@@ -25,6 +25,10 @@ REPO = Path(__file__).resolve().parents[2]
 #: The revision immediately before zones moved. Named rather than computed, so a
 #: later migration cannot silently move this test's starting point.
 BEFORE = "a7e3d2c19f40"
+#: The zone migration itself. Pinned rather than `head`, so later migrations
+#: reshaping the same tables - recorders moved four columns off `cameras` -
+#: do not change what this file is testing.
+AFTER = "b4c8e1a37d90"
 
 #: Two sites, four zones (two of them both called Kitchen), three cameras — one
 #: placed, two not — and two incidents, one of each. Shaped after the live
@@ -112,7 +116,7 @@ def _columns(database: Path, table: str) -> set[str]:
 @pytest.fixture(scope="module")
 def migrated(tmp_path_factory) -> Path:
     database = _seeded(tmp_path_factory.mktemp("zones"), SEED)
-    result = _alembic(database, "upgrade", "head")
+    result = _alembic(database, "upgrade", AFTER)
     assert result.returncode == 0, result.stdout + result.stderr
     return database
 
@@ -218,6 +222,6 @@ def test_module_data_stops_the_migration_rather_than_losing_its_placement(tmp_pa
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
         """,
     )
-    result = _alembic(database, "upgrade", "head")
+    result = _alembic(database, "upgrade", AFTER)
     assert result.returncode != 0
     assert "dining_tables" in result.stdout + result.stderr

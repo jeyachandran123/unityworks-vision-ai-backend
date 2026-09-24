@@ -24,7 +24,7 @@ from sqlalchemy import select
 
 from app.authorization.model import Permission, Role, permissions_for
 from app.authorization.resolver import SUSPENDED_FORBIDDEN
-from app.domain.models import Camera, Zone
+from app.domain.models import Recorder, Zone
 from app.domain.runtime_identity import runtime_camera_id, split_runtime_camera_id
 from app.errors import ValidationError
 from app.users.models import PlatformOperatorGrant
@@ -497,7 +497,7 @@ async def test_a_camera_cannot_be_placed_in_another_organizations_zone(client: A
             "camera_key": "cam-90",
             "name": "Misplaced",
             "channel": 90,
-            "host": "10.0.0.5",
+            "recorder_id": "rec-org-test",
         },
         headers=headers,
     )
@@ -506,32 +506,58 @@ async def test_a_camera_cannot_be_placed_in_another_organizations_zone(client: A
     assert refused.status_code == 404, refused.text
 
 
-async def test_a_camera_cannot_be_created_without_an_address(
-    client: AsyncClient, admin, monkeypatch
-):
-    """A camera with no host is skipped by the runtime, so it would be created,
-    listed, and permanently inert with nothing ever saying why.
-
-    The address now falls back to the deployment's own DVR, so the only way to
-    reach this refusal is a deployment that has none configured — which is
-    exactly when a camera created without one would be inert.
-    """
-    monkeypatch.setattr(admin.state.settings, "cctv_host", "")
+async def test_a_camera_cannot_be_created_without_a_recorder(client: AsyncClient, admin):
+    """A camera is a channel of a recorder. One with no recorder has nothing to
+    dial, and would be created, listed, and permanently inert."""
     headers = await bearer(client, "admin@example.com")
-    site = await client.post("/api/v1/zones", json={"name": "Hostless"}, headers=headers)
+    zone = await client.post("/api/v1/zones", json={"name": "Nowhere"}, headers=headers)
 
     response = await client.post(
         "/api/v1/cameras",
-        json={
-            "zone_id": site.json()["id"],
-            "camera_key": "cam-91",
-            "name": "No Address",
-            "channel": 91,
-        },
+        json={"zone_id": zone.json()["id"], "name": "No recorder", "channel": 91},
         headers=headers,
     )
     assert response.status_code == 422
-    assert "host" in response.text
+    assert "recorder" in response.text
+
+
+async def test_a_camera_cannot_be_put_on_another_organizations_recorder(client: AsyncClient, admin):
+    """Stricter than a zone, because of what a recorder holds: a camera on
+    somebody else's recorder would be dialled with *their* stored password.
+    Not found rather than forbidden, so the recorder's existence is not
+    confirmed either."""
+    headers = await bearer(client, "admin@example.com")
+    zone = await client.post("/api/v1/zones", json={"name": "Mine"}, headers=headers)
+
+    refused = await client.post(
+        "/api/v1/cameras",
+        json={
+            "zone_id": zone.json()["id"],
+            "name": "Borrowed",
+            "channel": 1,
+            "recorder_id": "rec-org-other",
+        },
+        headers=headers,
+    )
+    assert refused.status_code == 404, refused.text
+
+    # And a camera already here cannot be moved onto it either.
+    created = await client.post(
+        "/api/v1/cameras",
+        json={
+            "zone_id": zone.json()["id"],
+            "name": "Mine",
+            "channel": 2,
+            "recorder_id": "rec-org-test",
+        },
+        headers=headers,
+    )
+    moved = await client.patch(
+        f"/api/v1/cameras/{created.json()['camera_key']}",
+        json={"recorder_id": "rec-org-other"},
+        headers=headers,
+    )
+    assert moved.status_code == 404, moved.text
 
 
 async def test_a_camera_never_returns_its_credential_reference(client: AsyncClient, admin):
@@ -548,8 +574,7 @@ async def test_a_camera_never_returns_its_credential_reference(client: AsyncClie
             "camera_key": "cam-92",
             "name": "Watched",
             "channel": 92,
-            "host": "10.0.0.5",
-            "credential_ref": "env:CCTV_PASSWORD",
+            "recorder_id": "rec-org-test",
         },
         headers=headers,
     )
@@ -566,9 +591,10 @@ async def test_a_client_cannot_choose_which_secret_a_camera_reads(client: AsyncC
     """Stronger than refusing a literal: the field is not client input at all.
 
     `credential_ref` used to be accepted from the request and validated, which
-    made it a channel that could carry the secret itself. It is now always the
-    deployment's own reference, so a caller can neither write a password nor
-    point a camera at a different one to make the server read it.
+    made it a channel that could carry the secret itself. The credential now
+    belongs to the camera's recorder, and a camera request that names one is
+    ignored — a caller can neither write a password nor point a camera at a
+    different secret to make the server read it.
     """
     headers = await bearer(client, "admin@example.com")
     zone = await client.post("/api/v1/zones", json={"name": "Literal"}, headers=headers)
@@ -580,21 +606,21 @@ async def test_a_client_cannot_choose_which_secret_a_camera_reads(client: AsyncC
             "camera_key": "cam-93",
             "name": "Plaintext",
             "channel": 93,
-            "host": "10.0.0.5",
+            "recorder_id": "rec-org-test",
             "credential_ref": "literal:hunter2",
         },
         headers=headers,
     )
     assert response.status_code == 200, response.text
     assert "hunter2" not in response.text, "the response echoed the secret back"
-    # The deployment's reference, not the one the caller asked for.
+    # The recorder's reference, not the one the caller asked for.
     assert response.json()["credential_scheme"] == "env"
 
     async with admin.state.database.session_scope() as session:
-        stored = (
-            await session.execute(select(Camera).where(Camera.camera_key == "cam-93"))
+        recorder = (
+            await session.execute(select(Recorder).where(Recorder.id == "rec-org-test"))
         ).scalar_one()
-    assert stored.credential_ref == "env:CCTV_PASSWORD"
+    assert recorder.credential_ref == "env:CCTV_PASSWORD"
 
 
 async def test_a_connection_test_refuses_a_loopback_address(client: AsyncClient, admin):

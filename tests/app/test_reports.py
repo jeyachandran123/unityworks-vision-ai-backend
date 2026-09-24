@@ -78,6 +78,7 @@ async def with_incidents(admin):
             Camera(
                 organization_id="org-test",
                 zone_id="zone-1",
+                recorder_id="rec-org-test",
                 camera_key="cam-01",
                 name="Prep camera",
                 channel=1,

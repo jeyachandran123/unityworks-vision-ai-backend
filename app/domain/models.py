@@ -31,6 +31,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -103,6 +104,73 @@ class Zone(Base):
     cameras: Mapped[list[Camera]] = relationship(back_populates="zone")
 
 
+class Recorder(Base):
+    """A DVR or NVR — the physical box the cameras plug into.
+
+    It owns everything about *reaching* a camera that is the same for every
+    channel on it: the address, the port, the account and its password, and
+    the URL convention its vendor uses. A camera owns only what genuinely
+    differs per camera — which channel, which stream, where it is.
+
+    Before this existed every camera row carried its own copy of the address,
+    username and credential. Sixteen cameras behind one recorder meant sixteen
+    copies, and changing the recorder's address meant sixteen edits where
+    missing one left a camera quietly dialling the wrong place.
+
+    ### The password
+
+    Either a reference the environment resolves (`env:`, `file:`), or sealed in
+    this row with AES-GCM under a master key that lives only in the
+    environment (`recorder:<id>`, with the three `secret_*` columns). Never
+    plaintext. The row and the key are two halves: a database dump alone
+    recovers nothing. See `app/domain/recorder_secrets.py`.
+    """
+
+    __tablename__ = "recorders"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uq_recorder_name"),
+        Index("ix_recorders_organization", "organization_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
+    organization_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
+    )
+    #: What the people who run the site call it — "Gayathri DVR".
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    host: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    rtsp_port: Mapped[int] = mapped_column(Integer, nullable=False, default=554)
+    username: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+
+    #: `recorder:<id>`, `env:NAME` or `file:/path`. A reference, never a value.
+    credential_ref: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    #: Populated only for `recorder:` references. Never returned by any API.
+    secret_ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    secret_nonce: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    #: Which master key sealed the secret, so a rotation can tell rows apart.
+    secret_key_id: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+
+    #: A key into `config/recorders/brands.json`, or `custom`.
+    brand: Mapped[str] = mapped_column(String(32), nullable=False, default="dahua")
+    #: Only for `custom`: the path, and the integers that mean main and sub.
+    path_template: Mapped[str] = mapped_column(String(512), nullable=False, default="")
+    stream_main: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    stream_sub: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    #: Deactivated rather than deleted once it holds cameras. An inactive
+    #: recorder starts nothing, and keeps every camera configured on it.
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_now, onupdate=_now
+    )
+
+    cameras: Mapped[list[Camera]] = relationship(back_populates="recorder")
+
+
 class Camera(Base):
     """A configured video source.
 
@@ -111,9 +179,10 @@ class Camera(Base):
     Vision OS session at all — no socket, no decode, no model call. Cost follows
     configuration, not hardware.
 
-    **No password lives here.** `credential_ref` is a reference the
-    `SecretProvider` resolves at connect time; the row holds a pointer, never a
-    value, so a database dump is not a credential dump.
+    **Nothing about reaching it lives here.** The address, account, password
+    and URL convention belong to the `Recorder` this camera is a channel of. A
+    camera holds which channel, which stream, where it is and how it is
+    analysed — the things that genuinely differ between two cameras on one box.
     """
 
     __tablename__ = "cameras"
@@ -121,6 +190,7 @@ class Camera(Base):
         UniqueConstraint("organization_id", "camera_key", name="uq_camera_key"),
         Index("ix_cameras_org_enabled", "organization_id", "enabled"),
         Index("ix_cameras_zone", "zone_id"),
+        Index("ix_cameras_recorder", "recorder_id"),
     )
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, default=_uuid)
@@ -132,6 +202,11 @@ class Camera(Base):
     zone_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("zones.id", ondelete="RESTRICT"), nullable=False
     )
+    #: The box this camera is a channel of. RESTRICT: a recorder that still has
+    #: cameras cannot be deleted, only deactivated.
+    recorder_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("recorders.id", ondelete="RESTRICT"), nullable=False
+    )
 
     #: The stable identity the pipeline partitions on — `cam-01`. Never inferred
     #: from a frame, and unique per organization so two tenants cannot collide.
@@ -141,14 +216,11 @@ class Camera(Base):
     #: both depend on purpose, not on the fact that a lens exists.
     purpose: Mapped[str] = mapped_column(String(255), nullable=False, default="")
 
-    #: Transport
-    host: Mapped[str] = mapped_column(String(255), nullable=False, default="")
-    rtsp_port: Mapped[int] = mapped_column(Integer, nullable=False, default=554)
+    #: Which input on the recorder. 1-based, as every supported device numbers it.
     channel: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    #: Main or sub. A bandwidth choice per camera; the recorder's brand decides
+    #: which integer each one means on the wire.
     stream_type: Mapped[str] = mapped_column(String(16), nullable=False, default="sub")
-    username: Mapped[str] = mapped_column(String(128), nullable=False, default="")
-    #: `env:CCTV_PASSWORD`, `file:/run/secrets/dvr`. A REFERENCE, never a secret.
-    credential_ref: Mapped[str] = mapped_column(String(512), nullable=False, default="")
 
     #: Independent of camera fps: a 25 fps stream must not become 25 fps of work.
     analysis_fps: Mapped[float] = mapped_column(nullable=False, default=4.0)
@@ -178,6 +250,10 @@ class Camera(Base):
     )
 
     zone: Mapped[Zone | None] = relationship(back_populates="cameras")
+    #: Loaded with the camera, always. Rows are read inside a session and used
+    #: after it closes — the camera wall and the boot path both do — and a lazy
+    #: load there would fail at the exact moment a camera is being started.
+    recorder: Mapped[Recorder] = relationship(back_populates="cameras", lazy="selectin")
 
 
 class CameraZoneAssignment(Base):

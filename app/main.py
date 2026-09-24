@@ -39,6 +39,7 @@ from app.api.patron import router as patron_router
 from app.api.platform import router as platform_router
 from app.api.platform_administration import router as platform_administration_router
 from app.api.product import router as product_router
+from app.api.recorders import router as recorders_router
 from app.api.reports import router as reports_router
 from app.api.routes import build_router, devtools_router
 from app.api.user_administration import router as user_administration_router
@@ -94,10 +95,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.cache = Cache(cfg)
     app.state.auth = AuthService(TokenService(cfg))
     app.state.vision = VisionRuntime(cfg)
-    app.state.live = LiveRuntime(cfg)
+    # One credential provider for the whole process. It resolves `env:` and
+    # `file:` exactly as before, and additionally `recorder:<id>` — a password
+    # typed into the application and sealed on the recorder's row. The wall and
+    # the analysis sessions share it, so they can never disagree about whether
+    # a camera can authenticate: they once did, and the wall streamed four
+    # cameras while analysis failed to sign in to the same DVR.
+    from app.vision.recorder_credentials import RecorderCredentialStore, RecorderSecretProvider
+    from app.vision.secrets import EnvironmentSecretProvider
+
+    credentials = RecorderCredentialStore()
+    credentials.configure(cfg)
+    app.state.recorder_credentials = credentials
+    secrets = RecorderSecretProvider(
+        credentials, fallback=EnvironmentSecretProvider(cfg.secret_environment())
+    )
+    app.state.credential_provider = secrets
+    app.state.live = LiveRuntime(cfg, secrets=secrets)
     # Live viewing. Independent of Vision OS by design: the wall owns its own
     # sessions and never calls the perception path.
-    app.state.wall = CameraWall(cfg)
+    app.state.wall = CameraWall(cfg, secrets=secrets)
     # Bounded rings over the platform's own bus. Attached at start-up when a
     # platform exists; harmless and empty when one does not.
     app.state.taps = TapBus()
@@ -120,6 +137,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(build_router())
     app.include_router(product_router)
+    # Recorders (DVR/NVR): gated on VIEW_CAMERAS to read and MANAGE_CAMERAS to
+    # change, because a recorder is camera infrastructure.
+    app.include_router(recorders_router)
     app.include_router(administration_router)
     # User management, role assignment, permission-override and camera-scope
     # administration. An HTTP layer over the domain model
@@ -250,6 +270,11 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     # cameras dark behind a healthy-looking dashboard.
     live: LiveRuntime = app.state.live
     app.state.camera_bootstrap = None
+    # Before any camera is dialled: load the sealed recorder passwords, and
+    # refuse to start if some exist and this server has no key to open them.
+    # Booting anyway would leave every camera on those recorders failing to
+    # authenticate, with the reason buried in per-camera state nobody reads.
+    await _load_recorder_credentials(app, fatal=True)
     wall_done, live_done = await _bootstrap_cameras_once(app)
     if not (wall_done and live_done):
         logger.warning(
@@ -412,11 +437,11 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
             # starts every one of them; this narrows the far more expensive
             # half. A site with sixteen channels and four kitchens should pay
             # detection, tracking, cropping and model calls for four.
-            configs = [to_rtsp_config(row) for row in rows if row.host and row.analysis_enabled]
+            # `enabled_for_runtime` has already dropped cameras whose recorder
+            # is deactivated or has no address.
+            configs = [to_rtsp_config(row) for row in rows if row.analysis_enabled]
             watched_only = sorted(
-                to_rtsp_config(row).camera_id
-                for row in rows
-                if row.host and not row.analysis_enabled
+                to_rtsp_config(row).camera_id for row in rows if not row.analysis_enabled
             )
             if watched_only:
                 # Said out loud, because a camera that streams without being
@@ -586,6 +611,41 @@ async def _start_camera_wall(app: FastAPI) -> int | None:
 _BOOTSTRAP_BACKOFF = (1.0, 2.0, 5.0, 10.0, 15.0, 30.0)
 
 
+async def _load_recorder_credentials(app: FastAPI, *, fatal: bool) -> int | None:
+    """Fill the process-wide store with every sealed recorder password.
+
+    Returns how many were loaded, or `None` when the database could not be read
+    — a transient condition the bootstrap supervisor retries.
+
+    `fatal` decides what happens when sealed passwords exist and the master key
+    does not. At start-up it stops the application, which is the loud failure
+    that gets a missing setting fixed; later it is logged at CRITICAL, because a
+    background retry raising would only kill the retry.
+    """
+    from app.domain.recorder_secrets import MissingMasterKeyError
+    from app.domain.recorders import load_sealed
+
+    store = getattr(app.state, "recorder_credentials", None)
+    if store is None:
+        return 0
+    try:
+        async with app.state.database.session_scope() as session:
+            sealed = await load_sealed(session)
+    except Exception as exc:  # noqa: BLE001 - reported, and retried by the supervisor
+        logger.warning("could not read recorder credentials yet: {}: {}", type(exc).__name__, exc)
+        return None
+
+    store.replace(sealed)
+    try:
+        store.require_key_for(len(sealed))
+    except MissingMasterKeyError as exc:
+        if fatal:
+            logger.critical("refusing to start: {}", exc)
+            raise
+        logger.critical("{}", exc)
+    return len(sealed)
+
+
 async def _bootstrap_cameras_once(
     app: FastAPI, *, need_wall: bool = True, need_live: bool = True
 ) -> tuple[bool, bool]:
@@ -609,6 +669,10 @@ async def _bootstrap_cameras_once(
     """
     wall_read = not need_wall
     live_read = not need_live
+
+    # Refreshed on every attempt, so a recorder whose password changed while
+    # the database was unreachable is dialled with the current one.
+    await _load_recorder_credentials(app, fatal=False)
 
     if need_wall:
         wall_read = await _start_camera_wall(app) is not None

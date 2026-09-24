@@ -105,6 +105,20 @@ class AuditAction(enum.Enum):
     ZONE_UPDATED = "zone.updated"
     ZONE_DELETED = "zone.deleted"
 
+    # ── recorders (DVR / NVR) ─────────────────────────────────────────────
+    RECORDER_CREATED = "recorder.created"
+    RECORDER_UPDATED = "recorder.updated"
+    RECORDER_DELETED = "recorder.deleted"
+    #: Its own action, never folded into `updated`: "who changed the password,
+    #: and when" has to be answerable on its own. The row records that it
+    #: happened and how the secret is kept — never the value.
+    RECORDER_CREDENTIAL_SET = "recorder.credential_set"
+    RECORDER_ACTIVATED = "recorder.activated"
+    RECORDER_DEACTIVATED = "recorder.deactivated"
+    #: A connection test opens an outbound connection from this server using a
+    #: stored password, so it is recorded like any other use of a credential.
+    RECORDER_TESTED = "recorder.tested"
+
     # ── user administration (Stage 5) ─────────────────────────────────────
     #
     # Never carries a password, hash, or generated credential — `_scrub()`
@@ -197,6 +211,12 @@ _FORBIDDEN_KEYS = frozenset(
         # explicitly rather than by loosening the match, because a substring
         # rule would start redacting unrelated keys nobody chose.
         "credential_ref",
+        # A recorder's sealed password. Ciphertext is not plaintext, but it is
+        # half of a secret, and a log is not where either half belongs.
+        "secret_ciphertext",
+        "secret_nonce",
+        "ciphertext",
+        "nonce",
         "authorization",
         "cookie",
         "bytes",

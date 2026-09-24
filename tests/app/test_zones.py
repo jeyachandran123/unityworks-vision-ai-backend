@@ -45,7 +45,7 @@ async def estate(seeded):
                 zone_id="zone-kitchen",
                 camera_key="cam-01",
                 name="Prep line",
-                host="dvr.example",
+                recorder_id="rec-org-test",
                 channel=1,
             )
         )

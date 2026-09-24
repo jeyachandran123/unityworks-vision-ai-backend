@@ -145,6 +145,7 @@ class CameraStream:
         "_last_publish_at",
         "_quality",
         "_secret_environment",
+        "_secrets",
         "_state",
         "_stop_event",
         "_thread",
@@ -158,9 +159,15 @@ class CameraStream:
         *,
         quality: int = DEFAULT_QUALITY,
         secret_environment: dict[str, str] | None = None,
+        secrets: Any = None,
     ) -> None:
         self.camera = camera
         self._secret_environment = secret_environment
+        #: The process-wide provider, when the application supplies one. It is
+        #: what understands a recorder's own sealed password (`recorder:<id>`);
+        #: without it this stream falls back to the environment alone, exactly
+        #: as it always did.
+        self._secrets = secrets
         self.stats = CameraStreamStats()
         self._quality = quality
         self._state = StreamState.DISABLED
@@ -291,7 +298,7 @@ class CameraStream:
         # environment. A bare `EnvironmentSecretProvider()` reads only
         # `os.environ`, which pydantic-settings never writes to — so a correct
         # password in `.env` produced sixteen cameras stuck at CONNECTING.
-        secrets = EnvironmentSecretProvider(self._secret_environment)
+        secrets = self._secrets or EnvironmentSecretProvider(self._secret_environment)
         started_at = time.monotonic()
         #: Consecutive failed sessions. Reset by a session that delivered, so a
         #: camera that works for an hour and then drops retries promptly rather
@@ -411,9 +418,7 @@ class CameraStream:
                 continue
             if (time.monotonic() - last) > STALL_WATCHDOG_S:
                 self.stats.stalls += 1
-                self.stats.last_error = (
-                    f"stalled: no frame for {STALL_WATCHDOG_S:.0f}s"
-                )
+                self.stats.last_error = f"stalled: no frame for {STALL_WATCHDOG_S:.0f}s"
                 self._state = StreamState.RECONNECTING
                 logger.warning(
                     "wall camera {} stalled — no frame for {:.0f}s; "
@@ -522,15 +527,25 @@ class CameraWall:
     that id and nothing else.
     """
 
-    __slots__ = ("_lock", "_quality", "_secret_environment", "_settings", "_streams")
+    __slots__ = (
+        "_lock",
+        "_quality",
+        "_secret_environment",
+        "_secrets",
+        "_settings",
+        "_streams",
+    )
 
-    def __init__(self, settings: Any) -> None:
+    def __init__(self, settings: Any, *, secrets: Any = None) -> None:
         self._settings = settings
         self._streams: dict[str, CameraStream] = {}
         self._lock = asyncio.Lock()
         self._quality = DEFAULT_QUALITY
         reader = getattr(settings, "secret_environment", None)
         self._secret_environment = reader() if callable(reader) else None
+        #: Shared with the live runtime, so the wall and the analysis sessions
+        #: can never disagree about whether a camera can authenticate.
+        self._secrets = secrets
 
     @property
     def streams(self) -> dict[str, CameraStream]:
@@ -553,7 +568,7 @@ class CameraWall:
         begins here — a camera whose configuration will not even build is
         recorded as ERROR and the loop continues.
         """
-        from app.domain.cameras import to_rtsp_config
+        from app.domain.cameras import is_dialable, to_rtsp_config
         from app.vision.sources.rtsp import ReconnectPolicy
 
         reconnect = ReconnectPolicy(
@@ -572,10 +587,12 @@ class CameraWall:
                     camera,
                     quality=self._quality,
                     secret_environment=self._secret_environment,
+                    secrets=self._secrets,
                 )
                 self._streams[runtime_id] = stream
-                if not camera.enabled:
-                    # Present on the wall, and honest about why it is dark.
+                if not camera.enabled or not is_dialable(camera):
+                    # Present on the wall, and honest about why it is dark: the
+                    # camera is switched off, or its recorder is deactivated.
                     continue
                 try:
                     await stream.start(to_rtsp_config(camera), reconnect)
@@ -612,6 +629,18 @@ class CameraWall:
                 len(streams),
                 organization_id,
             )
+        return len(streams)
+
+    async def stop_cameras(self, runtime_ids: list[str]) -> int:
+        """Stop and forget these streams — a recorder being deactivated.
+
+        By runtime id, which carries the organization, so it can only ever reach
+        the cameras named. Unknown ids are ignored: a camera that was never on
+        the wall has nothing to stop.
+        """
+        async with self._lock:
+            streams = [self._streams.pop(k) for k in runtime_ids if k in self._streams]
+        await asyncio.gather(*(s.stop() for s in streams), return_exceptions=True)
         return len(streams)
 
     async def stop_all(self) -> None:

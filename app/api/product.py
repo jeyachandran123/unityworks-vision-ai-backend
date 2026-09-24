@@ -102,6 +102,25 @@ async def _placement(session, organization_id: str, zone_id: Any) -> str:
     return key
 
 
+async def _recorder_for(session, organization_id: str, recorder_id: Any):
+    """The recorder a camera is being put on, from this organization only.
+
+    Required: a camera is a channel of a recorder, and one with no recorder has
+    nothing to dial. Another organization's recorder is `NotFoundError`, never a
+    refusal — and it matters more here than for a zone, because a camera on
+    somebody else's recorder would be dialled with *their* stored password.
+    """
+    from app.domain.recorders import RecorderService
+
+    key = str(recorder_id or "").strip()
+    if not key:
+        raise ValidationError(
+            "'recorder_id' is required: choose the recorder (DVR or NVR) this camera "
+            "is plugged into"
+        )
+    return await RecorderService(session).get(organization_id=organization_id, recorder_id=key)
+
+
 @router.post("/cameras", dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))])
 async def create_camera(
     request: Request,
@@ -109,43 +128,30 @@ async def create_camera(
     session: DbSession,
     payload: Annotated[dict, Body(...)],
 ) -> dict[str, Any]:
-    """Register a camera. Created **disabled** — enabling is a separate act."""
+    """Register a camera on a recorder. Created **disabled** — enabling is a separate act.
+
+    The camera names its recorder and its channel. How to reach it — address,
+    account, password, URL convention — is the recorder's, so it is never asked
+    for here and never accepted if sent.
+    """
     service = camera_domain.CameraService(session)
     audit = AuditTrail(session)
-    settings = settings_of(request)
     zone_id = await _placement(session, access.tenant_id, payload.get("zone_id"))
+    recorder = await _recorder_for(session, access.tenant_id, payload.get("recorder_id"))
 
-    # The deployment already knows its DVR. Asking for the address, the port,
-    # the username and the stream type on every camera is four chances to get
-    # one wrong, so the payload only has to differ from the configured default.
-    host = str(payload.get("host", "") or settings.cctv_host or "").strip()
-    if not host:
-        # Required, because the runtime filters on it: `_start_cameras_from_
-        # database` and `_start_camera_wall` both skip rows with no host. A
-        # camera created without one is accepted, listed, and permanently
-        # inert — it never connects and nothing ever says why. Refusing here
-        # is the difference between a validation error and a camera that
-        # silently does not exist.
-        raise ValidationError(
-            "'host' is required: a camera with no address cannot be dialled, "
-            "and the runtime skips rows without one, so it would be created "
-            "and then never connect"
-        )
+    try:
+        channel = int(payload.get("channel", 1))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError("'channel' must be a number") from exc
 
     camera = await service.create(
         organization_id=access.tenant_id,
         camera_key=str(payload.get("camera_key", "")).strip()
         or await service.next_key(organization_id=access.tenant_id),
         name=str(payload.get("name", "")),
-        channel=int(payload.get("channel", 1)),
-        host=host,
-        rtsp_port=int(payload.get("rtsp_port", 0) or settings.cctv_rtsp_port),
-        stream_type=str(payload.get("stream_type", "") or settings.cctv_stream_type),
-        username=str(payload.get("username", "") or settings.cctv_username),
-        # Never from the client. The password is the deployment's, and a camera
-        # that could name a different secret would be a way to make the server
-        # read one it was never given.
-        credential_ref=settings.cctv_credential_ref,
+        channel=channel,
+        recorder_id=recorder.id,
+        stream_type=str(payload.get("stream_type", "") or "sub"),
         analysis_fps=float(payload.get("analysis_fps", 4.0)),
         purpose=str(payload.get("purpose", "")),
         zone_id=zone_id,
@@ -166,10 +172,7 @@ async def create_camera(
         # name anyway (`app.domain.audit._FORBIDDEN_KEYS`), so recording it
         # would store `***` and lose the one useful fact — that this camera
         # points at an environment variable rather than a file.
-        detail={
-            "channel": camera.channel,
-            "credential_scheme": camera_domain._credential_scheme(camera.credential_ref),
-        },
+        detail={"recorder_id": recorder.id, "channel": camera.channel},
     )
     return camera_domain.to_wire(camera)
 
@@ -197,8 +200,16 @@ async def update_camera(
         payload["zone_id"] = await _placement(
             session, access.tenant_id, payload.get("zone_id", existing.zone_id)
         )
-    # `credential_ref` is the deployment's, on update as on create.
-    payload.pop("credential_ref", None)
+    # Moving a camera to another recorder is allowed, and checked exactly like
+    # choosing one on create. Connection fields are the recorder's and are
+    # dropped rather than silently ignored further down.
+    payload = dict(payload)
+    if "recorder_id" in payload:
+        payload["recorder_id"] = (
+            await _recorder_for(session, access.tenant_id, payload.get("recorder_id"))
+        ).id
+    for moved in ("host", "rtsp_port", "username", "credential_ref"):
+        payload.pop(moved, None)
 
     camera = await service.update(
         organization_id=access.tenant_id,
@@ -280,13 +291,32 @@ async def start_camera(
                 "No camera can stream until it is switched on."
             ),
         }
-    if not camera.host:
+    recorder = camera.recorder
+    if recorder is None or not recorder.is_active:
         return {
             "camera_key": camera_key,
             "streaming": False,
             "available": False,
-            "reason": "This camera has no address, so there is nothing to dial.",
+            "reason": (
+                f"Its recorder, {recorder.name}, is deactivated. Activate the recorder "
+                "to start its cameras."
+                if recorder is not None
+                else "This camera has no recorder, so there is nothing to dial."
+            ),
         }
+    if not recorder.host:
+        return {
+            "camera_key": camera_key,
+            "streaming": False,
+            "available": False,
+            "reason": f"Its recorder, {recorder.name}, has no address yet.",
+        }
+
+    # The password this camera will dial with, current as of now — not as of the
+    # last restart.
+    from app.domain.recorders import sync_credential
+
+    sync_credential(getattr(request.app.state, "recorder_credentials", None), recorder)
 
     live = live_of(request)
     try:
@@ -310,7 +340,7 @@ async def start_camera(
         resource_type="camera",
         resource_id=camera_key,
         request_id=_request_id(request),
-        detail={"host": camera.host, "channel": camera.channel},
+        detail={"recorder_id": camera.recorder_id, "channel": camera.channel},
     )
     return {"camera_key": camera_key, "streaming": True, "available": True, "reason": ""}
 
@@ -377,49 +407,85 @@ async def next_camera_key(access: CurrentAccess, session: DbSession) -> dict[str
     dependencies=[Depends(requires(Permission.MANAGE_CAMERAS))],
 )
 async def test_camera_connection(
+    request: Request,
     access: CurrentAccess,
     session: DbSession,
     payload: Annotated[dict, Body(default_factory=dict)],
 ) -> dict[str, Any]:
-    """Is anything listening at this address?
+    """Will this camera stream? Or, before a camera exists, is anything listening?
 
-    Two ways to ask, and the first is the one to prefer:
+    * `{"camera_key": "cam-01"}` — the real test. Opens this camera's stream on
+      its recorder, with the recorder's stored password, and decodes a picture,
+      through the same code the runtime dials with. The answer says which thing
+      is wrong: the password, the channel, the address, or no picture coming
+      back. Nothing in the request chooses where the connection goes.
+    * `{"host": ..., "rtsp_port": ...}` — a TCP check only, kept for clients
+      that test an address before anything is saved. Refused for reserved
+      ranges; see `app.domain.connectivity`.
 
-    * `{"camera_key": "cam-01"}` — the address comes from the database, is
-      already tenant-scoped, and the caller cannot choose it. No part of the
-      request influences where the socket goes.
-    * `{"host": ..., "rtsp_port": ...}` — for the onboarding wizard, which
-      needs to check an address *before* the row exists. Gated on
-      `MANAGE_CAMERAS` and refused for reserved ranges; see
-      `app.domain.connectivity` for why that is sufficient.
-
-    Never returns a credential, and never resolves one: the test is a TCP
-    connect, so there is no authentication step for a secret to be needed by.
+    Neither ever returns a credential, a URL or the decoder's own error text.
     """
     from app.domain import connectivity
 
     camera_key = str(payload.get("camera_key", "") or "").strip()
-    if camera_key:
-        camera = await camera_domain.CameraService(session).get(
-            organization_id=access.tenant_id, camera_key=camera_key
-        )
-        host, port = camera.host, camera.rtsp_port
-        if not host:
-            raise ValidationError(
-                "this camera has no address, so there is nothing to test. A "
-                "camera without a host is skipped by the runtime and will "
-                "never connect."
-            )
-    else:
+    if not camera_key:
         host = str(payload.get("host", "") or "").strip()
         port = int(payload.get("rtsp_port", 554))
+        result = await connectivity.probe(host, port)
+        body = result.as_dict()
+        # Echoed so a wizard can show what it tested. The host is something the
+        # caller supplied.
+        body["host"] = host
+        body["rtsp_port"] = port
+        return body
 
-    result = await connectivity.probe(host, port)
+    from app.domain.recorder_probe import check_connection
+    from app.domain.recorders import brand_of, sync_credential
+
+    camera = await camera_domain.CameraService(session).get(
+        organization_id=access.tenant_id, camera_key=camera_key
+    )
+    recorder = camera.recorder
+    if recorder is None or not recorder.host:
+        raise ValidationError("this camera's recorder has no address, so there is nothing to test")
+
+    sync_credential(getattr(request.app.state, "recorder_credentials", None), recorder)
+    try:
+        password = request.app.state.credential_provider.resolve(recorder.credential_ref)
+    except Exception:  # noqa: BLE001 - reported as an outcome, never as its text
+        return {
+            "ok": False,
+            "reachable": False,
+            "outcome": "credential_unavailable",
+            "message": "This server cannot read the recorder's saved password.",
+            "hint": "Set the recorder's password again from its page.",
+            "detail": "This server cannot read the recorder's saved password.",
+            "channel": camera.channel,
+            "elapsed_ms": 0,
+            "resolution": None,
+        }
+    try:
+        result = await check_connection(
+            host=recorder.host,
+            port=recorder.rtsp_port,
+            username=recorder.username,
+            password=password,
+            brand=brand_of(recorder),
+            channel=camera.channel,
+            stream_type=camera.stream_type,
+        )
+    finally:
+        del password
+
     body = result.as_dict()
-    # Echoed so a wizard can show what it tested. The host is something the
-    # caller either supplied or is already entitled to read.
-    body["host"] = host
-    body["rtsp_port"] = port
+    # The older fields, still meaningful, for clients written against them.
+    body["reachable"] = result.outcome not in {
+        "timeout",
+        "unreachable",
+        "refused",
+        "address_not_found",
+    }
+    body["detail"] = body["message"]
     return body
 
 
