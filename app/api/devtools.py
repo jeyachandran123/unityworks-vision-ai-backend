@@ -208,7 +208,7 @@ async def sessions(request: Request, access: CurrentAccess) -> dict[str, Any]:
     return {
         "runtime": live.summary().to_wire(),
         "sessions": real + [_fixture(access).to_wire()],
-        "cameras_configured": live.describe_cameras(),
+        "cameras_configured": live.describe_cameras(tenant_id=access.tenant_id, camera_ids=cameras),
     }
 
 
@@ -225,7 +225,7 @@ async def live_runtime(request: Request, access: CurrentAccess) -> dict[str, Any
     return {
         "runtime": live.summary().to_wire(),
         "sessions": [session.to_wire() for session in sessions],
-        "cameras_configured": live.describe_cameras(),
+        "cameras_configured": live.describe_cameras(tenant_id=access.tenant_id, camera_ids=cameras),
         "backpressure": {
             "policy": "drop-oldest",
             "rationale": (

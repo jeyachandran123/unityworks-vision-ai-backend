@@ -69,15 +69,10 @@ def settings() -> Settings:
         redis_enabled=False,
         vision_autostart=False,
         feature_devtools=True,
-        # The DVR this deployment is configured against. Camera creation fills
-        # what the caller omits from these, so a suite that left them empty
-        # would be testing a deployment nobody runs — and would have missed
-        # that `credential_ref` is the server's, never the client's.
-        cctv_host="dvr.example",
-        cctv_rtsp_port=554,
-        cctv_username="admin",
-        cctv_stream_type="main",
-        cctv_credential_ref="env:CCTV_PASSWORD",
+        # No DVR is configured here, because a deployment configures none: every
+        # recorder is an organization's own row, made by `make_recorder` or
+        # through the API.
+        #
         # A real key, so the sealing path is exercised rather than skipped.
         # Fixed rather than random: a test that fails only on some runs
         # because its key happened to be rejected is worse than no test.
@@ -250,23 +245,51 @@ def make_recorder(
     org_id: str = "org-test",
     *,
     recorder_id: str | None = None,
-    host: str = "dvr.example",
+    host: str | None = None,
+    ip_address: str = "",
+    hostname: str = "dvr.example",
+    connect_via: str | None = None,
+    rtsp_port: int = 554,
     brand: str = "dahua",
     active: bool = True,
     credential_ref: str = "env:CCTV_PASSWORD",
 ) -> Recorder:
-    """A recorder row for a fixture. Its id defaults to `rec-<org>`."""
+    """A recorder row for a fixture. Its id defaults to `rec-<org>`.
+
+    The default credential is a migrated row's `env:` reference: most suites
+    here are about cameras, not passwords, and never dial. Recorders created
+    through the API — the only way the application creates one — are sealed.
+
+    `host` is a shorthand that files the value where it belongs: a dotted IPv4
+    address as `ip_address`, anything else as `hostname`. An empty `host` is a
+    recorder with no address at all.
+    """
+    if host is not None:
+        ip_address, hostname = ("", host) if not _is_ipv4(host) else (host, "")
+    via = connect_via or ("ip_address" if ip_address else "hostname")
     return Recorder(
         id=recorder_id or f"rec-{org_id}",
         organization_id=org_id,
         name=f"{org_id} recorder" if recorder_id is None else recorder_id,
-        host=host,
-        rtsp_port=554,
+        ip_address=ip_address,
+        hostname=hostname,
+        connect_via=via,
+        rtsp_port=rtsp_port,
         username="admin",
         credential_ref=credential_ref,
         brand=brand,
         is_active=active,
     )
+
+
+def _is_ipv4(value: str) -> bool:
+    import ipaddress
+
+    try:
+        ipaddress.IPv4Address(value)
+    except ValueError:
+        return False
+    return True
 
 
 async def login(client: AsyncClient, email: str, password: str = "correct-horse-battery"):

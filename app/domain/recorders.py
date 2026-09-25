@@ -1,8 +1,21 @@
 """Recorders — the DVRs and NVRs cameras plug into.
 
 A recorder owns everything about *reaching* a camera that is the same for every
-channel on it: address, port, account, password and the URL convention of its
-vendor. Cameras reference it and own only what differs per camera.
+channel on it: its addresses, port, account, password and the URL convention of
+its vendor. Cameras reference it and own only what differs per camera.
+
+### Nothing here is a deployment's
+
+Every value — IP address, domain, port, username, password, brand — is a
+column on one organization's row. The application defines the fields; the
+database holds the values. There is no default recorder, no fallback address
+and no environment variable that stands in for any of them.
+
+### Two addresses, one dialled
+
+A recorder may have an IP address, a domain, or both. `connect_via` names the
+one this server dials. With only one address there is nothing to choose; with
+both, the choice is explicit and kept, never inferred per connection.
 
 ### The password only ever goes in
 
@@ -21,8 +34,10 @@ refusal, because a refusal would confirm it exists.
 
 from __future__ import annotations
 
+import ipaddress
 import re
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -51,13 +66,18 @@ from app.vision.recorder_credentials import RECORDER_SCHEME, recorder_reference
 if TYPE_CHECKING:  # pragma: no cover
     from app.configuration.settings import Settings
 
-#: A hostname or an IPv4 address, and nothing else.
+#: A domain name, and nothing else.
 #:
-#: The host is interpolated into `rtsp://user:pass@HOST:port/path`. A value
+#: The address is interpolated into `rtsp://user:pass@HOST:port/path`. A value
 #: carrying `/`, `@`, `?` or whitespace would rewrite that URL — `@` alone would
 #: move the credentials onto a host of the caller's choosing — so the charset is
-#: closed rather than escaped.
+#: closed rather than escaped. IP addresses are checked by `ipaddress` instead.
 _HOST = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9.\-]{0,252}[A-Za-z0-9])?$")
+
+#: The two addresses a recorder can have, by the name `connect_via` uses.
+VIA_IP = "ip_address"
+VIA_HOSTNAME = "hostname"
+ADDRESS_CHOICES = (VIA_IP, VIA_HOSTNAME)
 
 #: Custom stream numbers. Every vendor here uses a single digit; two leaves room.
 _STREAM_NUMBER_RANGE = range(0, 100)
@@ -156,27 +176,31 @@ class RecorderService:
         *,
         organization_id: str,
         name: str,
-        host: str,
         rtsp_port: int,
         username: str,
         brand: str,
         settings: Settings,
-        password: str | None = None,
-        credential_ref: str | None = None,
+        password: str | None,
+        ip_address: str = "",
+        hostname: str = "",
+        connect_via: str | None = None,
         path_template: str = "",
         stream_main: int | None = None,
         stream_sub: int | None = None,
     ) -> Recorder:
         """Add a recorder. Its password is sealed before the row exists.
 
-        `credential_ref` is for callers inside the application that keep a
-        password in the environment (`env:`/`file:`). Nothing reachable from an
-        HTTP request passes one: a client that could name a reference could make
-        the server read a secret it was never given.
+        There is no other way to give a recorder a password. A reference to one
+        kept somewhere else — an environment variable, a file — cannot be passed
+        here: a password that lives in a deployment's configuration is one value
+        standing in for every organization, which is exactly what a recorder row
+        exists to replace.
         """
         clean = clean_connection(
             name=name,
-            host=host,
+            ip_address=ip_address,
+            hostname=hostname,
+            connect_via=connect_via,
             rtsp_port=rtsp_port,
             username=username,
             brand=brand,
@@ -186,24 +210,19 @@ class RecorderService:
         )
         await self._name_is_free(organization_id, clean["name"])
 
-        if password is None and not credential_ref:
+        if password is None:
             raise ValidationError(
                 "a password is required: the recorder cannot be signed in to without one"
             )
-        if credential_ref and not credential_ref.startswith(("env:", "file:")):
-            raise ValidationError("a credential reference must be env: or file:")
 
         # Sealed before the row exists, so a server that cannot seal - no master
         # key configured - refuses cleanly and leaves nothing half-written.
-        sealed = _seal(password, settings) if password is not None else None
+        sealed = _seal(password, settings)
 
         # The id is assigned here rather than at flush because the credential
         # reference names it.
         recorder = Recorder(id=uuid.uuid4().hex, organization_id=organization_id, **clean)
-        if sealed is not None:
-            _apply_sealed(recorder, sealed)
-        else:
-            recorder.credential_ref = str(credential_ref)
+        _apply_sealed(recorder, sealed)
         self._session.add(recorder)
         await self._session.flush()
         return recorder
@@ -217,30 +236,23 @@ class RecorderService:
         own audit row, so "who changed the password" is always answerable.
         """
         recorder = await self.get(organization_id=organization_id, recorder_id=recorder_id)
-        editable = (
-            "name",
-            "host",
-            "rtsp_port",
-            "username",
-            "brand",
-            "path_template",
-            "stream_main",
-            "stream_sub",
-        )
-        proposed = {field: getattr(recorder, field) for field in editable}
-        for field in editable:
+        proposed: dict[str, Any] = {field: getattr(recorder, field) for field in EDITABLE}
+        for field in EDITABLE:
             if field in changes and changes[field] is not None:
                 proposed[field] = changes[field]
         # Leaving `custom` clears what only `custom` uses, so a stale template
         # cannot linger behind a brand that ignores it.
         if proposed["brand"] != CUSTOM:
             proposed.update(path_template="", stream_main=None, stream_sub=None)
+        # Which address to dial is re-decided only when asked, or when the
+        # edit leaves no choice; otherwise the recorder keeps the one it had.
+        proposed["connect_via"] = changes.get("connect_via")
 
-        clean = clean_connection(**proposed)
+        clean = clean_connection(**proposed, current_via=recorder.connect_via)
         if clean["name"] != recorder.name:
             await self._name_is_free(organization_id, clean["name"])
 
-        changed = [field for field in editable if getattr(recorder, field) != clean[field]]
+        changed = [field for field in EDITABLE if getattr(recorder, field) != clean[field]]
         for field in changed:
             setattr(recorder, field, clean[field])
         if changed:
@@ -350,7 +362,11 @@ def to_wire(recorder: Recorder, *, camera_count: int = 0, cameras_on: int = 0) -
     return {
         "id": recorder.id,
         "name": recorder.name,
-        "host": recorder.host,
+        "ip_address": recorder.ip_address,
+        "hostname": recorder.hostname,
+        "connect_via": recorder.connect_via,
+        # The one this server dials, so a screen never has to work it out.
+        "address": recorder.address,
         "rtsp_port": recorder.rtsp_port,
         "username": recorder.username,
         "brand": recorder.brand,
@@ -374,6 +390,31 @@ def credential_configured(recorder: Recorder) -> bool:
     if (recorder.credential_ref or "").startswith(RECORDER_SCHEME):
         return recorder.secret_ciphertext is not None and recorder.secret_nonce is not None
     return bool(recorder.credential_ref)
+
+
+def address_for(recorder: Recorder, via: str | None = None) -> str:
+    """One of the recorder's addresses: `via`, or the one it connects with.
+
+    For testing the other address before switching to it. Raises when that
+    address is not filled in — testing nothing would look like a network fault.
+    """
+    choice = via or recorder.connect_via
+    if choice not in ADDRESS_CHOICES:
+        raise ValidationError("choose the IP address or the domain")
+    value = recorder.hostname if choice == VIA_HOSTNAME else recorder.ip_address
+    if not value:
+        raise ValidationError(
+            "this recorder has no domain to test"
+            if choice == VIA_HOSTNAME
+            else "this recorder has no IP address to test"
+        )
+    return value
+
+
+def uses_legacy_credential(recorder: Recorder) -> bool:
+    """A migrated row still reading its password from the server's configuration."""
+    ref = recorder.credential_ref or ""
+    return bool(ref) and not ref.startswith(RECORDER_SCHEME)
 
 
 def credential_scheme(credential_ref: str) -> str:
@@ -414,6 +455,62 @@ async def load_sealed(session: AsyncSession) -> dict[str, SealedSecret]:
         .all()
     )
     return {row.id: sealed for row in rows if (sealed := sealed_of(row)) is not None}
+
+
+async def legacy_credential_recorders(session: AsyncSession) -> list[tuple[str, str]]:
+    """`(organization_id, name)` of every recorder whose password is not sealed here."""
+    rows = (
+        await session.execute(
+            select(Recorder.organization_id, Recorder.name, Recorder.credential_ref).order_by(
+                Recorder.organization_id, Recorder.name
+            )
+        )
+    ).all()
+    return [
+        (organization_id, name)
+        for organization_id, name, ref in rows
+        if ref and not str(ref).startswith(RECORDER_SCHEME)
+    ]
+
+
+async def seal_legacy_credentials(
+    session: AsyncSession,
+    *,
+    settings: Settings,
+    resolve: Callable[[str], str],
+    apply: bool,
+) -> list[tuple[Recorder, str]]:
+    """Move every `env:`/`file:` recorder password into its own row, sealed.
+
+    `resolve` reads a reference the way the runtime would. Returns each legacy
+    recorder with `sealed`, `would_seal` (a dry run) or `unresolved` (its
+    reference names nothing, so there is nothing to move — its page asks for
+    the password instead). The value is held only long enough to seal it.
+    """
+    rows = (
+        (await session.execute(select(Recorder).order_by(Recorder.organization_id, Recorder.name)))
+        .scalars()
+        .all()
+    )
+    results: list[tuple[Recorder, str]] = []
+    for recorder in rows:
+        if not uses_legacy_credential(recorder):
+            continue
+        try:
+            password = resolve(recorder.credential_ref)
+        except Exception:  # noqa: BLE001 - reported per recorder, never its text
+            results.append((recorder, "unresolved"))
+            continue
+        try:
+            if apply:
+                _apply_sealed(recorder, _seal(password, settings))
+                recorder.updated_at = datetime.now(UTC)
+                results.append((recorder, "sealed"))
+            else:
+                results.append((recorder, "would_seal"))
+        finally:
+            del password
+    return results
 
 
 def sync_credential(store: Any, recorder: Recorder) -> None:
@@ -463,13 +560,31 @@ def _apply_sealed(recorder: Recorder, sealed: SealedSecret) -> None:
 # ── validation ───────────────────────────────────────────────────────────────
 
 
+#: The fields an edit may change. Never the password: that is its own route.
+EDITABLE = (
+    "name",
+    "ip_address",
+    "hostname",
+    "connect_via",
+    "rtsp_port",
+    "username",
+    "brand",
+    "path_template",
+    "stream_main",
+    "stream_sub",
+)
+
+
 def clean_connection(
     *,
     name: Any,
-    host: Any,
     rtsp_port: Any,
     username: Any,
     brand: Any,
+    ip_address: Any = "",
+    hostname: Any = "",
+    connect_via: Any = None,
+    current_via: str | None = None,
     path_template: Any = "",
     stream_main: Any = None,
     stream_sub: Any = None,
@@ -477,7 +592,8 @@ def clean_connection(
     """Validate everything about reaching a recorder, and return it normalised.
 
     Each message says what to do, because this text is shown to the person who
-    typed the value.
+    typed the value. `current_via` is the choice an existing recorder already
+    holds, kept when an edit does not change it.
     """
     clean_name = str(name or "").strip()
     if not clean_name:
@@ -485,14 +601,9 @@ def clean_connection(
     if len(clean_name) > 255:
         raise ValidationError("a recorder name may be at most 255 characters")
 
-    clean_host = str(host or "").strip()
-    if not clean_host:
-        raise ValidationError("enter the recorder's IP address or hostname")
-    if not _HOST.match(clean_host):
-        raise ValidationError(
-            "enter just the address, such as 192.168.1.20 or dvr.example.com — "
-            "without rtsp://, a port, or a path"
-        )
+    clean_ip = _clean_ip(ip_address)
+    clean_hostname = _clean_hostname(hostname)
+    via = _resolve_via(clean_ip, clean_hostname, connect_via, current_via)
 
     try:
         port = int(rtsp_port)
@@ -534,7 +645,9 @@ def clean_connection(
 
     return {
         "name": clean_name,
-        "host": clean_host,
+        "ip_address": clean_ip,
+        "hostname": clean_hostname,
+        "connect_via": via,
         "rtsp_port": port,
         "username": clean_username,
         "brand": clean_brand,
@@ -542,6 +655,77 @@ def clean_connection(
         "stream_main": main,
         "stream_sub": sub,
     }
+
+
+def dial_address(clean: dict[str, Any]) -> str:
+    """The address a cleaned connection dials."""
+    return clean["hostname"] if clean["connect_via"] == VIA_HOSTNAME else clean["ip_address"]
+
+
+_URLISH = re.compile(r"[/@:?#\s]")
+
+
+def _clean_ip(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if _URLISH.search(text):
+        raise ValidationError(
+            "enter just the IP address, such as 192.168.1.20 — without rtsp://, a port or a path"
+        )
+    try:
+        ipaddress.IPv4Address(text)
+    except ValueError:
+        if _HOST.match(text) and any(ch.isalpha() for ch in text):
+            raise ValidationError(
+                "that looks like a domain name — enter it under Domain / hostname, and "
+                "keep IP address for a number such as 192.168.1.20"
+            ) from None
+        raise ValidationError(
+            "an IP address is four numbers from 0 to 255 separated by dots, such as 192.168.1.20"
+        ) from None
+    return text
+
+
+def _clean_hostname(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if _URLISH.search(text):
+        raise ValidationError(
+            "enter just the domain, such as site.example.com — without rtsp://, a port or a path"
+        )
+    if not _HOST.match(text):
+        raise ValidationError("a domain may use only letters, numbers, dots and hyphens")
+    if all(ch.isdigit() or ch == "." for ch in text):
+        raise ValidationError(
+            "that is an IP address — enter it under IP address, and keep Domain / hostname "
+            "for a name such as site.example.com"
+        )
+    return text
+
+
+def _resolve_via(ip: str, hostname: str, requested: Any, current: str | None) -> str:
+    """Which address to dial. Never a guess between two filled-in addresses."""
+    if not ip and not hostname:
+        raise ValidationError("enter the recorder's IP address, its domain, or both")
+    choice = str(requested or "").strip()
+    if choice and choice not in ADDRESS_CHOICES:
+        raise ValidationError("choose whether to connect using the IP address or the domain")
+    if choice == VIA_IP and not ip:
+        raise ValidationError("you chose to connect using the IP address, but none is entered")
+    if choice == VIA_HOSTNAME and not hostname:
+        raise ValidationError("you chose to connect using the domain, but none is entered")
+    if choice:
+        return choice
+    if ip and hostname:
+        if current in ADDRESS_CHOICES:
+            return str(current)
+        raise ValidationError(
+            "this recorder has both an IP address and a domain — choose which one this "
+            "server should connect with"
+        )
+    return VIA_IP if ip else VIA_HOSTNAME
 
 
 def _stream_number(value: Any, which: str) -> int:
@@ -579,8 +763,17 @@ def _iso(value: datetime | None) -> str | None:
 
 
 __all__ = [
+    "ADDRESS_CHOICES",
+    "EDITABLE",
     "RecorderInUseError",
+    "VIA_HOSTNAME",
+    "VIA_IP",
+    "address_for",
     "clean_connection",
+    "dial_address",
+    "legacy_credential_recorders",
+    "seal_legacy_credentials",
+    "uses_legacy_credential",
     "RecorderService",
     "brand_label",
     "brand_of",

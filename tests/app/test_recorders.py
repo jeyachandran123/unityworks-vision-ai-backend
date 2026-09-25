@@ -44,7 +44,7 @@ async def estate(seeded):
 def _recorder(**overrides) -> dict:
     body = {
         "name": "Gayathri DVR",
-        "host": "192.168.1.20",
+        "ip_address": "192.168.1.20",
         "rtsp_port": 554,
         "username": "admin",
         "password": PASSWORD,
@@ -80,7 +80,11 @@ async def test_adding_a_recorder_returns_it_without_its_password(estate, client:
     assert body["name"] == "Gayathri DVR"
     assert body["brand"] == "hikvision"
     assert body["brand_label"] == "Hikvision"
-    assert body["host"] == "192.168.1.20"
+    assert body["ip_address"] == "192.168.1.20"
+    assert body["hostname"] == ""
+    assert body["connect_via"] == "ip_address"
+    assert body["address"] == "192.168.1.20"
+    assert "host" not in body
     assert body["credential_configured"] is True
     assert body["credential_scheme"] == "recorder"
     assert body["is_active"] is True
@@ -109,23 +113,36 @@ async def test_a_recorder_needs_a_password(estate, client: AsyncClient):
 
 
 @pytest.mark.parametrize(
-    "host",
+    ("field", "value"),
     [
-        "rtsp://192.168.1.20",
-        "192.168.1.20:554",
-        "192.168.1.20/cam",
-        "evil.example@192.168.1.20",
-        "dvr example",
-        "",
+        ("ip_address", "rtsp://192.168.1.20"),
+        ("ip_address", "192.168.1.20:554"),
+        ("ip_address", "192.168.1.20/cam"),
+        ("ip_address", "evil.example@192.168.1.20"),
+        ("ip_address", "192.168.1.300"),
+        ("hostname", "rtsp://dvr.example.com"),
+        ("hostname", "dvr.example.com:554"),
+        ("hostname", "dvr.example.com/cam"),
+        ("hostname", "evil.example@dvr.example.com"),
+        ("hostname", "dvr example"),
     ],
 )
 async def test_an_address_that_would_rewrite_the_url_is_refused(
-    estate, client: AsyncClient, host: str
+    estate, client: AsyncClient, field: str, value: str
 ):
-    """The host is placed inside `rtsp://user:pass@HOST:port/path`. An `@` would
-    move the credentials onto a host of the caller's choosing."""
-    response = await client.post(BASE, json=_recorder(host=host), headers=await _admin(client))
-    assert response.status_code == 422, host
+    """The address is placed inside `rtsp://user:pass@HOST:port/path`. An `@`
+    would move the credentials onto a host of the caller's choosing."""
+    body = _recorder(**{"ip_address": "", "hostname": "", field: value})
+    response = await client.post(BASE, json=body, headers=await _admin(client))
+    assert response.status_code == 422, value
+
+
+async def test_a_recorder_needs_at_least_one_address(estate, client: AsyncClient):
+    response = await client.post(
+        BASE, json=_recorder(ip_address="", hostname=""), headers=await _admin(client)
+    )
+    assert response.status_code == 422
+    assert "IP address, its domain, or both" in response.json()["message"]
 
 
 async def test_an_unknown_brand_is_refused(estate, client: AsyncClient):
@@ -334,12 +351,16 @@ async def test_editing_changes_how_it_is_reached(estate, client: AsyncClient):
 
     response = await client.patch(
         f"{BASE}/{created['id']}",
-        json={"host": "192.168.1.21", "rtsp_port": 8554, "brand": "dahua"},
+        json={"ip_address": "192.168.1.21", "rtsp_port": 8554, "brand": "dahua"},
         headers=headers,
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert (body["host"], body["rtsp_port"], body["brand"]) == ("192.168.1.21", 8554, "dahua")
+    assert (body["ip_address"], body["rtsp_port"], body["brand"]) == (
+        "192.168.1.21",
+        8554,
+        "dahua",
+    )
     # The password is untouched by an edit.
     assert body["credential_configured"] is True
 

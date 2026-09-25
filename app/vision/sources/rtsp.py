@@ -9,7 +9,7 @@ The password is resolved from a `SecretProvider` at connect time, used to build
 one URL, handed to the decoder, and dropped. `redacted_uri` — the only URL that
 is stored, logged, exported or returned — is built without it:
 
-    rtsp://***:***@gayatri.freemyip.com:554/cam/realmonitor?channel=1&subtype=1
+    rtsp://***:***@dvr.example.com:554/cam/realmonitor?channel=1&subtype=1
 
 `_redact()` additionally scrubs the live value out of every exception message,
 because decoder libraries habitually quote the URL they failed to open.

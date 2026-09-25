@@ -110,24 +110,41 @@ class TestCameraConfiguration:
     async def test_a_password_cannot_be_stored_as_a_credential_reference(self, session, settings):
         """A database dump must not be a credential dump.
 
-        The reference lives on the recorder now, and the rule moved with it: a
-        bare value where a reference belongs is refused, as is `literal:`, whose
-        reference *is* the password. A typed password is sealed instead.
+        The reference lives on the recorder, and the rule is now stricter than
+        refusing bad references: nothing can hand a recorder a reference at all
+        — not a bare value, not `literal:`, not `env:`. The only way in is a
+        password, and it is sealed before the row exists.
         """
+        import inspect
+
         from app.domain.recorders import RecorderService
 
-        for bad in ("hunter2", "literal:hunter2"):
-            with pytest.raises(ValidationError):
-                await RecorderService(session).create(
-                    organization_id=ORG,
-                    name=f"Bad {bad}",
-                    host="10.0.0.6",
-                    rtsp_port=554,
-                    username="admin",
-                    brand="dahua",
-                    settings=settings,
-                    credential_ref=bad,
-                )
+        assert "credential_ref" not in inspect.signature(RecorderService.create).parameters
+
+        recorder = await RecorderService(session).create(
+            organization_id=ORG,
+            name="Sealed",
+            ip_address="10.0.0.6",
+            rtsp_port=554,
+            username="admin",
+            brand="dahua",
+            settings=settings,
+            password="hunter2",
+        )
+        assert recorder.credential_ref == f"recorder:{recorder.id}"
+        assert b"hunter2" not in bytes(recorder.secret_ciphertext)
+
+        with pytest.raises(ValidationError):
+            await RecorderService(session).create(
+                organization_id=ORG,
+                name="No password",
+                ip_address="10.0.0.7",
+                rtsp_port=554,
+                username="admin",
+                brand="dahua",
+                settings=settings,
+                password=None,
+            )
 
     @pytest.mark.asyncio
     async def test_a_camera_row_holds_no_connection_details_at_all(self, session):

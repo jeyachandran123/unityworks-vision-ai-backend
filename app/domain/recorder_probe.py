@@ -22,6 +22,19 @@ the URL that carries it is built and consumed inside one function, every
 exception message is scrubbed of it before it is logged, and the result carries
 an outcome and a sentence, never a URL or an error string from the decoder.
 
+### Three steps, each answering a different question
+
+1. **Is anything listening?** A TCP connect. Wrong address, closed port,
+   switched-off recorder — answered in seconds.
+2. **Is it a video port?** An RTSP `OPTIONS` request, **with no credentials**.
+   Recorders listen on several ports — video, web page, phone app — and the one
+   printed in a recorder's phone app is frequently not the video port. Every
+   RTSP server answers `OPTIONS`, even with "401 Unauthorized"; a port that
+   stays silent or answers in another protocol is not the one to stream from.
+   Sending no credentials is deliberate: this step can never count as a failed
+   sign-in, so it cannot contribute to an account lockout.
+3. **Does a picture arrive?** Signed in, through the runtime's own dial path.
+
 ### Outcomes
 
 A fixed set, each with one sentence written for the person looking at the
@@ -32,6 +45,8 @@ the server log, scrubbed, and nowhere else.
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import ipaddress
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -52,7 +67,12 @@ from app.vision.sources.rtsp import (
 #: enough that somebody watching a spinner does not give up first.
 FRAME_TIMEOUT_S = 15.0
 
-#: `(outcome) -> (ok, message, hint)`.
+#: How long the unauthenticated RTSP question may take. A real RTSP server
+#: answers `OPTIONS` at once; this only has to outlast a slow uplink.
+HANDSHAKE_TIMEOUT_S = 6.0
+
+#: `(outcome) -> (ok, message, hint)`. `{address}` and `{port}` are filled in
+#: with what was tested, which the person typed or chose.
 OUTCOMES: dict[str, tuple[bool, str, str]] = {
     "connected": (
         True,
@@ -94,12 +114,36 @@ OUTCOMES: dict[str, tuple[bool, str, str]] = {
         "That address could not be found.",
         "Check the address for a typo.",
     ),
+    "not_rtsp": (
+        False,
+        "Something answered on port {port}, but it is not the recorder's video (RTSP) port.",
+        "Recorders use different ports for video, their web page and their phone app, and "
+        "the port shown in the phone app is often not the video one. The video port is "
+        "usually 554. If you connect over the internet, that port must also be forwarded "
+        "on the site's router.",
+    ),
     "decoder_unavailable": (
         False,
         "This server cannot decode video, so it cannot test the stream.",
         "Whoever runs the server needs to install its video support (the 'av' package).",
     ),
 }
+
+
+#: Failures that mean "nothing answered at that address".
+_NETWORK_FAILURES = frozenset({"timeout", "unreachable", "refused"})
+
+_LOCAL_ADDRESS_HINT = (
+    "{address} is a local network address. It works only when this server is on the same "
+    "network as the recorder. From anywhere else, connect using the recorder's domain."
+)
+
+
+def _is_local(address: str) -> bool:
+    try:
+        return ipaddress.IPv4Address(address).is_private
+    except ValueError:
+        return False
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +156,9 @@ class RecorderTestResult:
     width: int | None = None
     height: int | None = None
     extra: dict[str, Any] = field(default_factory=dict)
+    #: What was tested. Values the person typed or chose; never a URL.
+    address: str = ""
+    port: int = 0
 
     @property
     def ok(self) -> bool:
@@ -119,18 +166,23 @@ class RecorderTestResult:
 
     def as_dict(self) -> dict[str, Any]:
         ok, message, hint = OUTCOMES[self.outcome]
+        # The most useful thing to say about a private address nobody reached
+        # is that this server is probably not on that network.
+        if self.outcome in _NETWORK_FAILURES and _is_local(self.address):
+            hint = _LOCAL_ADDRESS_HINT
+        values = {"address": self.address or "this address", "port": self.port or "this"}
         return {
             "ok": ok,
             "outcome": self.outcome,
-            "message": message,
-            "hint": hint,
+            "message": message.format(**values),
+            "hint": hint.format(**values),
+            "address": self.address,
+            "port": self.port,
             "channel": self.channel,
             "elapsed_ms": self.elapsed_ms,
             # Stated when known, because "1920 × 1080 arrived" is the most
             # convincing thing a test can say.
-            "resolution": (
-                f"{self.width} × {self.height}" if self.width and self.height else None
-            ),
+            "resolution": (f"{self.width} × {self.height}" if self.width and self.height else None),
         }
 
 
@@ -156,6 +208,50 @@ def _first_frame_with_pyav(uri: str) -> tuple[int, int]:
             close()
 
 
+async def _rtsp_handshake(host: str, port: int, *, timeout_s: float = HANDSHAKE_TIMEOUT_S) -> str:
+    """Ask the port whether it speaks RTSP. **Sends no credentials.**
+
+    Returns `rtsp` (it answered as an RTSP server, whatever the status), `other`
+    (it answered in another protocol), `silent` (connected, never answered) or
+    `closed` (the connection failed or ended without a word — not conclusive,
+    so the caller carries on and lets the decoder decide).
+    """
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, int(port)), timeout=timeout_s
+        )
+    except (OSError, TimeoutError):
+        return "closed"
+    try:
+        request = (
+            f"OPTIONS rtsp://{host}:{int(port)}/ RTSP/1.0\r\n"
+            "CSeq: 1\r\nUser-Agent: UnityWorks-Vision\r\n\r\n"
+        )
+        writer.write(request.encode("ascii"))
+        await writer.drain()
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout_s
+        head = b""
+        while len(head) < 5:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                return "silent" if not head else "other"
+            try:
+                chunk = await asyncio.wait_for(reader.read(64), timeout=remaining)
+            except TimeoutError:
+                return "silent" if not head else "other"
+            if not chunk:
+                return "closed" if not head else "other"
+            head += chunk
+        return "rtsp" if head.startswith(b"RTSP/") else "other"
+    except OSError:
+        return "closed"
+    finally:
+        writer.close()
+        with contextlib.suppress(Exception):
+            await writer.wait_closed()
+
+
 async def check_connection(
     *,
     host: str,
@@ -176,6 +272,7 @@ async def check_connection(
     works, and "no, because the password was rejected" is the useful answer.
     """
     started = time.monotonic()
+    tested = {"address": host, "port": int(port)}
 
     def elapsed() -> int:
         return int((time.monotonic() - started) * 1000)
@@ -192,7 +289,13 @@ async def check_connection(
             "dns_failed": "address_not_found",
             "refused": "refused",
         }.get(reached.outcome, "unreachable")
-        return RecorderTestResult(outcome, channel, elapsed())
+        return RecorderTestResult(outcome, channel, elapsed(), **tested)
+
+    # Step two: is this the video port at all? Answered without a password, so
+    # a wrong port never becomes a failed sign-in on the recorder.
+    spoken = await _rtsp_handshake(host, int(port))
+    if spoken in {"other", "silent"}:
+        return RecorderTestResult("not_rtsp", channel, elapsed(), **tested)
 
     config = RtspCameraConfig(
         camera_id="connection-test",
@@ -213,15 +316,15 @@ async def check_connection(
             timeout=frame_timeout_s,
         )
     except RtspAuthenticationError:
-        return RecorderTestResult("authentication_failed", channel, elapsed())
+        return RecorderTestResult("authentication_failed", channel, elapsed(), **tested)
     except RtspStreamNotFoundError:
-        return RecorderTestResult("channel_not_found", channel, elapsed())
+        return RecorderTestResult("channel_not_found", channel, elapsed(), **tested)
     except TimeoutError:
-        return RecorderTestResult("stream_unavailable", channel, elapsed())
+        return RecorderTestResult("stream_unavailable", channel, elapsed(), **tested)
     except Exception as exc:  # noqa: BLE001 - classified, scrubbed, logged
         text = _scrub(f"{type(exc).__name__}: {exc}", username=username, password=password)
         if "decoder" in text.lower() and "install" in text.lower():
-            return RecorderTestResult("decoder_unavailable", channel, elapsed())
+            return RecorderTestResult("decoder_unavailable", channel, elapsed(), **tested)
         # The decoder's own words go to the server log only. They routinely
         # quote the URL, which is why they are scrubbed first.
         logger.warning(
@@ -231,9 +334,9 @@ async def check_connection(
             channel,
             text,
         )
-        return RecorderTestResult("stream_unavailable", channel, elapsed())
+        return RecorderTestResult("stream_unavailable", channel, elapsed(), **tested)
 
-    return RecorderTestResult("connected", channel, elapsed(), width=width, height=height)
+    return RecorderTestResult("connected", channel, elapsed(), width=width, height=height, **tested)
 
 
 def _scrub(text: str, *, username: str, password: str) -> str:
@@ -279,6 +382,7 @@ class ProbeThrottle:
 
 __all__ = [
     "FRAME_TIMEOUT_S",
+    "HANDSHAKE_TIMEOUT_S",
     "OUTCOMES",
     "RecorderTestResult",
     "ProbeThrottle",

@@ -3,9 +3,17 @@
 ### Nothing starts by itself
 
 Importing this module opens no socket. Importing the application opens no socket.
-Opening DevTools opens no socket. A camera session starts when
-`LiveRuntime.start_configured()` is called from the application lifespan **and**
-`FEATURE_LIVE_CCTV` is on **and** a camera is configured.
+Opening DevTools opens no socket. A camera session starts when the application
+lifespan (or a person, from the product) starts a camera row **and**
+`FEATURE_LIVE_CCTV` is on **and** that row is switched on.
+
+### Where a camera is, is never configuration
+
+Every session is dialled from an `RtspCameraConfig` built from one camera row
+and its recorder row — that organization's address, port, account and brand.
+There is no deployment-wide DVR here: the `CCTV_HOST`/`CCTV_CHANNELS` path that
+once built cameras from settings is gone, so no organization's cameras can be
+built from another's configuration, or from none.
 
 That is three deliberate acts. A backend that dials a DVR because somebody ran
 the test suite is a backend that will one day dial a customer's DVR from a
@@ -157,59 +165,31 @@ class LiveRuntime:
 
     # ── lifecycle ────────────────────────────────────────────────────────────
 
-    async def start_configured(self) -> int:
-        """Start the sessions configuration asks for. Returns how many started.
-
-        Called from the application lifespan and nowhere else.
-        """
-        if not self._settings.feature_live_cctv:
-            logger.info("live CCTV disabled (FEATURE_LIVE_CCTV=false); no sessions started")
-            return 0
-
-        cameras = self._configured_cameras()
-        if not cameras:
-            # Not an error. A deployment with no camera configured is a valid
-            # deployment, and it says so rather than failing to boot.
-            logger.info("live CCTV enabled but no camera is configured")
-            return 0
-
-        started = 0
-        for config in cameras:
-            try:
-                await self.start_live(config)
-                started += 1
-            except Exception as exc:  # noqa: BLE001 - one camera, not the process
-                logger.error(
-                    "camera {} failed to start: {}: {}",
-                    config.camera_id,
-                    type(exc).__name__,
-                    exc,
-                )
-        return started
-
-    async def start_from_records(self, configs: Sequence[RtspCameraConfig]) -> int:
+    async def start_from_records(self, records: Sequence[tuple[str, RtspCameraConfig]]) -> int:
         """Start the cameras the **database** says are enabled.
 
-        The durable replacement for `start_configured()`. The rule is unchanged
-        and the source of truth moved: a camera row that is not `enabled` opens
-        no socket. What changed is that the decision now survives a restart and
-        is auditable, instead of living in an environment variable nobody can
-        show you the history of.
+        Each record is `(organization_id, config)`: the camera's own
+        organization travels with it, and its session is filed under that
+        organization. Filing every boot-started session under one deployment
+        tenant made another organization's camera invisible to the people who
+        own it — they could not see it or stop it — and visible to people who
+        do not.
 
-        One camera failing to start does not stop the others — sixteen kitchens
-        must not go dark because one DVR channel is unplugged.
+        A camera row that is not `enabled` opens no socket. One camera failing
+        to start does not stop the others — sixteen kitchens must not go dark
+        because one DVR channel is unplugged.
         """
         if not self._settings.feature_live_cctv:
             logger.info(
                 "live CCTV disabled (FEATURE_LIVE_CCTV=false); {} enabled camera " "row(s) ignored",
-                len(configs),
+                len(records),
             )
             return 0
 
         started = 0
-        for config in configs:
+        for organization_id, config in records:
             try:
-                await self.start_live(config)
+                await self.start_live(config, tenant_id=organization_id)
                 started += 1
             except Exception as exc:  # noqa: BLE001 - one camera, not the process
                 logger.error(
@@ -368,60 +348,33 @@ class LiveRuntime:
         await asyncio.gather(*(s.stop() for s in sessions), return_exceptions=True)
         logger.info("live runtime stopped {} session(s)", len(sessions))
 
-    # ── configuration ────────────────────────────────────────────────────────
+    # ── description ──────────────────────────────────────────────────────────
 
-    def _configured_cameras(self) -> list[RtspCameraConfig]:
-        """Cameras named by configuration.
+    def describe_cameras(
+        self, *, tenant_id: str, camera_ids: tuple[str, ...] | None
+    ) -> list[dict[str, Any]]:
+        """The live cameras this caller may see, with **redacted** URIs.
 
-        **An empty `CCTV_CHANNELS` selects nothing.** The DVR has 16 channels and
-        must not become 16 pipelines because nobody said otherwise; cost follows
-        configuration, not hardware.
+        Read from the sessions actually running — each dialled from its own
+        recorder row — and scoped exactly as `visible()` is. Never a credential,
+        and never a camera of another organization.
         """
-        settings = self._settings
-        if not settings.cctv_host or not settings.cctv_channels.strip():
-            return []
-
-        cameras = []
-        for raw in settings.cctv_channels.split(","):
-            token = raw.strip()
-            if not token:
+        described = []
+        for session in self.visible(tenant_id=tenant_id, camera_ids=camera_ids):
+            config = getattr(session.source, "config", None)
+            if not isinstance(config, RtspCameraConfig):
                 continue
-            try:
-                channel = int(token)
-            except ValueError as exc:
-                # Raised, not skipped. A silently dropped channel is a kitchen
-                # nobody is watching.
-                raise ConfigurationInvalidError(
-                    f"CCTV_CHANNELS contains '{token}', which is not a number"
-                ) from exc
-
-            cameras.append(
-                RtspCameraConfig(
-                    camera_id=f"cam-{channel:02d}",
-                    host=settings.cctv_host,
-                    port=settings.cctv_rtsp_port,
-                    channel=channel,
-                    stream_type=settings.cctv_stream_type,
-                    username=settings.cctv_username,
-                    credential_ref=settings.cctv_credential_ref,
-                    analysis_fps=settings.cctv_analysis_fps,
-                )
+            described.append(
+                {
+                    "camera_id": config.camera_id,
+                    "uri": config.redacted_uri(),
+                    "channel": config.channel,
+                    "stream_type": config.stream_type,
+                    "analysis_fps": config.analysis_fps,
+                    "credential_configured": bool(config.credential_ref),
+                }
             )
-        return cameras
-
-    def describe_cameras(self) -> list[dict[str, Any]]:
-        """Configured cameras, with **redacted** URIs. Never a credential."""
-        return [
-            {
-                "camera_id": config.camera_id,
-                "uri": config.redacted_uri(),
-                "channel": config.channel,
-                "stream_type": config.stream_type,
-                "analysis_fps": config.analysis_fps,
-                "credential_configured": bool(config.credential_ref),
-            }
-            for config in self._configured_cameras()
-        ]
+        return described
 
 
 __all__ = ["LiveRuntime", "RuntimeSummary", "SourceKind"]

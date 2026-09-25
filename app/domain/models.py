@@ -117,13 +117,27 @@ class Recorder(Base):
     copies, and changing the recorder's address meant sixteen edits where
     missing one left a camera quietly dialling the wrong place.
 
+    ### Its addresses
+
+    A recorder may be known by a local IP address, by a domain name, or by
+    both — the IP on the site's own network, the domain (often a dynamic-DNS
+    name) from anywhere else. Both are kept, because both are true and the one
+    in use changes when the server moves. `connect_via` names the one this
+    server dials; nothing falls back from one to the other on its own, because
+    a recorder that silently changed which address it used would be a recorder
+    nobody could reason about.
+
     ### The password
 
-    Either a reference the environment resolves (`env:`, `file:`), or sealed in
-    this row with AES-GCM under a master key that lives only in the
+    Sealed in this row with AES-GCM under a master key that lives only in the
     environment (`recorder:<id>`, with the three `secret_*` columns). Never
     plaintext. The row and the key are two halves: a database dump alone
     recovers nothing. See `app/domain/recorder_secrets.py`.
+
+    A row migrated from the old per-camera configuration may still carry an
+    `env:` or `file:` reference. That is a transitional state, reported on the
+    recorder's page and by `scripts/seal_recorder_passwords.py`, never one the
+    application creates.
     """
 
     __tablename__ = "recorders"
@@ -136,14 +150,24 @@ class Recorder(Base):
     organization_id: Mapped[str] = mapped_column(
         String(64), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False
     )
-    #: What the people who run the site call it — "Gayathri DVR".
+    #: What the people who run the site call it — "Canteen DVR".
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    host: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    #: The recorder's IPv4 address, usually on the site's own network. Optional
+    #: when `hostname` is set.
+    ip_address: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    #: The recorder's domain name — `site.freemyip.com`. Optional when
+    #: `ip_address` is set.
+    hostname: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    #: `ip_address` or `hostname`: which of the two this server dials.
+    connect_via: Mapped[str] = mapped_column(String(16), nullable=False, default="ip_address")
+    #: The port the recorder serves video (RTSP) on. Not the port its phone app
+    #: or web page uses, which is frequently a different number.
     rtsp_port: Mapped[int] = mapped_column(Integer, nullable=False, default=554)
     username: Mapped[str] = mapped_column(String(128), nullable=False, default="")
 
-    #: `recorder:<id>`, `env:NAME` or `file:/path`. A reference, never a value.
+    #: `recorder:<id>` — or, on a migrated row, `env:NAME` / `file:/path`. A
+    #: reference, never a value.
     credential_ref: Mapped[str] = mapped_column(String(512), nullable=False, default="")
     #: Populated only for `recorder:` references. Never returned by any API.
     secret_ciphertext: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
@@ -169,6 +193,15 @@ class Recorder(Base):
     )
 
     cameras: Mapped[list[Camera]] = relationship(back_populates="recorder")
+
+    @property
+    def address(self) -> str:
+        """The address this server dials: whichever one `connect_via` names.
+
+        Empty when that one is not filled in. Never the other address instead —
+        see the class docstring.
+        """
+        return self.hostname if self.connect_via == "hostname" else self.ip_address
 
 
 class Camera(Base):

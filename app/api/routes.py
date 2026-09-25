@@ -594,9 +594,12 @@ async def status(request: Request, access: CurrentAccess, session: DbSession) ->
         # not producing is reported as such — never as a frozen last frame, and
         # never as online.
         "cameras": {
-            "configured": len(live.describe_cameras()),
+            # The cameras this organization has switched on — from its own rows,
+            # not from a deployment setting that described one DVR for everyone.
+            "configured": enabled,
             "sessions": len(sessions),
-            "streaming": summary.streaming_sessions,
+            # This organization's streaming cameras, not the whole process's.
+            "streaming": sum(1 for s in sessions if s.streaming),
             "health": [
                 {"camera_id": s.camera_id, "health": s.health.value, "kind": s.kind.value}
                 for s in sessions

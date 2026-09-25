@@ -47,7 +47,11 @@ class FakeRecorder:
         self.id = f"rec-{org}"
         self.organization_id = org
         self.name = "Fake DVR"
-        self.host = host
+        # `host` files itself where a real row would: here always an IP, or
+        # nothing at all for a recorder with no address.
+        self.ip_address = host
+        self.hostname = ""
+        self.connect_via = "ip_address"
         self.rtsp_port = 554
         self.username = "admin"
         self.credential_ref = "env:CCTV_PASSWORD"
@@ -56,6 +60,10 @@ class FakeRecorder:
         self.stream_main = None
         self.stream_sub = None
         self.is_active = active
+
+    @property
+    def address(self) -> str:
+        return self.hostname if self.connect_via == "hostname" else self.ip_address
 
 
 class FakeCamera:
@@ -355,48 +363,53 @@ class TestPhase6B1Regressions:
     the application must supply for itself.
     """
 
-    def test_the_configured_dvr_password_reaches_the_secret_provider(self):
-        """Defect 2. `.env` is loaded into Settings, never into `os.environ`.
+    def test_a_dvr_password_in_the_settings_file_reaches_nothing(self, monkeypatch):
+        """There is no deployment-wide DVR password any more.
 
-        `EnvironmentSecretProvider` resolves `env:NAME` against a mapping. Given
-        the bare process environment it cannot see a password pydantic put on
-        the settings object, so every camera sat at CONNECTING with a correct
-        credential on disk.
+        `secret_environment()` once copied `CCTV_PASSWORD` from the settings
+        file into the credential resolver, so one value in one `.env` could
+        sign in to any organization's recorder whose reference named it. A
+        recorder's password is now sealed on its own row; a leftover setting
+        is ignored and resolves nothing.
         """
-        from pydantic import SecretStr
-
         from app.configuration.settings import Settings
-        from app.vision.secrets import EnvironmentSecretProvider
+        from app.vision.secrets import EnvironmentSecretProvider, MissingSecretError
 
+        monkeypatch.delenv("CCTV_PASSWORD", raising=False)
         settings = Settings(
             app_env="test",
             secret_key=SECRET,
             database_url_override="sqlite+aiosqlite:///:memory:",
             redis_enabled=False,
-            cctv_credential_ref="env:CCTV_PASSWORD",
-            cctv_password=SecretStr("a-configured-value"),
+            cctv_password="a-configured-value",
         )
 
         provider = EnvironmentSecretProvider(settings.secret_environment())
-        assert provider.resolve("env:CCTV_PASSWORD") == "a-configured-value"
+        with pytest.raises(MissingSecretError):
+            provider.resolve("env:CCTV_PASSWORD")
 
     def test_a_real_environment_variable_still_wins(self, monkeypatch):
-        """An operator supplying a rotated credential must not lose to a file."""
+        """The overlay that remains — the understander's key — still yields to a
+        real environment variable, so an operator's rotated key is not lost to
+        a stale file."""
         from pydantic import SecretStr
 
         from app.configuration.settings import Settings
 
-        monkeypatch.setenv("CCTV_PASSWORD", "rotated-today")
+        monkeypatch.setenv("VISION_NVIDIA_API_KEY", "rotated-today")
         settings = Settings(
             app_env="test",
             secret_key=SECRET,
             database_url_override="sqlite+aiosqlite:///:memory:",
             redis_enabled=False,
-            cctv_password=SecretStr("stale-on-disk"),
+            vision_understander_api_key=SecretStr("stale-on-disk"),
         )
-        assert settings.secret_environment()["CCTV_PASSWORD"] == "rotated-today"
+        # Compared to a bool first, so a failure can never print a real key
+        # picked up from a developer's `.env`.
+        wins = settings.secret_environment().get("VISION_NVIDIA_API_KEY") == "rotated-today"
+        assert wins, "the environment variable lost to the settings file"
 
-    def test_the_secret_environment_is_not_written_into_the_process(self):
+    def test_the_secret_environment_is_not_written_into_the_process(self, monkeypatch):
         """The overlay is handed to one provider, never exported process-wide."""
         import os
 
@@ -404,15 +417,18 @@ class TestPhase6B1Regressions:
 
         from app.configuration.settings import Settings
 
+        monkeypatch.delenv("VISION_NVIDIA_API_KEY", raising=False)
         settings = Settings(
             app_env="test",
             secret_key=SECRET,
             database_url_override="sqlite+aiosqlite:///:memory:",
             redis_enabled=False,
-            cctv_password=SecretStr("must-not-escape"),
+            vision_understander_api_key=SecretStr("must-not-escape"),
         )
-        settings.secret_environment()
-        assert os.environ.get("CCTV_PASSWORD") != "must-not-escape"
+        overlaid = settings.secret_environment().get("VISION_NVIDIA_API_KEY") == "must-not-escape"
+        escaped = os.environ.get("VISION_NVIDIA_API_KEY") == "must-not-escape"
+        assert overlaid, "the configured key did not reach the overlay"
+        assert not escaped, "the overlay was written into the process environment"
 
     @pytest.mark.asyncio
     async def test_a_stale_camera_row_cannot_deny_a_valid_ticket(self, settings):

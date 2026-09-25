@@ -208,7 +208,15 @@ async def update_camera(
         payload["recorder_id"] = (
             await _recorder_for(session, access.tenant_id, payload.get("recorder_id"))
         ).id
-    for moved in ("host", "rtsp_port", "username", "credential_ref"):
+    for moved in (
+        "host",
+        "ip_address",
+        "hostname",
+        "connect_via",
+        "rtsp_port",
+        "username",
+        "credential_ref",
+    ):
         payload.pop(moved, None)
 
     camera = await service.update(
@@ -304,7 +312,7 @@ async def start_camera(
                 else "This camera has no recorder, so there is nothing to dial."
             ),
         }
-    if not recorder.host:
+    if not recorder.address:
         return {
             "camera_key": camera_key,
             "streaming": False,
@@ -323,7 +331,9 @@ async def start_camera(
         await live.start_one(camera_domain.to_rtsp_config(camera), tenant_id=access.tenant_id)
     except AppError as exc:
         # Already running is the state the caller asked for, so it is reported
-        # as reached rather than raised.
+        # as reached rather than raised — and the wall is brought in line, in
+        # case it is the half that was missing.
+        await _open_on_wall(request, camera)
         return {
             "camera_key": camera_key,
             "streaming": True,
@@ -331,7 +341,10 @@ async def start_camera(
             "reason": str(exc),
         }
 
-    await service.set_enabled(organization_id=access.tenant_id, camera_key=camera_key, enabled=True)
+    camera = await service.set_enabled(
+        organization_id=access.tenant_id, camera_key=camera_key, enabled=True
+    )
+    await _open_on_wall(request, camera)
     await AuditTrail(session).record(
         action=AuditAction.CAMERA_STARTED,
         organization_id=access.tenant_id,
@@ -343,6 +356,24 @@ async def start_camera(
         detail={"recorder_id": camera.recorder_id, "channel": camera.channel},
     )
     return {"camera_key": camera_key, "streaming": True, "available": True, "reason": ""}
+
+
+async def _open_on_wall(request: Request, camera) -> None:
+    """Put this camera on the Live Wall now, replacing any dark tile it had.
+
+    The wall opens its streams at boot and when a recorder is activated. A
+    camera started any other time — added through the product after the server
+    came up — was analysed and healthy while its tile said OFFLINE, with no
+    error, until the process restarted. A camera switched off at boot holds a
+    dark tile, and `start_cameras` leaves existing tiles alone, so that tile is
+    removed first.
+    """
+    wall = getattr(request.app.state, "wall", None)
+    if wall is None or not settings_of(request).feature_camera_wall:
+        return
+    runtime_id = runtime_camera_id(camera.organization_id, camera.camera_key)
+    await wall.stop_cameras([runtime_id])
+    await wall.start_cameras([camera])
 
 
 @router.post(
@@ -368,6 +399,10 @@ async def stop_camera(
         runtime_camera_id(access.tenant_id, camera_key),
         tenant_id=access.tenant_id,
     )
+    wall = getattr(request.app.state, "wall", None)
+    if wall is not None:
+        # Off the Live Wall too. It reappears as a switched-off tile.
+        await wall.stop_cameras([runtime_camera_id(access.tenant_id, camera_key)])
     await service.set_enabled(
         organization_id=access.tenant_id, camera_key=camera_key, enabled=False
     )
@@ -446,7 +481,7 @@ async def test_camera_connection(
         organization_id=access.tenant_id, camera_key=camera_key
     )
     recorder = camera.recorder
-    if recorder is None or not recorder.host:
+    if recorder is None or not recorder.address:
         raise ValidationError("this camera's recorder has no address, so there is nothing to test")
 
     sync_credential(getattr(request.app.state, "recorder_credentials", None), recorder)
@@ -466,7 +501,7 @@ async def test_camera_connection(
         }
     try:
         result = await check_connection(
-            host=recorder.host,
+            host=recorder.address,
             port=recorder.rtsp_port,
             username=recorder.username,
             password=password,

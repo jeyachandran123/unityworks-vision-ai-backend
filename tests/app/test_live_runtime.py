@@ -158,11 +158,7 @@ class TestSampler:
 
     def test_it_thins_a_fast_source_to_the_analysis_rate(self) -> None:
         sampler = FrameSampler(analysis_fps=4.0)  # one per 250 ms
-        accepted = sum(
-            1
-            for index in range(100)
-            if sampler.accepts(index * 40_000_000)  # 25 fps
-        )
+        accepted = sum(1 for index in range(100) if sampler.accepts(index * 40_000_000))  # 25 fps
         # 100 frames at 25 fps is 4 s; at 4 fps that is ~16 frames.
         assert 15 <= accepted <= 17
 
@@ -331,7 +327,7 @@ class TestCredentialRedaction:
     def config(self, **overrides) -> RtspCameraConfig:
         payload = {
             "camera_id": "cam-01",
-            "host": "gayatri.freemyip.com",
+            "host": "dvr.example.com",
             "username": "admin",
             "credential_ref": "env:CCTV_PASSWORD",
         }
@@ -345,7 +341,7 @@ class TestCredentialRedaction:
         redacted = self.config().redacted_uri()
         assert SECRET not in redacted
         assert REDACTED in redacted
-        assert "gayatri.freemyip.com" in redacted, "still diagnosable"
+        assert "dvr.example.com" in redacted, "still diagnosable"
         assert "admin" not in redacted
 
     def test_source_status_exposes_only_the_redacted_url(self) -> None:
@@ -795,49 +791,98 @@ class TestNoAutostart:
     async def test_the_feature_flag_is_off_by_default(self) -> None:
         assert settings().feature_live_cctv is False
 
-    async def test_start_configured_does_nothing_when_the_flag_is_off(self) -> None:
-        runtime = LiveRuntime(
-            settings(cctv_host="dvr.invalid", cctv_channels="1", feature_live_cctv=False)
-        )
-        assert await runtime.start_configured() == 0
+    async def test_records_start_nothing_when_the_flag_is_off(self) -> None:
+        runtime = LiveRuntime(settings(feature_live_cctv=False))
+        config = RtspCameraConfig(camera_id="org-a:cam-01", host="dvr.invalid")
+        assert await runtime.start_from_records([("org-a", config)]) == 0
         assert runtime.sessions == ()
 
-    async def test_an_empty_channel_list_selects_nothing(self) -> None:
-        """A 16-channel DVR must not become 16 pipelines by default."""
-        runtime = LiveRuntime(
-            settings(cctv_host="dvr.invalid", cctv_channels="", feature_live_cctv=True)
-        )
-        assert await runtime.start_configured() == 0
 
-    def test_only_named_channels_become_cameras(self) -> None:
-        runtime = LiveRuntime(
-            settings(cctv_host="dvr.invalid", cctv_channels="1,5,7", feature_live_cctv=True)
-        )
-        cameras = runtime.describe_cameras()
-        assert [c["camera_id"] for c in cameras] == ["cam-01", "cam-05", "cam-07"]
-        assert len(cameras) == 3, "a 16-channel DVR did not yield 16 cameras"
+class TestNoDeploymentWideDvr:
+    """No camera can come from the deployment's configuration.
 
-    def test_a_typo_raises_rather_than_dropping_a_camera(self) -> None:
-        """A silently skipped channel is a kitchen nobody is watching."""
-        from app.errors import ConfigurationInvalidError
+    There was once a path that built cameras from `CCTV_HOST`, `CCTV_CHANNELS`,
+    `CCTV_USERNAME` and `CCTV_CREDENTIAL_REF` — one DVR for the whole
+    application. On a platform serving many organizations, each with its own
+    recorders, a value like that is one organization's infrastructure standing
+    in for everyone's.
+    """
 
-        runtime = LiveRuntime(
-            settings(cctv_host="dvr.invalid", cctv_channels="1,two,3", feature_live_cctv=True)
-        )
-        with pytest.raises(ConfigurationInvalidError, match="not a number"):
-            runtime.describe_cameras()
+    def test_the_settings_describe_no_dvr(self) -> None:
+        for name in (
+            "cctv_host",
+            "cctv_rtsp_port",
+            "cctv_channels",
+            "cctv_stream_type",
+            "cctv_username",
+            "cctv_credential_ref",
+            "cctv_password",
+        ):
+            assert name not in Settings.model_fields, f"{name} is still a setting"
 
-    def test_described_cameras_carry_no_credential(self) -> None:
-        runtime = LiveRuntime(
-            settings(
-                cctv_host="gayatri.freemyip.com",
-                cctv_channels="1",
-                cctv_username="admin",
-                cctv_credential_ref="env:CCTV_PASSWORD",
-                feature_live_cctv=True,
-            )
+    def test_leftover_cctv_variables_are_ignored(self, monkeypatch) -> None:
+        """An old `.env` still carrying them must not break start-up, and must
+        not reach anything: the runtime has no way to read them."""
+        for name, value in {
+            "CCTV_HOST": "old-site.example.com",
+            "CCTV_CHANNELS": "1,2,3",
+            "CCTV_USERNAME": "admin",
+            "CCTV_PASSWORD": "left-over",
+        }.items():
+            monkeypatch.setenv(name, value)
+        configured = settings(feature_live_cctv=True)
+        runtime = LiveRuntime(configured)
+        assert not hasattr(runtime, "start_configured")
+        assert runtime.describe_cameras(tenant_id="org-a", camera_ids=None) == []
+        assert "left-over" not in str(configured.model_dump())
+
+    def test_the_password_overlay_is_gone(self, monkeypatch) -> None:
+        """`secret_environment()` once copied a CCTV password from the settings
+        file into the credential resolver. Nothing may do that any more."""
+        monkeypatch.delenv("CCTV_PASSWORD", raising=False)
+        assert "CCTV_PASSWORD" not in settings().secret_environment()
+
+
+class _FakeLiveSource(SyntheticFrameSource):
+    """A synthetic source that carries the config a live one would dial."""
+
+    def __init__(self, config: RtspCameraConfig, **_: object) -> None:
+        super().__init__(camera_id=config.camera_id, count=None, interval_override_s=0.01)
+        self.config = config
+
+
+class TestEachCameraBelongsToItsOrganization:
+    """Boot-started sessions are filed under the camera's own organization."""
+
+    async def test_start_from_records_files_each_session_under_its_owner(self, monkeypatch) -> None:
+        import app.vision.manager as manager_module
+
+        monkeypatch.setattr(manager_module, "LiveRtspSource", _FakeLiveSource)
+        runtime = LiveRuntime(settings(feature_live_cctv=True))
+        org_a = RtspCameraConfig(
+            camera_id="org-a:cam-01", host="192.168.54.243", port=554, username="a-admin"
         )
-        rendered = str(runtime.describe_cameras())
-        assert REDACTED in rendered
-        assert "admin" not in rendered
-        assert "CCTV_PASSWORD" not in rendered
+        org_b = RtspCameraConfig(
+            camera_id="org-b:cam-01", host="site-b.example.net", port=8554, username="b-admin"
+        )
+        try:
+            assert await runtime.start_from_records([("org-a", org_a), ("org-b", org_b)]) == 2
+
+            seen_by_a = runtime.visible(tenant_id="org-a", camera_ids=None)
+            seen_by_b = runtime.visible(tenant_id="org-b", camera_ids=None)
+            assert [s.camera_id for s in seen_by_a] == ["org-a:cam-01"]
+            assert [s.camera_id for s in seen_by_b] == ["org-b:cam-01"]
+
+            described_a = runtime.describe_cameras(tenant_id="org-a", camera_ids=None)
+            assert [c["camera_id"] for c in described_a] == ["org-a:cam-01"]
+            rendered = str(described_a)
+            assert "192.168.54.243:554" in rendered
+            assert "site-b.example.net" not in rendered
+            assert "a-admin" not in rendered, "a username is part of the credential"
+
+            # And the owner can stop it — which a session filed elsewhere
+            # could never be.
+            assert await runtime.stop_camera("org-a:cam-01", tenant_id="org-a") is True
+            assert await runtime.stop_camera("org-b:cam-01", tenant_id="org-a") is False
+        finally:
+            await runtime.stop_all()

@@ -84,6 +84,7 @@ class CameraService:
         existing = await self._by_key(organization_id, camera_key)
         if existing is not None:
             raise ConflictError(f"camera '{camera_key}' already exists in this organization")
+        await self._channel_is_free(organization_id, recorder_id, channel)
 
         camera = Camera(
             organization_id=organization_id,
@@ -152,6 +153,17 @@ class CameraService:
 
         zone_before = camera.zone_id
         recorder_before = camera.recorder_id
+        channel_before = camera.channel
+        proposed_recorder = changes.get("recorder_id") or recorder_before
+        proposed_channel = changes.get("channel")
+        if proposed_channel is None:
+            proposed_channel = channel_before
+        # Checked only when the camera moves. A pair of cameras that already
+        # share a channel predates this rule and is left exactly as it is.
+        if (proposed_recorder, proposed_channel) != (recorder_before, channel_before):
+            await self._channel_is_free(
+                organization_id, proposed_recorder, proposed_channel, excluding=camera_key
+            )
         for field, value in changes.items():
             if field not in allowed or value is None:
                 continue
@@ -366,6 +378,39 @@ class CameraService:
             if is_dialable(camera)
         ]
 
+    async def _channel_is_free(
+        self,
+        organization_id: str,
+        recorder_id: str,
+        channel: Any,
+        *,
+        excluding: str | None = None,
+    ) -> None:
+        """One camera per channel on a recorder.
+
+        Two rows on one channel are two connections to the same input — the
+        recorder's connection limit spent twice, and two cameras whose records
+        are of the same view under different names.
+        """
+        try:
+            number = int(channel)
+        except (TypeError, ValueError):
+            return  # `_validate` reports a channel that is not a number.
+        query = select(Camera).where(
+            Camera.organization_id == organization_id,
+            Camera.recorder_id == str(recorder_id or ""),
+            Camera.channel == number,
+        )
+        if excluding:
+            query = query.where(Camera.camera_key != excluding)
+        taken = (await self._session.execute(query.limit(1))).scalar_one_or_none()
+        if taken is not None:
+            raise ConflictError(
+                f"channel {number} on this recorder is already used by the camera "
+                f"'{taken.name}' ({taken.camera_key})",
+                details={"channel": number, "camera_key": taken.camera_key},
+            )
+
     async def _by_key(self, organization_id: str, camera_key: str) -> Camera | None:
         result = await self._session.execute(
             select(Camera)
@@ -446,7 +491,7 @@ def is_dialable(camera: Camera) -> bool:
     "deactivate the recorder" means.
     """
     recorder = getattr(camera, "recorder", None)
-    return bool(recorder is not None and recorder.is_active and recorder.host)
+    return bool(recorder is not None and recorder.is_active and recorder.address)
 
 
 def _redacted_uri(camera: Camera) -> str:
@@ -457,7 +502,7 @@ def _redacted_uri(camera: Camera) -> str:
     would have shown a Hikvision camera a URL it never used.
     """
     recorder = getattr(camera, "recorder", None)
-    if recorder is None or not recorder.host:
+    if recorder is None or not recorder.address:
         return ""
     try:
         return to_rtsp_config(camera).redacted_uri()
@@ -579,7 +624,9 @@ def to_rtsp_config(camera: Camera, *, recorder: Recorder | None = None) -> RtspC
         # session in every process-wide registry it reaches, and two tenants
         # may legitimately both call a camera `cam-01`.
         camera_id=for_camera(camera),
-        host=box.host,
+        # The address the recorder is set to connect with — never the other
+        # one, and never anything from the deployment's configuration.
+        host=box.address,
         channel=camera.channel,
         port=box.rtsp_port,
         stream_type=camera.stream_type,

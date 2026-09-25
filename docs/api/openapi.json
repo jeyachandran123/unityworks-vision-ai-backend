@@ -3374,7 +3374,7 @@
     },
     "/api/v1/recorders/test": {
       "post": {
-        "description": "Test a recorder that has not been saved yet, with the password just typed.\n\nNothing is stored. The password is used for this one connection and then\ndropped; it is never logged, echoed or written anywhere.",
+        "description": "Test a recorder that has not been saved yet, with the password just typed.\n\nNothing is stored. The password is used for this one connection and then\ndropped; it is never logged, echoed or written anywhere.\n\n`via` (`ip_address` or `hostname`) tests that one of the two addresses;\nwithout it, the one the recorder would connect with.",
         "operationId": "test_new_recorder_api_v1_recorders_test_post",
         "requestBody": {
           "content": {
@@ -3710,7 +3710,7 @@
     },
     "/api/v1/recorders/{recorder_id}/test": {
       "post": {
-        "description": "Test a saved recorder with its stored password, on one channel.\n\nThe password is resolved through the same provider the runtime uses, so this\nanswers the question \"will a camera on this recorder start\" and not a\nneighbouring one.",
+        "description": "Test a saved recorder with its stored password, on one channel.\n\nThe password is resolved through the same provider the runtime uses, so this\nanswers the question \"will a camera on this recorder start\" and not a\nneighbouring one. `via` tests the recorder's other address instead of the\none it connects with \u2014 the check to run before switching.",
         "operationId": "test_saved_recorder_api_v1_recorders__recorder_id__test_post",
         "parameters": [
           {

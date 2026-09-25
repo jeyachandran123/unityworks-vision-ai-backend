@@ -18,6 +18,13 @@ one transaction. A recorder saved with half its cameras — because the fourth
 one's channel was taken — would be a partial configuration nobody chose, and
 the person would be left to work out which half.
 
+### Every value is the organization's own
+
+Address, domain, port, account, password and brand arrive in the request and
+are stored on this organization's recorder. Nothing on these routes reads a
+deployment-wide CCTV setting, and no request can name a credential reference —
+only a password, which is sealed.
+
 ### Tests are real, and limited
 
 `POST /recorders/test` (before saving) and `POST /recorders/{id}/test` (after)
@@ -96,17 +103,17 @@ async def _audit(
 
 def _connection_fields(payload: dict[str, Any]) -> dict[str, Any]:
     """The editable connection fields a client may send. Never a credential reference."""
-    fields = (
-        "name",
-        "host",
-        "rtsp_port",
-        "username",
-        "brand",
-        "path_template",
-        "stream_main",
-        "stream_sub",
-    )
-    return {field: payload[field] for field in fields if field in payload}
+    return {field: payload[field] for field in recorder_domain.EDITABLE if field in payload}
+
+
+def _via(payload: dict[str, Any]) -> str | None:
+    """Which of the recorder's addresses a test should use, when the caller says."""
+    via = payload.get("via")
+    if via in (None, ""):
+        return None
+    if via not in recorder_domain.ADDRESS_CHOICES:
+        raise ValidationError("choose whether to test the IP address or the domain")
+    return str(via)
 
 
 def _password(payload: dict[str, Any], *, required: bool) -> str | None:
@@ -246,7 +253,8 @@ async def create_recorder(
         detail={
             "name": recorder.name,
             "brand": recorder.brand,
-            "host": recorder.host,
+            "address": recorder.address,
+            "connect_via": recorder.connect_via,
             "credential_scheme": recorder_domain.credential_scheme(recorder.credential_ref),
             "cameras": [camera.camera_key for camera in created],
         },
@@ -533,20 +541,34 @@ async def test_new_recorder(
 
     Nothing is stored. The password is used for this one connection and then
     dropped; it is never logged, echoed or written anywhere.
+
+    `via` (`ip_address` or `hostname`) tests that one of the two addresses;
+    without it, the one the recorder would connect with.
     """
     _no_store(response)
     fields = _connection_fields(payload)
     fields.setdefault("name", "Connection test")
     fields.setdefault("rtsp_port", 554)
+    via = _via(payload)
+    if via and not fields.get("connect_via"):
+        # Testing one address of two is a choice of address for this test.
+        fields["connect_via"] = via
     # Reuses the same validation a save would apply, so a test cannot pass for a
     # configuration the save would then refuse.
-    clean = recorder_domain.clean_connection(**{k: fields.get(k) for k in _CLEAN_KEYS})
+    clean = recorder_domain.clean_connection(**{k: fields.get(k) for k in recorder_domain.EDITABLE})
+    address = clean[via] if via else recorder_domain.dial_address(clean)
+    if not address:
+        raise ValidationError(
+            "enter the domain to test it"
+            if via == "hostname"
+            else "enter the IP address to test it"
+        )
     password = _password(payload, required=True) or ""
     channel = _channel(payload)
-    _throttle(f"{access.tenant_id}:new:{clean['host']}:{clean['rtsp_port']}")
+    _throttle(f"{access.tenant_id}:new:{address}:{clean['rtsp_port']}")
 
     result = await check_connection(
-        host=clean["host"],
+        host=address,
         port=clean["rtsp_port"],
         username=clean["username"],
         password=password,
@@ -560,7 +582,7 @@ async def test_new_recorder(
         access,
         AuditAction.RECORDER_TESTED,
         "(unsaved)",
-        detail={"host": clean["host"], "channel": channel, "outcome": result.outcome},
+        detail={"address": address, "channel": channel, "outcome": result.outcome},
         outcome=AuditOutcome.SUCCESS if result.ok else AuditOutcome.FAILED,
     )
     return result.as_dict()
@@ -582,12 +604,14 @@ async def test_saved_recorder(
 
     The password is resolved through the same provider the runtime uses, so this
     answers the question "will a camera on this recorder start" and not a
-    neighbouring one.
+    neighbouring one. `via` tests the recorder's other address instead of the
+    one it connects with — the check to run before switching.
     """
     _no_store(response)
     service = recorder_domain.RecorderService(session)
     recorder = await service.get(organization_id=access.tenant_id, recorder_id=recorder_id)
     channel = _channel(payload)
+    address = recorder_domain.address_for(recorder, _via(payload))
     _throttle(f"{access.tenant_id}:{recorder.id}")
 
     store = _store(request)
@@ -601,7 +625,7 @@ async def test_saved_recorder(
             access,
             AuditAction.RECORDER_TESTED,
             recorder.id,
-            detail={"channel": channel, "outcome": "credential_unavailable"},
+            detail={"address": address, "channel": channel, "outcome": "credential_unavailable"},
             outcome=AuditOutcome.FAILED,
         )
         return {
@@ -610,6 +634,8 @@ async def test_saved_recorder(
             "message": "This server cannot read the recorder's saved password.",
             "hint": "Set the password again. If that fails, whoever runs the server needs to "
             "check its encryption key (RECORDER_SECRET_KEY).",
+            "address": address,
+            "port": recorder.rtsp_port,
             "channel": channel,
             "elapsed_ms": 0,
             "resolution": None,
@@ -617,7 +643,7 @@ async def test_saved_recorder(
 
     try:
         result = await check_connection(
-            host=recorder.host,
+            host=address,
             port=recorder.rtsp_port,
             username=recorder.username,
             password=password,
@@ -634,22 +660,10 @@ async def test_saved_recorder(
         access,
         AuditAction.RECORDER_TESTED,
         recorder.id,
-        detail={"channel": channel, "outcome": result.outcome},
+        detail={"address": address, "channel": channel, "outcome": result.outcome},
         outcome=AuditOutcome.SUCCESS if result.ok else AuditOutcome.FAILED,
     )
     return result.as_dict()
-
-
-_CLEAN_KEYS = (
-    "name",
-    "host",
-    "rtsp_port",
-    "username",
-    "brand",
-    "path_template",
-    "stream_main",
-    "stream_sub",
-)
 
 
 def _brand_from(clean: dict[str, Any]):

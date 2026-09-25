@@ -133,7 +133,9 @@ def _camera(recorder, *, channel=3, stream_type="main"):
 def _recorder(**overrides):
     values = {
         "id": "r1",
-        "host": "192.168.1.20",
+        "ip_address": "192.168.1.20",
+        "hostname": "",
+        "connect_via": "ip_address",
         "rtsp_port": 554,
         "username": "admin",
         "credential_ref": "recorder:r1",
@@ -144,7 +146,12 @@ def _recorder(**overrides):
         "is_active": True,
         "name": "Gayathri DVR",
     }
+    if "host" in overrides:  # shorthand: an IP, or no address at all
+        values["ip_address"] = overrides.pop("host")
     values.update(overrides)
+    values["address"] = (
+        values["hostname"] if values["connect_via"] == "hostname" else values["ip_address"]
+    )
     return SimpleNamespace(**values)
 
 
@@ -209,7 +216,7 @@ async def test_a_recorder_added_in_the_application_is_dialled_with_its_own_passw
         "/api/v1/recorders",
         json={
             "name": "Gayathri DVR",
-            "host": "192.168.1.20",
+            "ip_address": "192.168.1.20",
             "rtsp_port": 554,
             "username": "admin",
             "password": PASSWORD,
@@ -256,7 +263,7 @@ async def test_a_changed_password_is_used_without_a_restart(estate, client: Asyn
             "/api/v1/recorders",
             json={
                 "name": "Gayathri DVR",
-                "host": "192.168.1.20",
+                "ip_address": "192.168.1.20",
                 "rtsp_port": 554,
                 "username": "admin",
                 "password": "first-password",

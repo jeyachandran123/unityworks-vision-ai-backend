@@ -66,7 +66,8 @@ python scripts/manage.py grant --email you@example.com --cameras all      # came
 python scripts/manage.py grant-operator --email you@example.com           # platform operator
 python scripts/export_openapi.py            # writes docs/api/openapi.json (committed)
 python scripts/export_openapi.py --check    # fails if a route changed without regenerating
-python scripts/seed_cameras.py
+python -m scripts.seal_recorder_passwords            # dry run: recorders still on env:/file: passwords
+python -m scripts.seal_recorder_passwords --apply    # move them into the database, sealed
 python scripts/migrate_observation_partitions.py
 ```
 
@@ -227,7 +228,9 @@ disclosure. Every query is *constructed* already narrowed, never filtered after 
   (`app/domain/retention.py`), and only `RESOLVED` incidents are ever pruned.
 - **Incidents close for exactly two reasons:** a later grounded observation that clears the condition,
   or an explicit authorised operator action. A UI refresh is neither.
-- **Credentials are references.** `Camera.credential_ref` holds `env:CCTV_PASSWORD`, never a password.
+- **Credentials are references.** `Recorder.credential_ref` holds `recorder:<id>` — the password is
+  sealed on that recorder's row under `RECORDER_SECRET_KEY` — never a password. There is no
+  deployment-wide `CCTV_HOST`/`CCTV_PASSWORD`: every recorder value is one organization's row.
   A database dump must not be a credential dump.
 
 ---

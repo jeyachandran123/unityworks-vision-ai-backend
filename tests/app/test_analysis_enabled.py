@@ -188,10 +188,13 @@ class _Live:
 
     def __init__(self) -> None:
         self.started: list[str] = []
+        self.owners: set[str] = set()
 
-    async def start_from_records(self, configs) -> int:
-        # Runtime ids: what `to_rtsp_config` now hands the live runtime.
-        self.started = [str(c.camera_id) for c in configs]
+    async def start_from_records(self, records) -> int:
+        # Runtime ids: what `to_rtsp_config` now hands the live runtime, each
+        # with the organization that owns the camera.
+        self.started = [str(config.camera_id) for _, config in records]
+        self.owners = {organization for organization, _ in records}
         return len(self.started)
 
 
@@ -238,6 +241,7 @@ class TestAnalysisScheduling:
         started = await app_main._start_cameras_from_database(holder)
 
         assert sorted(live.started) == [f"{ORG}:cam-61", f"{ORG}:cam-62"]
+        assert live.owners == {ORG}
         assert started == 2
 
     @pytest.mark.asyncio

@@ -11,9 +11,17 @@ Resolution runs lowest-to-highest, and the last layer to speak wins:
     5. database                  per-organization settings        (Phase 4)
 
 Layer 4 is deliberately not an override of layer 3. A secret enters the earlier
-layers as a **reference** (``CCTV_CREDENTIAL_REF``) and is resolved at layer 4,
-so the value itself never appears in a config file, an environment dump, a log
-line or a ``repr()``. Vision OS declares ``SecretProviderPort`` for exactly this
+layers as a **reference** and is resolved at layer 4, so the value itself never
+appears in a config file, an environment dump, a log line or a ``repr()``.
+
+### CCTV infrastructure is not configuration
+
+No recorder address, domain, port, username or password is a setting. Those are
+values of one organization's recorder, held in the database (layer 5) and
+entered through the application. The only CCTV secret here is the master key
+that seals recorder passwords, ``RECORDER_SECRET_KEY``. What remains below is
+how the *application* behaves — frame rates, queues, back-off — the same for
+every organization. Vision OS declares ``SecretProviderPort`` for exactly this
 and it is bound in Phase 2; until then the plain variables carry a
 development-only marking in ``.env.example``.
 
@@ -244,28 +252,13 @@ class Settings(BaseSettings):
 
     # ── CCTV / live runtime ──────────────────────────────────────────────────
     #
-    # Nothing here starts a camera. `feature_live_cctv` gates the runtime,
-    # `cctv_channels` names which channels exist, and the application lifespan
-    # is the only caller that starts a session. Three deliberate acts.
-    cctv_host: str = ""
-    cctv_rtsp_port: int = 554
-    #: EXPLICIT allowlist, e.g. "1,2,5,7". **Empty selects nothing** — a
-    #: 16-channel DVR must not become 16 pipelines because nobody said otherwise.
-    cctv_channels: str = ""
-    cctv_stream_type: Literal["main", "sub"] = "sub"
-    cctv_username: str = ""
-    #: A REFERENCE, resolved through the secret provider — never a password.
-    #: `env:CCTV_PASSWORD`, `file:/run/secrets/dvr`, `literal:…` (development).
-    cctv_credential_ref: str = ""
-    #: The DVR password itself, when the deployment keeps it in configuration.
-    #:
-    #: `cctv_credential_ref` names *where* the secret is; this is the value for
-    #: the common case where "where" is this application's own `.env`.
-    #: pydantic-settings loads `.env` into this object and **not** into
-    #: `os.environ`, so a provider reading `os.environ` cannot see it — which is
-    #: exactly how sixteen cameras sat at CONNECTING with a correct password on
-    #: disk. `secret_environment()` closes that gap.
-    cctv_password: SecretStr = SecretStr("")
+    # Nothing here starts a camera, and nothing here says where a camera is.
+    # `feature_live_cctv` gates the runtime for the whole deployment; which
+    # cameras exist, on which recorder, at which address, with which account,
+    # is each organization's own data. The `CCTV_HOST`, `CCTV_USERNAME`,
+    # `CCTV_PASSWORD` and `CCTV_CHANNELS` settings that once described a single
+    # DVR for the whole application are gone, and are ignored if still present.
+    #
     #: Base64 of 32 bytes. Seals the passwords of recorders that keep their
     #: credential in the database rather than in the environment.
     #:
@@ -292,8 +285,10 @@ class Settings(BaseSettings):
     cctv_reconnect_max_ms: float = 60_000.0
     #: 0 retries indefinitely, with the delay still capped.
     cctv_reconnect_max_attempts: int = 0
-    #: Tenant that owns lifespan-started camera sessions. Phase 4 moves camera
-    #: ownership into the database and this becomes a per-camera column.
+    #: The organization the compliance pass evaluates, and the one an
+    #: unattributable audit row (a failed sign-in for an unknown email) is filed
+    #: under. **Not** the owner of any camera session: every camera is started
+    #: under its own organization, from its own row.
     default_tenant_id: str = "default"
 
     # ── Evidence & imagery ───────────────────────────────────────────────────
@@ -479,9 +474,6 @@ class Settings(BaseSettings):
         import os
 
         overlay = dict(os.environ)
-        password = self.cctv_password.get_secret_value()
-        if password and not overlay.get("CCTV_PASSWORD"):
-            overlay["CCTV_PASSWORD"] = password
         key = self.vision_understander_api_key.get_secret_value()
         if key and not overlay.get("VISION_NVIDIA_API_KEY"):
             overlay["VISION_NVIDIA_API_KEY"] = key

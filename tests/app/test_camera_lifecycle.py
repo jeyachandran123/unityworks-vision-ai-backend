@@ -39,6 +39,10 @@ async def estate(seeded, monkeypatch):
     """
     app = seeded
     monkeypatch.setattr(app.state.settings, "feature_live_cctv", True)
+    # These are about the analysis session. Starting a camera also opens its
+    # Live Wall stream, which would dial a real socket from a test; that half
+    # is covered, with the wall replaced, in `test_camera_wall_lifecycle.py`.
+    monkeypatch.setattr(app.state.settings, "feature_camera_wall", False)
     async with app.state.database.session_scope() as session:
         _, admin = make_user(
             email="admin@example.com",

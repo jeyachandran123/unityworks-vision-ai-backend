@@ -23,6 +23,11 @@ REPO = Path(__file__).resolve().parents[2]
 #: The revision immediately before recorders existed.
 BEFORE = "b4c8e1a37d90"
 
+#: The recorders revision itself. Pinned rather than `head`: these tests read
+#: `recorders.host`, which the next revision splits into `ip_address` and
+#: `hostname` (see `test_recorder_address_migration.py`).
+AFTER = "c7d3e9a14b52"
+
 #: Two organizations, three distinct recorders' worth of connection details.
 #:
 #: `org-g` has fifteen cameras on one DVR and one camera on a second box — the
@@ -67,7 +72,7 @@ def _camera(org: str, zone: str, key: str, channel: int, host: str, **extra) -> 
 
 CAMERAS = "\n".join(
     [
-        *(_camera("org-g", "z-g", f"cam-{n:02d}", n, "gayatri.freemyip.com") for n in range(1, 16)),
+        *(_camera("org-g", "z-g", f"cam-{n:02d}", n, "dvr-g.example.net") for n in range(1, 16)),
         # The one on a different box. Its own recorder, not the big one's.
         _camera("org-g", "z-g", "cam-16", 1, "10.0.4.9", username="viewer"),
         _camera("org-p", "z-p", "cam-01", 3, "pcc1.example", stream_type="main", enabled=0),
@@ -141,7 +146,7 @@ def test_every_camera_keeps_the_connection_it_had(tmp_path: Path) -> None:
     database = _seeded(tmp_path)
     before = _connections_before(database)
 
-    result = _alembic(database, "upgrade", "head")
+    result = _alembic(database, "upgrade", AFTER)
     assert result.returncode == 0, result.stdout + result.stderr
 
     assert _connections_after(database) == before
@@ -152,14 +157,14 @@ def test_a_camera_on_a_different_box_gets_its_own_recorder(tmp_path: Path) -> No
     and it would have kept streaming — from the wrong place, with nothing to say
     so."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     recorders = _rows(
         database, "SELECT organization_id, host, username FROM recorders ORDER BY organization_id"
     )
     assert recorders == [
         ("org-g", "10.0.4.9", "viewer"),
-        ("org-g", "gayatri.freemyip.com", "admin"),
+        ("org-g", "dvr-g.example.net", "admin"),
         ("org-p", "pcc1.example", "admin"),
     ]
 
@@ -168,7 +173,7 @@ def test_an_organization_without_cameras_gets_no_recorder(tmp_path: Path) -> Non
     """A recorder invented for nothing would be a box on the Recorders page that
     does not exist."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     assert _rows(
         database, "SELECT count(*) FROM recorders WHERE organization_id = 'org-empty'"
@@ -180,7 +185,7 @@ def test_existing_deployments_keep_their_environment_password(tmp_path: Path) ->
     keep working. The reference moves to the recorder unchanged, and nothing is
     sealed that was not sealed before."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     assert _rows(
         database,
@@ -193,12 +198,12 @@ def test_the_largest_group_is_named_for_its_organization(tmp_path: Path) -> None
     """Names are what people read on the Recorders page. The main DVR is simply
     "Gayathri recorder"; the second box says which address it is."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     names = dict(
         _rows(database, "SELECT host, name FROM recorders WHERE organization_id = 'org-g'")
     )
-    assert names["gayatri.freemyip.com"] == "Gayathri recorder"
+    assert names["dvr-g.example.net"] == "Gayathri recorder"
     assert names["10.0.4.9"] == "Gayathri recorder (10.0.4.9)"
 
 
@@ -206,14 +211,14 @@ def test_recorders_start_active_with_the_brand_that_was_hardcoded(tmp_path: Path
     """Every camera was dialled with the Dahua path before this migration,
     because that was the only path there was."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     assert _rows(database, "SELECT DISTINCT brand, is_active FROM recorders") == [("dahua", 1)]
 
 
 def test_no_camera_is_left_without_a_recorder(tmp_path: Path) -> None:
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     assert _rows(database, "SELECT count(*) FROM cameras WHERE recorder_id IS NULL") == [(0,)]
 
@@ -222,7 +227,7 @@ def test_the_columns_that_moved_are_gone_from_cameras(tmp_path: Path) -> None:
     """Left behind they would be read by something later and silently disagree
     with the recorder they were copied from."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     columns = {row[0] for row in _rows(database, "SELECT name FROM pragma_table_info('cameras')")}
     assert columns.isdisjoint({"host", "rtsp_port", "username", "credential_ref"})
@@ -233,7 +238,7 @@ def test_enabled_flags_survive(tmp_path: Path) -> None:
     """A disabled camera must not come back enabled because its row was rebuilt."""
     database = _seeded(tmp_path)
     before = _rows(database, "SELECT organization_id, camera_key, enabled FROM cameras")
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     assert _rows(database, "SELECT organization_id, camera_key, enabled FROM cameras") == before
 
@@ -242,7 +247,7 @@ def test_downgrade_refuses_rather_than_guessing(tmp_path: Path) -> None:
     """Once a recorder has been edited, which of its values a camera originally
     held is not recorded anywhere. Restore from the backup instead."""
     database = _seeded(tmp_path)
-    _alembic(database, "upgrade", "head")
+    _alembic(database, "upgrade", AFTER)
 
     result = _alembic(database, "downgrade", BEFORE)
     assert result.returncode != 0

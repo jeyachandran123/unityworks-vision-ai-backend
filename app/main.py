@@ -95,12 +95,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.cache = Cache(cfg)
     app.state.auth = AuthService(TokenService(cfg))
     app.state.vision = VisionRuntime(cfg)
-    # One credential provider for the whole process. It resolves `env:` and
-    # `file:` exactly as before, and additionally `recorder:<id>` — a password
-    # typed into the application and sealed on the recorder's row. The wall and
-    # the analysis sessions share it, so they can never disagree about whether
-    # a camera can authenticate: they once did, and the wall streamed four
-    # cameras while analysis failed to sign in to the same DVR.
+    # One credential provider for the whole process. It opens `recorder:<id>` —
+    # a password typed into the application and sealed on that recorder's row.
+    # The fallback resolves `env:`/`file:` only for rows migrated from the old
+    # per-camera configuration, and only from the real process environment:
+    # there is no CCTV password setting any more for it to find. Such rows are
+    # reported at start-up. The wall and the analysis sessions share this one
+    # provider, so they can never disagree about whether a camera can
+    # authenticate: they once did, and the wall streamed four cameras while
+    # analysis failed to sign in to the same DVR.
     from app.vision.recorder_credentials import RecorderCredentialStore, RecorderSecretProvider
     from app.vision.secrets import EnvironmentSecretProvider
 
@@ -439,7 +442,11 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
             # detection, tracking, cropping and model calls for four.
             # `enabled_for_runtime` has already dropped cameras whose recorder
             # is deactivated or has no address.
-            configs = [to_rtsp_config(row) for row in rows if row.analysis_enabled]
+            # Each camera keeps its own organization, so its session is filed
+            # under the people who own it rather than a deployment default.
+            records = [
+                (row.organization_id, to_rtsp_config(row)) for row in rows if row.analysis_enabled
+            ]
             watched_only = sorted(
                 to_rtsp_config(row).camera_id for row in rows if not row.analysis_enabled
             )
@@ -460,16 +467,16 @@ async def _start_cameras_from_database(app: FastAPI) -> int | None:
         )
         return None
 
-    if not configs:
+    if not records:
         # Not an error. A deployment with no enabled camera is a valid
         # deployment, and it says so rather than failing to boot.
         logger.info(
-            "no enabled camera rows; nothing to start. Cameras are managed at "
-            "/api/v1/cameras, not by CCTV_CHANNELS."
+            "no enabled camera rows; nothing to start. Recorders and cameras are "
+            "configured per organization, in the application."
         )
         return 0
 
-    return await live.start_from_records(configs)
+    return await live.start_from_records(records)
 
 
 def _build_compliance_driver(app: FastAPI, cfg, vision):
@@ -643,7 +650,33 @@ async def _load_recorder_credentials(app: FastAPI, *, fatal: bool) -> int | None
             logger.critical("refusing to start: {}", exc)
             raise
         logger.critical("{}", exc)
+    await _report_legacy_credentials(app)
     return len(sealed)
+
+
+async def _report_legacy_credentials(app: FastAPI) -> None:
+    """Name every recorder still reading its password from the environment.
+
+    A warning rather than a refusal: those cameras worked yesterday, and
+    stopping them to make a point would take kitchens off the wall. But a
+    password in the server's environment is one value standing in for an
+    organization's recorder, so it is said at every start until it is moved.
+    """
+    from app.domain.recorders import legacy_credential_recorders
+
+    try:
+        async with app.state.database.session_scope() as session:
+            legacy = await legacy_credential_recorders(session)
+    except Exception:  # noqa: BLE001 - a report, never a reason to stop
+        return
+    if legacy:
+        logger.warning(
+            "{} recorder(s) still read their password from the server environment rather "
+            "than the database: {}. Set the password on each recorder's page, or run "
+            "scripts/seal_recorder_passwords.py.",
+            len(legacy),
+            ", ".join(f"{name} ({organization})" for organization, name in legacy),
+        )
 
 
 async def _bootstrap_cameras_once(
