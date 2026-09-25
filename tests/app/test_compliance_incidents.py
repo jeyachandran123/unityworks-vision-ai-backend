@@ -95,7 +95,7 @@ def _finding(state: ComplianceState, *, object_id: str = "obj-1", camera: str = 
 
 
 class _Settings:
-    default_tenant_id = "org-test"
+    """No organization lives here: the pass is told which one it serves."""
 
 
 async def apply(app, findings, cameras=None):
@@ -113,7 +113,9 @@ async def apply(app, findings, cameras=None):
         database=app.state.database,
         rules=_rules(),
     )
-    return await driver.apply(findings, cameras=cameras or {"cam-12": "zone-01"})
+    return await driver.apply(
+        findings, cameras=cameras or {"cam-12": "zone-01"}, organization_id="org-test"
+    )
 
 
 async def _incidents(app, organization_id: str = "org-test"):

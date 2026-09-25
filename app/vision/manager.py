@@ -200,17 +200,13 @@ class LiveRuntime:
                 )
         return started
 
-    async def start_live(
-        self, config: RtspCameraConfig, *, tenant_id: str | None = None
-    ) -> VisionSession:
-        """Start one live camera.
+    async def start_live(self, config: RtspCameraConfig, *, tenant_id: str) -> VisionSession:
+        """Start one live camera, for the organization that owns it.
 
-        `tenant_id` is the organization the camera belongs to. It defaults to
-        the deployment's own tenant for the boot path, which reads a single
-        configured deployment; a camera started from the product passes its
-        own, because `visible()` and `get()` filter sessions on it and a
-        session filed under the wrong organization is invisible to the people
-        who own the camera.
+        `tenant_id` is required: `visible()` and `get()` filter sessions on it,
+        the platform files every observation under it, and a session filed
+        under the wrong organization is invisible to the people who own the
+        camera. There is no deployment-wide default to fall back to.
         """
         source = LiveRtspSource(
             config,
@@ -225,7 +221,7 @@ class LiveRuntime:
             source,
             SessionSpec(
                 camera_id=config.camera_id,
-                tenant_id=tenant_id or self._settings.default_tenant_id,
+                tenant_id=tenant_id,
                 queue_capacity=self._settings.cctv_queue_capacity,
                 analysis_fps=config.analysis_fps,
             ),

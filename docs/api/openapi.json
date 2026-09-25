@@ -1481,7 +1481,7 @@
     },
     "/api/v1/devtools/compliance": {
       "get": {
-        "description": "The live compliance verdicts, and the rules that produced them.\n\nVerdicts are recomputed from current Vision State on each call rather than\nread from a cache, so what this returns is what the rules say *now*. It does\nnot write: incidents are opened by the driver's own pass, and a read that\nraised incidents would make every refresh of a dashboard a business event.",
+        "description": "The live compliance verdicts, and the rules that produced them.\n\nVerdicts are recomputed from current Vision State on each call rather than\nread from a cache, so what this returns is what the rules say *now*. It does\nnot write: incidents are opened by the driver's own pass, and a read that\nraised incidents would make every refresh of a dashboard a business event.\n\nThe caller's own organization only: its cameras, read as its tenant, and\nits own last pass \u2014 never another organization's counters.",
         "operationId": "compliance_state_api_v1_devtools_compliance_get",
         "responses": {
           "200": {

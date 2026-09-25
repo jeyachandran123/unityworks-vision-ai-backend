@@ -122,13 +122,16 @@ async def real_observations(request: Request, access: CurrentAccess) -> dict[str
 
 
 @router.get("/compliance", dependencies=[_REQUIRE_DEVTOOLS])
-async def compliance_state(request: Request) -> dict[str, Any]:
+async def compliance_state(request: Request, access: CurrentAccess) -> dict[str, Any]:
     """The live compliance verdicts, and the rules that produced them.
 
     Verdicts are recomputed from current Vision State on each call rather than
     read from a cache, so what this returns is what the rules say *now*. It does
     not write: incidents are opened by the driver's own pass, and a read that
     raised incidents would make every refresh of a dashboard a business event.
+
+    The caller's own organization only: its cameras, read as its tenant, and
+    its own last pass — never another organization's counters.
     """
     driver = getattr(request.app.state, "compliance", None)
     if driver is None:
@@ -139,8 +142,10 @@ async def compliance_state(request: Request) -> dict[str, Any]:
 
     from app.vision.compliance_driver import _finding_wire
 
-    cameras = await driver.cameras()
-    run, findings = driver.evaluate(driver.snapshot(tuple(cameras)))
+    cameras = await driver.cameras(access.tenant_id)
+    run, findings = driver.evaluate(
+        driver.snapshot(tuple(cameras), organization_id=access.tenant_id)
+    )
 
     rules = driver.evaluator.rules
     return {
@@ -156,7 +161,7 @@ async def compliance_state(request: Request) -> dict[str, Any]:
             for r in rules.rules
         ],
         "summary": run.to_wire(),
-        "last_applied_pass": driver.last_pass.to_wire(),
+        "last_applied_pass": driver.last_pass_for(access.tenant_id).to_wire(),
         "findings": [_finding_wire(f) for f in findings],
     }
 

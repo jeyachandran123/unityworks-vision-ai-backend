@@ -295,6 +295,7 @@ async def _create_cameras(session, request, access, recorder, requested: list) -
             channel=channel,
             recorder_id=recorder.id,
             stream_type=str(item.get("stream_type") or "sub"),
+            wall_fps=item.get("wall_fps", camera_domain.DEFAULT_WALL_FPS),
             purpose=str(item.get("purpose") or ""),
             zone_id=zone_id,
             enabled=False,

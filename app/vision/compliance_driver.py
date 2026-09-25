@@ -21,6 +21,21 @@ tenants, databases or incidents. `app/domain/incidents.py` knows about incidents
 and nothing about rules. This module is the only place that knows both, which
 is what keeps either of them replaceable.
 
+### Every organization, each on its own
+
+One pass per **active** organization, under that organization's own tenant,
+reading its switched-on cameras by the identity their observations are stored
+under — `organization:camera_key`, the runtime identity. A finding becomes an
+incident in the organization that owns the camera, on that camera's own key
+and zone. Nothing here names an organization: the list comes from the database
+on every pass, so a new organization is evaluated from its first camera, with
+no configuration and no restart.
+
+This replaced a pass that read one configured organization by bare camera key.
+Observations moved to the runtime identity on 2026-09-03, the bare-key read
+matched nothing, and no alert was raised anywhere for three weeks while
+perception ran normally — see `tests/app/test_compliance_every_organization.py`.
+
 ### Why a timer rather than a subscription
 
 Vision State publishes deltas, and subscribing would be tidier. It would also
@@ -42,6 +57,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 from loguru import logger
+
+from app.domain.runtime_identity import SEPARATOR, runtime_camera_id
 
 
 @dataclass(slots=True)
@@ -82,6 +99,31 @@ class CompliancePass:
             self.compliant += 1
         else:
             self.unknown += 1
+
+    def merge(self, other: CompliancePass) -> None:
+        """Add another organization's pass into this one — for totals only."""
+        for name in (
+            "subjects",
+            "findings",
+            "compliant",
+            "violations",
+            "unknown",
+            "incidents_opened",
+            "incidents_updated",
+            "incidents_resolved",
+            "errors",
+            "evidence_captured",
+            "notifications_sent",
+            "notifications_failed",
+        ):
+            setattr(self, name, getattr(self, name) + getattr(other, name))
+        self.capability_gaps = tuple(sorted({*self.capability_gaps, *other.capability_gaps}))
+        for rule_id, counts in other.by_rule.items():
+            bucket = self.by_rule.setdefault(
+                rule_id, {"compliant": 0, "violation": 0, "unknown": 0}
+            )
+            for state, count in counts.items():
+                bucket[state] = bucket.get(state, 0) + count
 
     def to_wire(self) -> dict[str, Any]:
         return {
@@ -130,8 +172,9 @@ class ComplianceDriver:
         "_evaluator",
         "_interval_s",
         "_last",
+        "_last_by_organization",
         "_notifier",
-        "_reader",
+        "_readers",
         "_settings",
         "_task",
         "_vision",
@@ -158,7 +201,9 @@ class ComplianceDriver:
         self._interval_s = interval_s
         self._task: asyncio.Task[None] | None = None
         self._last = CompliancePass()
-        self._reader: Any = None
+        self._last_by_organization: dict[str, CompliancePass] = {}
+        #: One reader per organization: each reads as its own tenant's principal.
+        self._readers: dict[str, Any] = {}
         self._wall = wall
         self._notifier = notifier
 
@@ -168,7 +213,12 @@ class ComplianceDriver:
 
     @property
     def last_pass(self) -> CompliancePass:
+        """The last pass, totalled across organizations. Counters only."""
         return self._last
+
+    def last_pass_for(self, organization_id: str) -> CompliancePass:
+        """The last pass for one organization — what a screen in it may show."""
+        return self._last_by_organization.get(organization_id, CompliancePass())
 
     def start(self) -> None:
         if self._task is None:
@@ -194,51 +244,70 @@ class ComplianceDriver:
 
     # -- reading ------------------------------------------------------------
 
-    def _observation_reader(self) -> Any:
+    def _observation_reader(self, organization_id: str) -> Any:
+        """A reader acting as this organization — Vision OS refuses any other."""
         exposure = getattr(getattr(self._vision, "composition", None), "exposure", None)
         if exposure is None:
             return None
-        if self._reader is None:
+        reader = self._readers.get(organization_id)
+        if reader is None:
             from compliance import ObservationReader
             from vision_os.core.model.api import Principal
             from vision_os.core.model.ids import TenantId
 
-            self._reader = ObservationReader(
+            reader = ObservationReader(
                 exposure.api,
-                principal=Principal(
-                    subject="compliance",
-                    tenant_id=TenantId(self._settings.default_tenant_id),
-                ),
+                principal=Principal(subject="compliance", tenant_id=TenantId(organization_id)),
             )
-        return self._reader
+            self._readers[organization_id] = reader
+        return reader
 
-    async def cameras(self) -> dict[str, str | None]:
-        """`camera_key → zone_id` for this tenant's enabled cameras.
+    async def estate(self) -> dict[str, dict[str, str | None]]:
+        """`{organization_id: {camera_key: zone_id}}` — every active
+        organization's switched-on cameras, read fresh on every pass.
 
         From the database, because the incident needs the placement and the
-        camera row is the only place that mapping is durable.
+        camera row is the only place that mapping is durable. A suspended or
+        archived organization is not evaluated: nobody there should be paged.
         """
         from sqlalchemy import select
 
+        from app.authorization.model import OrganizationStatus
         from app.domain.models import Camera
+        from app.users.models import Organization
 
         async with self._database.session_scope() as session:
-            rows = await session.execute(
-                select(Camera.camera_key, Camera.zone_id).where(
-                    Camera.organization_id == self._settings.default_tenant_id,
-                    Camera.enabled.is_(True),
+            rows = (
+                await session.execute(
+                    select(Camera.organization_id, Camera.camera_key, Camera.zone_id)
+                    .join(Organization, Organization.id == Camera.organization_id)
+                    .where(
+                        Camera.enabled.is_(True),
+                        Organization.status == OrganizationStatus.ACTIVE.value,
+                    )
+                    .order_by(Camera.organization_id, Camera.camera_key)
                 )
-            )
-            return dict(rows.all())
+            ).all()
+        estate: dict[str, dict[str, str | None]] = {}
+        for organization_id, camera_key, zone_id in rows:
+            estate.setdefault(organization_id, {})[camera_key] = zone_id
+        return estate
 
-    def snapshot(self, camera_keys: tuple[str, ...]) -> Any:
+    async def cameras(self, organization_id: str) -> dict[str, str | None]:
+        """`camera_key → zone_id` for one organization's switched-on cameras."""
+        return (await self.estate()).get(organization_id, {})
+
+    def snapshot(self, camera_keys: tuple[str, ...], *, organization_id: str) -> Any:
         """Confirmed objects the platform is currently willing to vouch for.
+
+        Asked as the organization, for the ids its observations are stored
+        under: `organization:camera_key`. A bare key names no partition.
 
         `StateFilter` is left at its default, which excludes `PROVISIONAL`
         objects. Phase 6A.4 rejected widening it to populate a screen; widening
         it to raise an incident against an unconfirmed object would be worse.
         """
-        reader = self._observation_reader()
+        reader = self._observation_reader(organization_id)
         if reader is None or not camera_keys:
             return None
 
@@ -247,8 +316,10 @@ class ComplianceDriver:
 
         return reader.read(
             Scope(
-                tenant_id=TenantId(self._settings.default_tenant_id),
-                camera_ids=tuple(CameraId(c) for c in camera_keys),
+                tenant_id=TenantId(organization_id),
+                camera_ids=tuple(
+                    CameraId(runtime_camera_id(organization_id, key)) for key in camera_keys
+                ),
             )
         )
 
@@ -320,7 +391,9 @@ class ComplianceDriver:
             logger.debug("decision frame lookup failed: {}: {}", type(exc).__name__, exc)
             return None
 
-    async def _capture_evidence(self, session: Any, *, camera_key: str, finding: Any) -> str:
+    async def _capture_evidence(
+        self, session: Any, *, camera_key: str, finding: Any, organization_id: str
+    ) -> str:
         """Store **the frame the decision was made on** as durable evidence.
 
         **Off unless the deployment turns it on.** Storing images of
@@ -360,7 +433,10 @@ class ComplianceDriver:
         if not getattr(self._settings, "evidence_capture", False):
             return ""
 
-        decision = self._decision_frame(camera_key=camera_key, finding=finding)
+        # Retained frames are filed under the id the platform analysed them
+        # with — the one the finding carries — and the wall under the runtime
+        # identity. The stored record takes the camera's own key.
+        decision = self._decision_frame(camera_key=str(finding.subject.camera_id), finding=finding)
         if decision is not None:
             jpeg = decision.jpeg
             captured_at = datetime.fromtimestamp(decision.captured_at_ns / 1_000_000_000, tz=UTC)
@@ -369,7 +445,7 @@ class ComplianceDriver:
         else:
             if self._wall is None:
                 return ""
-            stream = self._wall.get(camera_key)
+            stream = self._wall.get(runtime_camera_id(organization_id, camera_key))
             if stream is None:
                 return ""
             _, jpeg = stream.latest(0, 0.0)
@@ -390,7 +466,7 @@ class ComplianceDriver:
             # and a crop that then fails to store costs a thumbnail, not the
             # photograph the operator actually needs.
             await store.put(
-                organization_id=self._settings.default_tenant_id,
+                organization_id=organization_id,
                 evidence_ref=ref,
                 camera_key=camera_key,
                 payload=bytes(jpeg),
@@ -415,7 +491,7 @@ class ComplianceDriver:
         for exhibit in exhibits.crops:
             try:
                 await store.put(
-                    organization_id=self._settings.default_tenant_id,
+                    organization_id=organization_id,
                     evidence_ref=exhibit.evidence_ref,
                     camera_key=camera_key,
                     payload=exhibit.jpeg,
@@ -463,20 +539,44 @@ class ComplianceDriver:
     # -- writing ------------------------------------------------------------
 
     async def run_once(self) -> CompliancePass:
-        """One full pass: read, decide, persist. Safe to call from a route."""
-        cameras = await self.cameras()
-        run, findings = self.evaluate(self.snapshot(tuple(cameras)))
-        self._last = await self.apply(findings, cameras=cameras, run=run)
-        return self._last
+        """One full pass over every active organization. Safe to call from a route.
+
+        Each organization is read, decided and persisted on its own; one that
+        fails is counted as an error in its own pass and the rest carry on.
+        """
+        total = CompliancePass()
+        passes: dict[str, CompliancePass] = {}
+        for organization_id, cameras in (await self.estate()).items():
+            try:
+                run, findings = self.evaluate(
+                    self.snapshot(tuple(cameras), organization_id=organization_id)
+                )
+                run = await self.apply(
+                    findings, cameras=cameras, organization_id=organization_id, run=run
+                )
+            except Exception as exc:  # noqa: BLE001 - one organization, not the pass
+                run = CompliancePass(errors=1)
+                logger.warning(
+                    "compliance pass for {} failed: {}: {}",
+                    organization_id,
+                    type(exc).__name__,
+                    exc,
+                )
+            passes[organization_id] = run
+            total.merge(run)
+        self._last_by_organization = passes
+        self._last = total
+        return total
 
     async def apply(
         self,
         findings: Any,
         *,
         cameras: dict[str, str | None],
+        organization_id: str,
         run: CompliancePass | None = None,
     ) -> CompliancePass:
-        """Move the incident queue to match these findings.
+        """Move this organization's incident queue to match these findings.
 
         Separate from `run_once` because reading Vision State and deciding what
         an incident should look like are different jobs with different failure
@@ -495,11 +595,20 @@ class ComplianceDriver:
             for finding in findings:
                 if finding.severity not in RAISES_INCIDENTS:
                     continue
-                camera_key = str(finding.subject.camera_id)
+                camera_key = _camera_key_of(str(finding.subject.camera_id), organization_id)
+                if camera_key is None:
+                    # Names another organization's camera. Never filed here.
+                    run.errors += 1
+                    logger.warning(
+                        "compliance refused a finding on {} in the pass for {}",
+                        finding.subject.camera_id,
+                        organization_id,
+                    )
+                    continue
                 try:
                     if finding.state is ComplianceState.VIOLATION:
                         incident, created = await service.open(
-                            organization_id=self._settings.default_tenant_id,
+                            organization_id=organization_id,
                             zone_id=cameras.get(camera_key),
                             camera_key=camera_key,
                             rule_id=finding.rule_id,
@@ -523,7 +632,10 @@ class ComplianceDriver:
                         # deduplication exists to prevent, moved one layer out.
                         if created:
                             ref = await self._capture_evidence(
-                                session, camera_key=camera_key, finding=finding
+                                session,
+                                camera_key=camera_key,
+                                finding=finding,
+                                organization_id=organization_id,
                             )
                             if ref:
                                 incident.evidence_refs = ref
@@ -537,7 +649,7 @@ class ComplianceDriver:
                         # on, and closing on "we can no longer see the violation"
                         # is how a safety system learns to lie.
                         resolved = await service.resolve_by_observation(
-                            organization_id=self._settings.default_tenant_id,
+                            organization_id=organization_id,
                             camera_key=camera_key,
                             object_id=str(finding.subject.object_id),
                             rule_id=finding.rule_id,
@@ -561,6 +673,19 @@ class ComplianceDriver:
                 run.violations,
             )
         return run
+
+
+def _camera_key_of(platform_camera_id: str, organization_id: str) -> str | None:
+    """The camera's own key, from the id the platform carries.
+
+    `org:cam-12` in the pass for `org` is `cam-12`. A bare key is its own key.
+    A runtime id belonging to another organization is `None`: it is not this
+    organization's camera, whatever its key looks like.
+    """
+    if SEPARATOR not in platform_camera_id:
+        return platform_camera_id
+    owner, _, camera_key = platform_camera_id.partition(SEPARATOR)
+    return camera_key if owner == organization_id and camera_key else None
 
 
 #: How many crops one incident may keep. The alert subject first, then the

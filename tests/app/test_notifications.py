@@ -24,7 +24,6 @@ from tests.app.test_compliance_incidents import _finding, _incidents, _rules
 
 
 class _Settings:
-    default_tenant_id = "org-test"
     evidence_capture = False
     evidence_path = "./var/evidence-test"
     evidence_retention_days = 30
@@ -58,7 +57,7 @@ async def _run(app, findings, *, settings=None, notifier=None, wall=None):
         wall=wall,
         notifier=notifier,
     )
-    return await driver.apply(findings, cameras={"cam-12": "rest-01"})
+    return await driver.apply(findings, cameras={"cam-12": "rest-01"}, organization_id="org-test")
 
 
 class TestChannelSelection:
@@ -84,9 +83,7 @@ class TestDispatch:
     @pytest.mark.asyncio
     async def test_a_new_violation_notifies_once(self, app):
         channel = _RecordingChannel()
-        run = await _run(
-            app, [_finding(ComplianceState.VIOLATION)], notifier=Notifier(channel)
-        )
+        run = await _run(app, [_finding(ComplianceState.VIOLATION)], notifier=Notifier(channel))
         assert run.incidents_opened == 1
         assert run.notifications_sent == 1
         assert len(channel.sent) == 1
@@ -105,9 +102,7 @@ class TestDispatch:
 
         await _run(app, [_finding(ComplianceState.VIOLATION)], notifier=notifier)
         for _ in range(5):
-            run = await _run(
-                app, [_finding(ComplianceState.VIOLATION)], notifier=notifier
-            )
+            run = await _run(app, [_finding(ComplianceState.VIOLATION)], notifier=notifier)
             assert run.notifications_sent == 0
 
         assert len(channel.sent) == 1, "a running violation notified more than once"
@@ -117,18 +112,14 @@ class TestDispatch:
     async def test_unknown_never_notifies(self, app):
         """The four-state design must not be undone at the last step."""
         channel = _RecordingChannel()
-        run = await _run(
-            app, [_finding(ComplianceState.UNKNOWN)], notifier=Notifier(channel)
-        )
+        run = await _run(app, [_finding(ComplianceState.UNKNOWN)], notifier=Notifier(channel))
         assert run.notifications_sent == 0
         assert channel.sent == []
 
     @pytest.mark.asyncio
     async def test_compliant_never_notifies(self, app):
         channel = _RecordingChannel()
-        await _run(
-            app, [_finding(ComplianceState.COMPLIANT)], notifier=Notifier(channel)
-        )
+        await _run(app, [_finding(ComplianceState.COMPLIANT)], notifier=Notifier(channel))
         assert channel.sent == []
 
     @pytest.mark.asyncio
@@ -136,9 +127,7 @@ class TestDispatch:
         import dataclasses
 
         channel = _RecordingChannel()
-        finding = dataclasses.replace(
-            _finding(ComplianceState.VIOLATION), severity="informational"
-        )
+        finding = dataclasses.replace(_finding(ComplianceState.VIOLATION), severity="informational")
         run = await _run(app, [finding], notifier=Notifier(channel))
         assert (run.incidents_opened, run.notifications_sent) == (0, 0)
         assert channel.sent == []
@@ -248,16 +237,12 @@ class TestEvidenceCapture:
         assert settings.evidence_capture is False
 
         wall = self._Wall(b"\xff\xd8fake-jpeg\xff\xd9")
-        run = await _run(
-            app, [_finding(ComplianceState.VIOLATION)], settings=settings, wall=wall
-        )
+        run = await _run(app, [_finding(ComplianceState.VIOLATION)], settings=settings, wall=wall)
         assert run.evidence_captured == 0
         assert (await _incidents(app))[0].evidence_refs in ("", None)
 
     @pytest.mark.asyncio
-    async def test_an_enabled_deployment_stores_a_frame_against_the_incident(
-        self, app, tmp_path
-    ):
+    async def test_an_enabled_deployment_stores_a_frame_against_the_incident(self, app, tmp_path):
         from app.domain.evidence import EvidenceStore
 
         settings = _Settings()
@@ -273,9 +258,9 @@ class TestEvidenceCapture:
         assert incident.evidence_refs, "the incident must carry the handle"
 
         async with app.state.database.session_scope() as session:
-            record = await EvidenceStore(
-                session, root=settings.evidence_path
-            ).metadata(organization_id="org-test", evidence_ref=incident.evidence_refs)
+            record = await EvidenceStore(session, root=settings.evidence_path).metadata(
+                organization_id="org-test", evidence_ref=incident.evidence_refs
+            )
 
         # Right camera, right subject, its own honest timestamp.
         assert record.camera_key == "cam-12"
@@ -291,7 +276,9 @@ class TestEvidenceCapture:
         settings.evidence_capture = True
 
         run = await _run(
-            app, [_finding(ComplianceState.VIOLATION)], settings=settings,
+            app,
+            [_finding(ComplianceState.VIOLATION)],
+            settings=settings,
             wall=self._Wall(None),
         )
         assert run.incidents_opened == 1
@@ -305,9 +292,7 @@ class TestEvidenceCapture:
         settings.evidence_path = str(tmp_path / "evidence")
         wall = self._Wall(b"\xff\xd8fake\xff\xd9")
 
-        first = await _run(
-            app, [_finding(ComplianceState.VIOLATION)], settings=settings, wall=wall
-        )
+        first = await _run(app, [_finding(ComplianceState.VIOLATION)], settings=settings, wall=wall)
         assert first.evidence_captured == 1
 
         for _ in range(3):

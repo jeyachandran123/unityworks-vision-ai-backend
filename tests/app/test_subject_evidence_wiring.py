@@ -68,17 +68,20 @@ def _real_crop(*, pixels: bytes | None, retention=None, size=(8, 8)):
         tenant_id=TenantId("tenant-1"),
         site_id=SiteId("site-1"),
         camera_id=camera,
-        source_frame=FrameRef(
-            camera_id=camera, stream_epoch=StreamEpoch(1), frame_seq=100
-        ),
+        source_frame=FrameRef(camera_id=camera, stream_epoch=StreamEpoch(1), frame_seq=100),
         object_id=ObjectId(SUBJECT),
         source_box=Box(0.4, 0.3, 0.55, 0.85),
         padding_applied=0.15,
         output_size=(width, height),
         transform=CropTransform(
-            output_width=width, output_height=height,
-            source_width=960, source_height=576,
-            crop_x=10, crop_y=10, crop_width=width, crop_height=height,
+            output_width=width,
+            output_height=height,
+            source_width=960,
+            source_height=576,
+            crop_x=10,
+            crop_y=10,
+            crop_width=width,
+            crop_height=height,
         ),
         quality=QualityGrades(scale_pixels=264.0),
         gate_result=GateResult.accept(),
@@ -145,7 +148,6 @@ class TestTheCropSeamProducesRealPixels:
 @pytest.fixture
 def evidence_settings(tmp_path):
     class _Settings:
-        default_tenant_id = "org-test"
         evidence_capture = True
         evidence_path = tmp_path / "evidence"
         evidence_retention_days = 30
@@ -164,17 +166,26 @@ def decision_frame():
     DECISION_FRAMES.clear()
     ref = f"{CAMERA}/e1/f00100"
     DECISION_FRAMES.remember(
-        camera_id=CAMERA, frame_ref=ref, captured_at_ns=100 * SECOND,
-        width=960, height=576, jpeg=b"\xff\xd8\xffscene",
+        camera_id=CAMERA,
+        frame_ref=ref,
+        captured_at_ns=100 * SECOND,
+        width=960,
+        height=576,
+        jpeg=b"\xff\xd8\xffscene",
     )
     for object_id, box in (
         (BYSTANDER, (0.10, 0.30, 0.25, 0.85)),
         (SUBJECT, (0.55, 0.32, 0.72, 0.88)),
     ):
         DECISION_FRAMES.attach_subject(
-            camera_id=CAMERA, frame_ref=ref, object_id=object_id, box=box,
+            camera_id=CAMERA,
+            frame_ref=ref,
+            object_id=object_id,
+            box=box,
             crop_jpeg=b"\xff\xd8\xff" + object_id.encode(),
-            crop_id=f"crop-{object_id}", sent_to_model=True, object_class="person",
+            crop_id=f"crop-{object_id}",
+            sent_to_model=True,
+            object_class="person",
         )
     yield ref
     DECISION_FRAMES.clear()
@@ -193,7 +204,7 @@ async def _capture(app, evidence_settings, *, object_id=SUBJECT):
     finding = _finding(ComplianceState.VIOLATION, object_id=object_id, camera=CAMERA)
     async with app.state.database.session_scope() as session:
         ref = await driver._capture_evidence(
-            session, camera_key=CAMERA, finding=finding
+            session, camera_key=CAMERA, finding=finding, organization_id="org-test"
         )
     return ref
 
@@ -326,9 +337,7 @@ class TestCropsAreGovernedLikeEveryOtherImage:
                 evidence_ref="ev-1.crop.obj-person-1",
                 camera_key="cam-01",
                 payload=b"\xff\xd8\xffcrop",
-                captured_at=__import__("datetime").datetime.now(
-                    __import__("datetime").UTC
-                ),
+                captured_at=__import__("datetime").datetime.now(__import__("datetime").UTC),
                 purpose="compliance:kitchen.person.ppe.v1:decision-crop",
                 retention_days=30,
                 geometry=json.dumps({"kind": "decision-crop", "is_subject": True}),
@@ -352,9 +361,7 @@ class TestCropsAreGovernedLikeEveryOtherImage:
         response = await client.get(f"/api/v1/evidence/{ref}/image")
         assert response.status_code == 401
 
-    async def test_a_crop_retrieval_leaves_an_audit_row(
-        self, app, client, seeded, settings
-    ):
+    async def test_a_crop_retrieval_leaves_an_audit_row(self, app, client, seeded, settings):
         """Every disclosure of imagery is recorded. A gallery of four crops is
         four disclosures, and must be four rows — not one for the page."""
         from sqlalchemy import select
@@ -368,10 +375,10 @@ class TestCropsAreGovernedLikeEveryOtherImage:
 
         async with app.state.database.session_scope() as session:
             rows = (
-                await session.execute(
-                    select(AuditEvent).where(AuditEvent.resource_id == ref)
-                )
-            ).scalars().all()
+                (await session.execute(select(AuditEvent).where(AuditEvent.resource_id == ref)))
+                .scalars()
+                .all()
+            )
         assert rows, "a crop was served without an audit row"
         assert rows[0].resource_type == "evidence"
 

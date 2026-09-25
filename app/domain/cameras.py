@@ -44,6 +44,29 @@ if TYPE_CHECKING:
 
 VALID_STREAM_TYPES = {"main", "sub"}
 
+#: The Live Wall rate a camera gets unless somebody chooses another — the rate
+#: the wall played every camera at before the rate was a per-camera setting.
+DEFAULT_WALL_FPS = 4.0
+#: At least one frame a second, so a tile is never a still picture pretending to
+#: be live; at most twenty-five, which is what a CCTV stream sends at best.
+WALL_FPS_RANGE = (1.0, 25.0)
+
+
+def clean_wall_fps(value: Any) -> float:
+    """A Live Wall frame rate, checked. Said in words a person can act on."""
+    low, high = WALL_FPS_RANGE
+    message = f"the Live Wall frame rate must be a number from {low:g} to {high:g} frames a second"
+    # `True` is an int in Python; a checkbox value is not a frame rate.
+    if isinstance(value, bool) or not isinstance(value, int | float | str):
+        raise ValidationError(message)
+    try:
+        fps = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(message) from exc
+    if not low <= fps <= high:
+        raise ValidationError(message)
+    return fps
+
 
 class CameraService:
     """Camera configuration. Tenant-scoped at every entry point."""
@@ -63,6 +86,7 @@ class CameraService:
         recorder_id: str,
         stream_type: str = "sub",
         analysis_fps: float = 4.0,
+        wall_fps: Any = DEFAULT_WALL_FPS,
         purpose: str = "",
         zone_id: str = "",
         enabled: bool = False,
@@ -96,6 +120,7 @@ class CameraService:
             channel=channel,
             stream_type=stream_type,
             analysis_fps=analysis_fps,
+            wall_fps=clean_wall_fps(wall_fps),
             enabled=enabled,
         )
         self._session.add(camera)
@@ -132,6 +157,7 @@ class CameraService:
             "channel",
             "stream_type",
             "analysis_fps",
+            "wall_fps",
             "zone_id",
             "enabled",
             "analysis_enabled",
@@ -150,6 +176,9 @@ class CameraService:
             raise ValidationError(
                 f"analysis_enabled must be true or false, got " f"{type(analysis_flag).__name__}"
             )
+
+        if changes.get("wall_fps") is not None:
+            changes = {**changes, "wall_fps": clean_wall_fps(changes["wall_fps"])}
 
         zone_before = camera.zone_id
         recorder_before = camera.recorder_id
@@ -471,6 +500,7 @@ def to_wire(camera: Camera) -> dict[str, Any]:
         "credential_configured": bool(recorder is not None and credential_configured(recorder)),
         "credential_scheme": credential_scheme(recorder.credential_ref) if recorder else "",
         "analysis_fps": camera.analysis_fps,
+        "wall_fps": camera.wall_fps,
         "enabled": camera.enabled,
         # Two decisions, not one. `enabled` is "this camera streams"; this is
         # "this camera is analysed". A client that shows only the first cannot
@@ -640,7 +670,10 @@ def to_rtsp_config(camera: Camera, *, recorder: Recorder | None = None) -> RtspC
 
 
 __all__ = [
+    "DEFAULT_WALL_FPS",
+    "WALL_FPS_RANGE",
     "CameraService",
+    "clean_wall_fps",
     "FrameService",
     "frame_to_wire",
     "is_dialable",

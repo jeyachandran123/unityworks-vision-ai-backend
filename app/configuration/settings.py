@@ -285,10 +285,10 @@ class Settings(BaseSettings):
     cctv_reconnect_max_ms: float = 60_000.0
     #: 0 retries indefinitely, with the delay still capped.
     cctv_reconnect_max_attempts: int = 0
-    #: The organization the compliance pass evaluates, and the one an
-    #: unattributable audit row (a failed sign-in for an unknown email) is filed
-    #: under. **Not** the owner of any camera session: every camera is started
-    #: under its own organization, from its own row.
+    #: Where an unattributable audit row — a failed sign-in for an email no
+    #: account has — is filed. Nothing else. It owns no camera session (each
+    #: camera starts under its own organization) and it is not the organization
+    #: compliance evaluates (that is every active organization, on every pass).
     default_tenant_id: str = "default"
 
     # ── Evidence & imagery ───────────────────────────────────────────────────

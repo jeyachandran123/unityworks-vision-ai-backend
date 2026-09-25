@@ -257,6 +257,11 @@ class Camera(Base):
 
     #: Independent of camera fps: a 25 fps stream must not become 25 fps of work.
     analysis_fps: Mapped[float] = mapped_column(nullable=False, default=4.0)
+    #: How many frames a second the Live Wall shows of this camera. Its own
+    #: value, chosen when it is added and changed when it is edited: a kitchen
+    #: pass may want 15 while a store room is fine at 2. The camera's own
+    #: stream sets the ceiling — the wall shows at most what arrives.
+    wall_fps: Mapped[float] = mapped_column(nullable=False, default=4.0, server_default="4")
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     #: Whether this camera is *analysed*, as distinct from whether it streams.

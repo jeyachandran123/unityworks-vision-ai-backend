@@ -153,6 +153,7 @@ async def create_camera(
         recorder_id=recorder.id,
         stream_type=str(payload.get("stream_type", "") or "sub"),
         analysis_fps=float(payload.get("analysis_fps", 4.0)),
+        wall_fps=payload.get("wall_fps", camera_domain.DEFAULT_WALL_FPS),
         purpose=str(payload.get("purpose", "")),
         zone_id=zone_id,
         enabled=False,
@@ -190,6 +191,10 @@ async def update_camera(
 
     existing = await service.get(organization_id=access.tenant_id, camera_key=camera_key)
     was_enabled = existing.enabled
+    # What the camera dials. If an edit changes it while the camera is on, the
+    # camera is re-dialled now — left alone, it would keep showing its old
+    # channel under its new description.
+    dialled_before = (existing.recorder_id, existing.channel, existing.stream_type)
 
     # Placement is re-validated on every update that touches it, not only on
     # create. `update` passes `**payload` into the domain service, so before
@@ -251,7 +256,35 @@ async def update_camera(
             detail={"fields": sorted(payload.keys())},
         )
 
-    return camera_domain.to_wire(camera)
+    reconnected = False
+    if camera.enabled and (camera.recorder_id, camera.channel, camera.stream_type) != (
+        dialled_before
+    ):
+        reconnected = await _reconnect(request, access, camera)
+
+    body = camera_domain.to_wire(camera)
+    body["reconnected"] = reconnected
+    return body
+
+
+async def _reconnect(request: Request, access: AccessDecision, camera) -> bool:
+    """Re-dial a switched-on camera whose channel, stream or recorder changed.
+
+    The analysis session is restarted only if it was running, and the Live Wall
+    stream is reopened. Returns whether anything was re-dialled.
+    """
+    from app.domain.recorders import sync_credential
+
+    runtime_id = runtime_camera_id(access.tenant_id, camera.camera_key)
+    live = live_of(request)
+    was_running = await live.stop_camera(runtime_id, tenant_id=access.tenant_id)
+    restarted = False
+    if was_running and settings_of(request).feature_live_cctv and camera_domain.is_dialable(camera):
+        sync_credential(getattr(request.app.state, "recorder_credentials", None), camera.recorder)
+        await live.start_one(camera_domain.to_rtsp_config(camera), tenant_id=access.tenant_id)
+        restarted = True
+    reopened = await _open_on_wall(request, camera)
+    return restarted or reopened
 
 
 @router.post(
@@ -358,7 +391,7 @@ async def start_camera(
     return {"camera_key": camera_key, "streaming": True, "available": True, "reason": ""}
 
 
-async def _open_on_wall(request: Request, camera) -> None:
+async def _open_on_wall(request: Request, camera) -> bool:
     """Put this camera on the Live Wall now, replacing any dark tile it had.
 
     The wall opens its streams at boot and when a recorder is activated. A
@@ -370,10 +403,11 @@ async def _open_on_wall(request: Request, camera) -> None:
     """
     wall = getattr(request.app.state, "wall", None)
     if wall is None or not settings_of(request).feature_camera_wall:
-        return
+        return False
     runtime_id = runtime_camera_id(camera.organization_id, camera.camera_key)
     await wall.stop_cameras([runtime_id])
     await wall.start_cameras([camera])
+    return True
 
 
 @router.post(

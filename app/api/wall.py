@@ -148,6 +148,9 @@ async def list_wall_cameras(
                 "last_error": "",
             }
         entry["purpose"] = camera.purpose
+        # The rate this camera's tile plays at — its own setting, not the
+        # wall's default. The page asks for its stream at this rate.
+        entry["wall_fps"] = camera.wall_fps
         cameras.append(entry)
 
     cameras.sort(key=lambda c: c["channel"])

@@ -34,8 +34,15 @@ OTHER = "obj-person-2"
 SECOND = 1_000_000_000
 
 
-def _frame(store, *, at_s: int, subject: str | None = PERSON, camera: str = CAMERA,
-           jpeg: bytes | None = None, box=(0.3, 0.4, 0.4, 0.8)) -> str:
+def _frame(
+    store,
+    *,
+    at_s: int,
+    subject: str | None = PERSON,
+    camera: str = CAMERA,
+    jpeg: bytes | None = None,
+    box=(0.3, 0.4, 0.4, 0.8),
+) -> str:
     ref = f"{camera}/e1/f{at_s:05d}"
     store.remember(
         camera_id=camera,
@@ -47,7 +54,10 @@ def _frame(store, *, at_s: int, subject: str | None = PERSON, camera: str = CAME
     )
     if subject:
         store.attach_subject(
-            camera_id=camera, frame_ref=ref, object_id=subject, box=box,
+            camera_id=camera,
+            frame_ref=ref,
+            object_id=subject,
+            box=box,
             sent_to_model=True,
         )
     return ref
@@ -80,27 +90,28 @@ class TestAObservationFrameIsRetained:
 
     def test_attaching_to_an_unknown_frame_reports_failure(self, store):
         """Rather than inventing a frame to hang the subject on."""
-        assert store.attach_subject(
-            camera_id=CAMERA, frame_ref="never/seen", object_id=PERSON,
-            box=(0, 0, 1, 1),
-        ) is False
+        assert (
+            store.attach_subject(
+                camera_id=CAMERA,
+                frame_ref="never/seen",
+                object_id=PERSON,
+                box=(0, 0, 1, 1),
+            )
+            is False
+        )
 
 
 class TestBIncidentUsesObservationEvidence:
     def test_the_frame_returned_is_the_one_the_subject_was_seen_in(self, store):
         first = _frame(store, at_s=100)
-        _frame(store, at_s=110, subject=OTHER)      # someone else, later
-        chosen = store.nearest_before(
-            CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND
-        )
+        _frame(store, at_s=110, subject=OTHER)  # someone else, later
+        chosen = store.nearest_before(CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND)
         assert chosen is not None
         assert chosen.frame_ref == first
 
     def test_a_different_persons_frame_is_never_returned(self, store):
         _frame(store, at_s=100, subject=OTHER)
-        assert store.nearest_before(
-            CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND
-        ) is None
+        assert store.nearest_before(CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND) is None
 
     def test_another_cameras_frame_is_never_returned(self, store):
         _frame(store, at_s=100, camera="cam-13")
@@ -118,12 +129,8 @@ class TestCDelayedIncidentDoesNotChangeTheImage:
         for later in (101, 102, 130, 160):
             _frame(store, at_s=later)
 
-        chosen = store.nearest_before(
-            CAMERA, PERSON, 100 * SECOND, tolerance_ns=30 * SECOND
-        )
-        assert chosen.frame_ref == chosen_ref, (
-            "evidence moved to a frame taken after the decision"
-        )
+        chosen = store.nearest_before(CAMERA, PERSON, 100 * SECOND, tolerance_ns=30 * SECOND)
+        assert chosen.frame_ref == chosen_ref, "evidence moved to a frame taken after the decision"
 
     def test_the_answer_does_not_drift_as_the_incident_is_delayed(self, store):
         """Whether the pass runs 1 s or 25 s late, the picture is the same."""
@@ -142,9 +149,7 @@ class TestCDelayedIncidentDoesNotChangeTheImage:
     def test_a_frame_far_older_than_the_observation_is_refused(self, store):
         """Better no picture than one from a different visit."""
         _frame(store, at_s=10)
-        assert store.nearest_before(
-            CAMERA, PERSON, 100 * SECOND, tolerance_ns=30 * SECOND
-        ) is None
+        assert store.nearest_before(CAMERA, PERSON, 100 * SECOND, tolerance_ns=30 * SECOND) is None
 
     def test_the_driver_never_falls_back_to_a_later_frame(self, store, monkeypatch):
         """The bug this suite did not catch the first time.
@@ -160,7 +165,8 @@ class TestCDelayedIncidentDoesNotChangeTheImage:
         monkeypatch.setattr(module, "DECISION_FRAMES", store, raising=False)
         monkeypatch.setitem(
             __import__("sys").modules["app.vision.decision_frames"].__dict__,
-            "DECISION_FRAMES", store,
+            "DECISION_FRAMES",
+            store,
         )
 
         # Only frames AFTER the observation are retained.
@@ -177,17 +183,15 @@ class TestCDelayedIncidentDoesNotChangeTheImage:
             conditions = (_Condition(),)
             subject = type("S", (), {"object_id": PERSON})()
 
-        assert driver._decision_frame(camera_key=CAMERA, finding=_Finding()) is None, (
-            "the driver reached forward in time for a picture"
-        )
+        assert (
+            driver._decision_frame(camera_key=CAMERA, finding=_Finding()) is None
+        ), "the driver reached forward in time for a picture"
 
 
 class TestDEvidenceTimestampMatchesTheDecision:
     def test_captured_at_is_the_frame_time_not_now(self, store):
         _frame(store, at_s=100)
-        frame = store.nearest_before(
-            CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND
-        )
+        frame = store.nearest_before(CAMERA, PERSON, 105 * SECOND, tolerance_ns=30 * SECOND)
         captured = datetime.fromtimestamp(frame.captured_at_ns / 1e9, tz=UTC)
         assert captured == datetime.fromtimestamp(100, tz=UTC)
         assert captured < datetime.now(UTC)
@@ -229,8 +233,9 @@ class TestFRetentionAndBounds:
         assert store.get("cam-14", "cam-14/e1/f00001") is not None
 
     def test_an_empty_payload_is_not_retained(self, store):
-        store.remember(camera_id=CAMERA, frame_ref="r", captured_at_ns=0,
-                       width=960, height=576, jpeg=b"")
+        store.remember(
+            camera_id=CAMERA, frame_ref="r", captured_at_ns=0, width=960, height=576, jpeg=b""
+        )
         assert store.stats()["frames_retained"] == 0
 
 
@@ -250,9 +255,15 @@ class TestGUnknownProducesNoViolationEvidence:
         attempted: list = []
         original = module.ComplianceDriver._capture_evidence
 
-        async def _spy(self, session, *, camera_key, finding):
+        async def _spy(self, session, *, camera_key, finding, organization_id):
             attempted.append(str(finding.finding_id))
-            return await original(self, session, camera_key=camera_key, finding=finding)
+            return await original(
+                self,
+                session,
+                camera_key=camera_key,
+                finding=finding,
+                organization_id=organization_id,
+            )
 
         monkeypatch.setattr(module.ComplianceDriver, "_capture_evidence", _spy)
         run = await apply(app, [_finding(state)])
@@ -264,8 +275,7 @@ class TestGUnknownProducesNoViolationEvidence:
         run, attempted = await self._run(app, monkeypatch, ComplianceState.UNKNOWN)
         assert run.incidents_opened == 0
         assert attempted == [], (
-            "an unobservable attribute reached for a photograph of the person "
-            "it could not see"
+            "an unobservable attribute reached for a photograph of the person " "it could not see"
         )
 
     async def test_a_real_violation_does_reach_it(self, app, monkeypatch):
