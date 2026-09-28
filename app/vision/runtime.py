@@ -586,7 +586,8 @@ class VisionRuntime:
         had been seen — the exact class of lie this product exists to avoid — so
         the failure is loud and the caller decides.
         """
-        from vision_os.adapters.synthesis import FileObservationLog, InMemoryObservationLog
+        from app.vision.observation_log import BoundedFileObservationLog
+        from vision_os.adapters.synthesis import InMemoryObservationLog
 
         if self._settings.observation_log != "file":
             return InMemoryObservationLog()
@@ -599,7 +600,11 @@ class VisionRuntime:
                 f"observation_log is 'file' but its directory could not be created: {root}",
                 details={"path": str(root), "error": type(exc).__name__},
             ) from exc
-        return FileObservationLog(root)
+        # The platform's file log, with start-up, retention and memory that do
+        # not grow with history — see `app/vision/observation_log.py`. The
+        # platform's own full-history load blinded perception for about 55
+        # minutes after every restart on 10 GB of observations.
+        return BoundedFileObservationLog(root)
 
     def _config_document(self) -> dict[str, Any]:
         """A minimal valid platform configuration with **no cameras**.
