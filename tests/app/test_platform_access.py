@@ -24,8 +24,9 @@ from app.users.models import (
     OrganizationMembership,
     PermissionOverride,
     PlatformOperatorGrant,
+    User,
 )
-from tests.app.conftest import bearer, make_user
+from tests.app.conftest import bearer, login, make_user
 
 PLATFORM = "/api/v1/platform"
 SOLO = "user-solo@example.com"
@@ -86,6 +87,7 @@ async def tenant_admin(estate, client: AsyncClient):
     [
         ("GET", f"/people/{SOLO}/access"),
         ("PUT", f"/people/{SOLO}/access"),
+        ("POST", "/people"),
     ],
 )
 async def test_no_tenant_role_reaches_the_access_matrix(
@@ -381,3 +383,122 @@ async def test_a_tick_is_a_door_on_an_ordinary_tenant_route(estate, client: Asyn
         {"organization_id": "org-acme", "role": "restaurant_manager", "permissions": MANAGER},
     )
     assert (await client.get("/api/v1/zones", headers=solo)).status_code == 200
+
+
+def _new_person(**overrides):
+    body = {
+        "email": "priya@example.com",
+        "display_name": "Priya Raman",
+        "password": "long-enough-password",
+        "home_organization_id": "org-acme",
+        "organizations": [
+            {"organization_id": "org-acme", "role": None, "permissions": ["view_zones"]},
+            {
+                "organization_id": "org-borden",
+                "role": "auditor",
+                "permissions": sorted(p.value for p in ROLE_PERMISSIONS[Role.AUDITOR]),
+                "camera_breadth": "all_in_tenant",
+            },
+        ],
+    }
+    body.update(overrides)
+    return body
+
+
+async def _user_count(app) -> int:
+    async with app.state.database.session_scope() as session:
+        return len((await session.execute(select(User.id))).all())
+
+
+async def test_creating_a_person_writes_account_memberships_and_access(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    response = await client.post(f"{PLATFORM}/people", headers=headers, json=_new_person())
+    assert response.status_code == 200, response.text
+    body = response.json()
+
+    assert body["email"] == "priya@example.com"
+    assert body["home_organization_id"] == "org-acme"
+    acme = _org(body, "org-acme")
+    borden = _org(body, "org-borden")
+    assert (acme["is_member"], acme["is_home"], acme["permissions"]) == (
+        True,
+        True,
+        ["view_zones"],
+    )
+    assert borden["role"] == "auditor"
+    assert borden["camera_scope"]["breadth"] == "all_in_tenant"
+    assert _org(body, "org-closed")["is_member"] is False
+
+
+async def test_the_new_person_signs_in_and_their_ticks_open_doors(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    await client.post(
+        f"{PLATFORM}/people",
+        headers=headers,
+        json=_new_person(
+            organizations=[
+                {"organization_id": "org-acme", "role": None, "permissions": ["view_zones"]}
+            ]
+        ),
+    )
+    response = await login(client, "priya@example.com", "long-enough-password")
+    assert response.status_code == 200, response.text
+    priya = {"Authorization": f"Bearer {response.json()['access_token']}"}
+    assert (await client.get("/api/v1/zones", headers=priya)).status_code == 200
+    # Nothing else was ticked.
+    assert (await client.get("/api/v1/admin/users", headers=priya)).status_code == 403
+
+
+async def test_the_home_organization_is_joined_even_with_nothing_ticked(
+    estate, client: AsyncClient
+):
+    headers = await bearer(client, "operator@example.com")
+    body = (
+        await client.post(f"{PLATFORM}/people", headers=headers, json=_new_person(organizations=[]))
+    ).json()
+    acme = _org(body, "org-acme")
+    assert (acme["is_member"], acme["permissions"]) == (True, [])
+
+
+@pytest.mark.parametrize(
+    ("overrides", "status"),
+    [
+        ({"email": "solo@example.com"}, 409),
+        ({"password": "short"}, 422),
+        ({"email": "not-an-email"}, 422),
+        ({"home_organization_id": ""}, 422),
+        ({"home_organization_id": "org-nowhere"}, 404),
+        ({"home_organization_id": "org-closed"}, 422),
+        (
+            {
+                "organizations": [
+                    {"organization_id": "org-closed", "role": None, "permissions": ["view_live"]}
+                ]
+            },
+            422,
+        ),
+    ],
+)
+async def test_a_refused_creation_creates_nothing(estate, client: AsyncClient, overrides, status):
+    headers = await bearer(client, "operator@example.com")
+    before = await _user_count(estate)
+    response = await client.post(
+        f"{PLATFORM}/people", headers=headers, json=_new_person(**overrides)
+    )
+    assert response.status_code == status, response.text
+    assert await _user_count(estate) == before
+
+
+async def test_creating_a_person_is_audited_in_the_home_organization(estate, client: AsyncClient):
+    headers = await bearer(client, "operator@example.com")
+    body = (await client.post(f"{PLATFORM}/people", headers=headers, json=_new_person())).json()
+    async with estate.state.database.session_scope() as session:
+        created = (
+            await session.execute(
+                select(AuditEvent).where(
+                    AuditEvent.action == AuditAction.USER_CREATED.value,
+                    AuditEvent.resource_id == body["user_id"],
+                )
+            )
+        ).scalar_one()
+    assert (created.organization_id, created.actor) == ("org-acme", "operator@example.com")

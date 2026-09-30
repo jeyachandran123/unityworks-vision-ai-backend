@@ -874,6 +874,93 @@ async def set_person_access(
     return await _access_to_wire(session, await _access_user(session, user_id))
 
 
+@router.post("/people")
+async def create_person(
+    request: Request,
+    operator: CurrentOperator,
+    session: DbSession,
+    payload: Annotated[dict, Body(...)],
+) -> dict[str, Any]:
+    """Create a person and give them their access, in one step.
+
+    The access matrix's first screen: account details, a home organization, and
+    the same per-organization items `PUT .../access` takes. Everything is
+    checked — the email, the password's floor, every organization — before any
+    row exists, and it all happens in this request's one transaction, so a
+    refusal leaves nothing behind.
+
+    The home organization is always joined, even with nothing ticked there: it
+    is where the account lives, and an account filed somewhere it cannot enter
+    is the state `home_membership_missing` exists to report, not one to create.
+
+    A duplicate email is a plain 409 naming the existing account. The caller is
+    a Platform Admin who can already list everyone, and the next step is to edit
+    that person's access rather than create a second one.
+    """
+    email = str(payload.get("email", "") or "").strip().lower()
+    if not email or "@" not in email:
+        raise ValidationError("'email' must be a valid address")
+    display_name = str(payload.get("display_name", "") or "").strip() or email.split("@")[0]
+
+    home_id = str(payload.get("home_organization_id", "") or "").strip()
+    if not home_id:
+        raise ValidationError("'home_organization_id' is required")
+    items = parse_access_items(payload.get("organizations", []))
+    home_item = OrganizationAccess(organization_id=home_id, role=None, permissions=frozenset())
+    await _require_open_organizations(session, [home_item, *items])
+
+    password_hash = hash_password(
+        str(payload.get("password", "") or ""),
+        min_length=settings_of(request).password_min_length,
+    )
+
+    existing = (
+        await session.execute(select(User.id).where(User.email == email))
+    ).scalar_one_or_none()
+    if existing is not None:
+        raise ConflictError(
+            f"{email} already has an account. Open that person and edit their access instead.",
+            details={"email": email, "user_id": existing},
+        )
+
+    user = User(
+        organization_id=home_id,
+        email=email,
+        display_name=display_name,
+        password_hash=password_hash,
+        is_active=True,
+    )
+    session.add(user)
+    await session.flush()
+    session.add(
+        OrganizationMembership(
+            user_id=user.id, organization_id=home_id, granted_by=operator.subject
+        )
+    )
+    await session.flush()
+    await AuditTrail(session).record(
+        action=AuditAction.USER_CREATED,
+        organization_id=home_id,
+        actor=operator.subject,
+        actor_roles=("platform_operator",),
+        resource_type="user",
+        resource_id=user.id,
+        request_id=_request_id(request),
+        detail={"email": email, "display_name": display_name, "via": "access_matrix"},
+    )
+
+    actor = await _operator_user(session, operator)
+    for item in items:
+        target = await _access_user(session, user.id)
+        applied = await apply_organization_access(
+            session, actor=actor, target=target, access=item, granted_by=operator.subject
+        )
+        if applied is not None:
+            await _audit_access(session, request, operator, target, applied)
+
+    return await _access_to_wire(session, await _access_user(session, user.id))
+
+
 async def _refuse_unassignable_target(
     session: DbSession, operator: PlatformOperator, user: User
 ) -> None:
