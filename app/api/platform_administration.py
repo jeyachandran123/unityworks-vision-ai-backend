@@ -46,8 +46,12 @@ from sqlalchemy.orm import selectinload
 from app.api.dependencies import CurrentOperator, DbSession, settings_of
 from app.auth.passwords import hash_password
 from app.authorization.assignments import (
+    AppliedAccess,
+    OrganizationAccess,
+    apply_organization_access,
     intended_permissions,
     load_for_access,
+    parse_access_items,
     template_role,
 )
 from app.authorization.camera_scope import grant_to_wire
@@ -57,10 +61,11 @@ from app.authorization.model import (
     Permission,
     Role,
 )
+from app.authorization.platform import PlatformOperator
 from app.authorization.resolver import decide
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.models import AuditEvent, Camera, Zone
-from app.errors import ConflictError, NotFoundError, ValidationError
+from app.errors import ConflictError, NotFoundError, ScopeError, ValidationError
 from app.users.models import (
     AccessGrant,
     Organization,
@@ -87,6 +92,7 @@ PLATFORM_ACTIONS: tuple[str, ...] = (
     AuditAction.ORGANIZATION_MEMBER_ADDED.value,
     AuditAction.ORGANIZATION_MEMBER_REMOVED.value,
     AuditAction.ORGANIZATION_ADMIN_CREATED.value,
+    AuditAction.ACCESS_SET.value,
 )
 
 
@@ -817,6 +823,133 @@ def _organization_access_to_wire(
         ),
         "camera_scope": grant_to_wire(grant),
     }
+
+
+@router.put("/people/{user_id}/access")
+async def set_person_access(
+    user_id: str,
+    request: Request,
+    operator: CurrentOperator,
+    session: DbSession,
+    payload: Annotated[dict, Body(...)],
+) -> dict[str, Any]:
+    """Set what this person may do, in one or more organizations, at once.
+
+    Each item states an organization's whole access: a template role (or none),
+    the permissions ticked, and optionally the camera breadth. The server writes
+    the role and the exceptions that make `decide()` answer exactly those
+    permissions (`app.authorization.assignments`).
+
+    ### All or nothing
+
+    Every item is parsed and every organization checked — it exists, it is not
+    archived — before the first row is written, and the request is one
+    transaction. One bad organization refuses the lot.
+
+    ### Who may not be a target
+
+    Yourself (403): an operator who could set their own access could give
+    themselves anything, in any organization. And another Platform Admin
+    (422): a Platform Admin belongs to no organization, and giving one
+    memberships would make them a tenant principal as well.
+
+    Only the organizations named are touched. An organization the person is not
+    in is joined only if its item asks for something — a role, a permission or
+    every camera — and that admission is audited as such.
+    """
+    user = await _access_user(session, user_id)
+    items = parse_access_items(payload.get("organizations"))
+    await _refuse_unassignable_target(session, operator, user)
+    await _require_open_organizations(session, items)
+
+    actor = await _operator_user(session, operator)
+    for item in items:
+        target = await _access_user(session, user_id)
+        applied = await apply_organization_access(
+            session, actor=actor, target=target, access=item, granted_by=operator.subject
+        )
+        if applied is not None:
+            await _audit_access(session, request, operator, target, applied)
+
+    return await _access_to_wire(session, await _access_user(session, user_id))
+
+
+async def _refuse_unassignable_target(
+    session: DbSession, operator: PlatformOperator, user: User
+) -> None:
+    if user.id == operator.user_id:
+        raise ScopeError("you may not change your own access")
+    if user.id in await _operator_user_ids(session):
+        raise ValidationError(
+            "a Platform Admin belongs to no organization; platform authority is not "
+            "set from the access matrix",
+            details={"user_id": user.id},
+        )
+
+
+async def _require_open_organizations(session: DbSession, items: list[OrganizationAccess]) -> None:
+    """Every named organization exists (404) and is not archived (422)."""
+    for item in items:
+        organization = await _organization(session, item.organization_id)
+        if str(organization.status or "").strip().lower() == OrganizationStatus.ARCHIVED.value:
+            raise ValidationError(
+                "an archived organization cannot be given access: nobody may sign in to one",
+                details={"organization_id": organization.id},
+            )
+
+
+async def _operator_user(session: DbSession, operator: PlatformOperator) -> User:
+    """The operator's own row — the `actor` the override and camera guards
+    compare against, and whose id is recorded as `granted_by` on overrides."""
+    return (await session.execute(select(User).where(User.id == operator.user_id))).scalar_one()
+
+
+async def _audit_access(
+    session: DbSession,
+    request: Request,
+    operator: PlatformOperator,
+    user: User,
+    applied: AppliedAccess,
+) -> None:
+    """Filed in the organization that changed — its own trail is where somebody
+    reviewing that customer's access will look."""
+    trail = AuditTrail(session)
+    if applied.admitted:
+        await trail.record(
+            action=AuditAction.ORGANIZATION_MEMBER_ADDED,
+            organization_id=applied.organization_id,
+            actor=operator.subject,
+            actor_roles=("platform_operator",),
+            resource_type="user",
+            resource_id=user.id,
+            request_id=_request_id(request),
+            detail={
+                "email": user.email,
+                "home_organization_id": user.organization_id,
+                "via": "access_matrix",
+            },
+        )
+    await trail.record(
+        action=AuditAction.ACCESS_SET,
+        organization_id=applied.organization_id,
+        actor=operator.subject,
+        actor_roles=("platform_operator",),
+        resource_type="user",
+        resource_id=user.id,
+        request_id=_request_id(request),
+        detail={
+            "email": user.email,
+            "role": applied.plan.role.value if applied.plan.role is not None else None,
+            "added": sorted(p.value for p in applied.after - applied.before),
+            "removed": sorted(p.value for p in applied.before - applied.after),
+            "granted": sorted(p.value for p in applied.plan.granted),
+            "revoked": sorted(p.value for p in applied.plan.revoked),
+            "camera_breadth": (
+                applied.camera_breadth.value if applied.camera_breadth is not None else None
+            ),
+            "admitted": applied.admitted,
+        },
+    )
 
 
 # ── operators ────────────────────────────────────────────────────────────────
