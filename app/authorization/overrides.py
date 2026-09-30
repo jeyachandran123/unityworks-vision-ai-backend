@@ -39,7 +39,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.authorization.model import OverrideState, Permission
-from app.errors import ScopeError
+from app.errors import ScopeError, ValidationError
 from app.users.models import OrganizationMembership, PermissionOverride, User
 
 
@@ -111,6 +111,62 @@ async def clear_permission_override(
         await session.delete(row)
 
 
+async def replace_permission_overrides(
+    session: AsyncSession,
+    *,
+    actor: User,
+    target: User,
+    organization_id: str,
+    granted: frozenset[Permission],
+    revoked: frozenset[Permission],
+) -> None:
+    """Make the target's overrides in one organization exactly `granted` and
+    `revoked`, removing every other.
+
+    The bulk form of `set_permission_override`, for a caller that states a
+    person's whole access at once — the platform console's access matrix
+    (`app.authorization.assignments`) — and would otherwise have to diff the
+    stored rows itself and call the single-row functions once per permission,
+    each running the same guard again. One guard, then the rows.
+
+    A permission in both sets is refused rather than resolved: REVOKE would win
+    in `effective_permissions`, so the caller's GRANT would be silently
+    discarded, and a caller that produced both has a bug worth hearing about.
+    """
+    both = granted & revoked
+    if both:
+        raise ValidationError(
+            "a permission cannot be both granted and revoked",
+            details={"permissions": sorted(p.value for p in both)},
+        )
+    await _guard(session, actor, target, organization_id)
+
+    existing = await session.execute(
+        select(PermissionOverride).where(
+            PermissionOverride.user_id == target.id,
+            PermissionOverride.organization_id == organization_id,
+        )
+    )
+    for row in existing.scalars().all():
+        await session.delete(row)
+    # Flushed before the new rows exist, so re-stating a permission that was
+    # already overridden cannot collide with its own old row on
+    # `uq_permission_override_user_permission`.
+    await session.flush()
+
+    for state, permissions in ((OverrideState.GRANT, granted), (OverrideState.REVOKE, revoked)):
+        for permission in sorted(permissions, key=lambda p: p.value):
+            session.add(
+                PermissionOverride(
+                    user_id=target.id,
+                    organization_id=organization_id,
+                    permission=permission.value,
+                    state=state.value,
+                    granted_by=actor.id,
+                )
+            )
+
+
 async def _guard(session: AsyncSession, actor: User, target: User, organization_id: str) -> None:
     """No self-modification, and no reaching outside the organization.
 
@@ -153,4 +209,9 @@ async def require_member(
         )
 
 
-__all__ = ["clear_permission_override", "require_member", "set_permission_override"]
+__all__ = [
+    "clear_permission_override",
+    "replace_permission_overrides",
+    "require_member",
+    "set_permission_override",
+]

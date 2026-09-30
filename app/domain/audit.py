@@ -139,6 +139,12 @@ class AuditAction(enum.Enum):
     #: camera grant sees nothing, and one with a tenant-wide grant sees every
     #: kitchen. Changing either is the same kind of act.
     CAMERA_SCOPE_CHANGED = "user.camera_scope_changed"
+    #: Somebody's whole access in one organization was set at once — the role,
+    #: the per-permission exceptions and the camera breadth — from the platform
+    #: console's access matrix. One row for the act rather than one per
+    #: permission, because the question an access review asks is "what did this
+    #: change make them able to do", and `detail` answers it as a difference.
+    ACCESS_SET = "user.access_set"
 
     # ── organization lifecycle ───────────────────────────────────────
     #
