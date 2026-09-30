@@ -866,8 +866,10 @@ async def set_person_access(
     """
     user = await _access_user(session, user_id)
     items = parse_access_items(payload.get("organizations"))
-    await _refuse_unassignable_target(session, operator, user)
+    # Organizations first: a refusal below is audited *in* them, and an audit
+    # row needs an organization that exists.
     await _require_open_organizations(session, items)
+    await _refuse_unassignable_target(session, request, operator, user, items)
 
     actor = await _operator_user(session, operator)
     for item in items:
@@ -925,6 +927,20 @@ async def create_person(
         await session.execute(select(User.id).where(User.email == email))
     ).scalar_one_or_none()
     if existing is not None:
+        # Audited with the same weight as a success, and committed before the
+        # error propagates: the request rolls back on the way out.
+        await AuditTrail(session).record(
+            action=AuditAction.USER_CREATED,
+            organization_id=home_id,
+            actor=operator.subject,
+            actor_roles=("platform_operator",),
+            outcome=AuditOutcome.DENIED,
+            resource_type="user",
+            resource_id=existing,
+            request_id=_request_id(request),
+            detail={"email": email, "reason": "email_in_use", "via": "access_matrix"},
+        )
+        await session.commit()
         raise ConflictError(
             f"{email} already has an account. Open that person and edit their access instead.",
             details={"email": email, "user_id": existing},
@@ -969,16 +985,45 @@ async def create_person(
 
 
 async def _refuse_unassignable_target(
-    session: DbSession, operator: PlatformOperator, user: User
+    session: DbSession,
+    request: Request,
+    operator: PlatformOperator,
+    user: User,
+    items: list[OrganizationAccess],
 ) -> None:
+    """Refuse yourself and other Platform Admins — audited, then raised.
+
+    A refusal is recorded with the same weight as a success, in each
+    organization the request aimed at, and committed before the error
+    propagates: the request rolls back on the way out, and the record that
+    somebody tried must not go with it.
+    """
     if user.id == operator.user_id:
-        raise ScopeError("you may not change your own access")
-    if user.id in await _operator_user_ids(session):
-        raise ValidationError(
+        reason, error = "self", ScopeError("you may not change your own access")
+    elif user.id in await _operator_user_ids(session):
+        reason, error = "platform_operator", ValidationError(
             "a Platform Admin belongs to no organization; platform authority is not "
             "set from the access matrix",
             details={"user_id": user.id},
         )
+    else:
+        return
+
+    trail = AuditTrail(session)
+    for item in items:
+        await trail.record(
+            action=AuditAction.ACCESS_SET,
+            organization_id=item.organization_id,
+            actor=operator.subject,
+            actor_roles=("platform_operator",),
+            outcome=AuditOutcome.DENIED,
+            resource_type="user",
+            resource_id=user.id,
+            request_id=_request_id(request),
+            detail={"email": user.email, "reason": reason},
+        )
+    await session.commit()
+    raise error
 
 
 async def _require_open_organizations(session: DbSession, items: list[OrganizationAccess]) -> None:

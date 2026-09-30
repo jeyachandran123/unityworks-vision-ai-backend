@@ -502,3 +502,46 @@ async def test_creating_a_person_is_audited_in_the_home_organization(estate, cli
             )
         ).scalar_one()
     assert (created.organization_id, created.actor) == ("org-acme", "operator@example.com")
+
+
+async def _denied(app, action: AuditAction) -> list[AuditEvent]:
+    async with app.state.database.session_scope() as session:
+        return (
+            (
+                await session.execute(
+                    select(AuditEvent).where(
+                        AuditEvent.action == action.value, AuditEvent.outcome == "denied"
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+
+async def test_a_refused_self_edit_is_audited_where_it_was_aimed(estate, client: AsyncClient):
+    """Final review I2: a refusal is audited with the same weight as a success."""
+    headers = await bearer(client, "operator@example.com")
+    response = await _put(
+        client,
+        headers,
+        {"organization_id": "org-borden", "role": None, "permissions": ["view_live"]},
+        user_id="user-operator@example.com",
+    )
+    assert response.status_code == 403
+    [row] = await _denied(estate, AuditAction.ACCESS_SET)
+    assert (row.organization_id, row.actor) == ("org-borden", "operator@example.com")
+    assert json.loads(row.detail)["reason"] == "self"
+
+
+async def test_a_duplicate_email_refusal_is_audited_in_the_home_organization(
+    estate, client: AsyncClient
+):
+    headers = await bearer(client, "operator@example.com")
+    response = await client.post(
+        f"{PLATFORM}/people", headers=headers, json=_new_person(email="solo@example.com")
+    )
+    assert response.status_code == 409
+    [row] = await _denied(estate, AuditAction.USER_CREATED)
+    assert (row.organization_id, row.actor) == ("org-acme", "operator@example.com")
+    assert json.loads(row.detail)["reason"] == "email_in_use"
