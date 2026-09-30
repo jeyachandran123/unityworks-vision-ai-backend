@@ -45,12 +45,19 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import CurrentOperator, DbSession, settings_of
 from app.auth.passwords import hash_password
+from app.authorization.assignments import (
+    intended_permissions,
+    load_for_access,
+    template_role,
+)
+from app.authorization.camera_scope import grant_to_wire
 from app.authorization.model import (
     ROLE_PERMISSIONS,
     OrganizationStatus,
     Permission,
     Role,
 )
+from app.authorization.resolver import decide
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.models import AuditEvent, Camera, Zone
 from app.errors import ConflictError, NotFoundError, ValidationError
@@ -713,6 +720,102 @@ async def remove_member(
         #: The account can no longer sign in anywhere. Not an error — this is
         #: what offboarding looks like — but the console must be able to say it.
         "left_without_access": not remaining,
+    }
+
+
+# ── access ───────────────────────────────────────────────────────────────────
+#
+# The access matrix. Membership used to be the only thing this console
+# administered; roles were granted inside each organization. Since 2026-09-22
+# the Platform Admin can enter any organization with every permission and do
+# exactly this from inside it, so setting access from here grants nobody reach
+# they could not already be given — it is a second door onto the same
+# authority, and every write through it is audited into the organization it
+# changes, not into the platform's own trail.
+#
+# Enforcement is untouched: the rows written are the rows an Organization Admin
+# writes from `/admin/users/:id`, read by `decide()` on every request.
+
+
+@router.get("/people/{user_id}/access")
+async def person_access(
+    user_id: str, operator: CurrentOperator, session: DbSession
+) -> dict[str, Any]:
+    """What this person may do in every organization on the platform.
+
+    Every organization is listed, member or not, because the matrix offers every
+    one of them. For an organization the person is not in, everything is empty
+    and `camera_scope` says `none` — roles left behind by a removed membership
+    grant nothing and are not shown as if they did.
+
+    `permissions` is what the matrix shows, `(role ∪ GRANTs) − REVOKEs`.
+    `effective` is what `decide()` gives on the next request; the two differ
+    only in a suspended organization, whose writes are withheld until it is
+    restored. Both are reported so the console never re-derives either.
+    """
+    return await _access_to_wire(session, await _access_user(session, user_id))
+
+
+async def _access_user(session: DbSession, user_id: str) -> User:
+    found = await load_for_access(session, user_id)
+    if found is None:
+        raise NotFoundError(f"no user '{user_id}'")
+    return found
+
+
+async def _access_to_wire(session: DbSession, user: User) -> dict[str, Any]:
+    organizations = (
+        (await session.execute(select(Organization).order_by(Organization.name))).scalars().all()
+    )
+    operators = await _operator_user_ids(session)
+    member_of = {m.organization_id for m in (user.memberships or ())}
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "display_name": user.display_name,
+        "is_platform_operator": user.id in operators,
+        "home_organization_id": user.organization_id,
+        "organizations": [
+            _organization_access_to_wire(user, organization, organization.id in member_of)
+            for organization in organizations
+        ],
+    }
+
+
+def _organization_access_to_wire(
+    user: User, organization: Organization, is_member: bool
+) -> dict[str, Any]:
+    base = {
+        "organization_id": organization.id,
+        "organization_name": organization.name,
+        "status": str(organization.status or OrganizationStatus.ACTIVE.value).strip().lower(),
+        "is_member": is_member,
+        "is_home": user.organization_id == organization.id,
+    }
+    if not is_member:
+        return {
+            **base,
+            "role": None,
+            "roles": [],
+            "permissions": [],
+            "effective": [],
+            "camera_scope": grant_to_wire(None),
+        }
+    template = template_role(user, organization.id)
+    grant = next(
+        (g for g in (user.access_grants or ()) if g.organization_id == organization.id), None
+    )
+    return {
+        **base,
+        "role": template.value if template is not None else None,
+        "roles": sorted(
+            a.role for a in (user.role_assignments or ()) if a.organization_id == organization.id
+        ),
+        "permissions": sorted(p.value for p in intended_permissions(user, organization.id)),
+        "effective": sorted(
+            p.value for p in decide(user, organization_id=organization.id).permissions
+        ),
+        "camera_scope": grant_to_wire(grant),
     }
 
 
