@@ -391,3 +391,29 @@ async def test_applied_access_reports_before_and_after(app):
     assert applied.before == MANAGER | {Permission.VIEW_AUDIT}
     assert applied.after == MANAGER - {Permission.VIEW_LIVE}
     assert applied.admitted is False
+
+
+async def test_readmitting_a_removed_member_does_not_revive_their_old_cameras(app):
+    """Final review C1. `remove_member` keeps a person's rows so an undo is
+    lossless — including an every-camera grant. The matrix shows a non-member as
+    "no cameras", so admitting them without a stated breadth must mean exactly
+    that, not whatever the old grant said."""
+    await _people(app)
+    async with app.state.database.session_scope() as session:
+        session.add(
+            AccessGrant(
+                user_id=TARGET,
+                organization_id="org-b",
+                camera_breadth="all_in_tenant",
+                camera_ids="",
+                site_ids="",
+            )
+        )
+    applied = await _apply(
+        app, OrganizationAccess("org-b", None, frozenset({Permission.VIEW_LIVE}))
+    )
+
+    decision = await _decision(app, "org-b")
+    assert decision.permissions == frozenset({Permission.VIEW_LIVE})
+    assert decision.cameras.breadth is ScopeBreadth.NONE
+    assert applied.camera_breadth is ScopeBreadth.NONE

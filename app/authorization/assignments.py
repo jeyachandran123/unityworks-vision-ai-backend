@@ -257,6 +257,14 @@ async def apply_organization_access(
 
     before = intended_permissions(target, organization_id) if is_member else frozenset()
 
+    camera_breadth = access.camera_breadth
+    if camera_breadth is None and not is_member:
+        # `remove_member` keeps a person's rows so that an undo is lossless —
+        # an every-camera grant included. The matrix shows a non-member as "no
+        # cameras", so admitting one without a stated breadth must mean that,
+        # never whatever a removed membership left behind: deny by default.
+        camera_breadth = ScopeBreadth.NONE
+
     if not is_member:
         session.add(
             OrganizationMembership(
@@ -293,12 +301,12 @@ async def apply_organization_access(
         revoked=plan.revoked,
     )
 
-    if access.camera_breadth is not None:
+    if camera_breadth is not None:
         await set_camera_scope(
             session,
             actor=actor,
             target=target,
-            scope=CameraScope(breadth=access.camera_breadth),
+            scope=CameraScope(breadth=camera_breadth),
             organization_id=organization_id,
         )
     await session.flush()
@@ -309,7 +317,7 @@ async def apply_organization_access(
         before=before,
         after=access.permissions,
         plan=plan,
-        camera_breadth=access.camera_breadth,
+        camera_breadth=camera_breadth,
     )
 
 
