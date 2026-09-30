@@ -56,6 +56,30 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/roles": {
+      "get": {
+        "description": "What each role grants, and whether *you* may give it.\n\nThe matrix's \"Start from role\" list. `grantable` is rule 2 read ahead of\ntime: a role is grantable when every permission it carries is one the\ncaller holds, which is exactly what `refuse_escalation` checks on save \u2014\nso the screen never offers a role the server would refuse.",
+        "operationId": "role_policy_api_v1_admin_roles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Role Policy Api V1 Admin Roles Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Role Policy",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "description": "Users in the caller's organization, searchable and filterable.\n\nThe role filter is a subquery rather than a join, deliberately: a user may\nhold several roles, and joining would return them once per matching role\nand make `total` wrong in a way that only shows up for exactly the accounts\nan administrator is most likely to be looking at.",
@@ -302,6 +326,106 @@
           }
         },
         "summary": "Update User",
+        "tags": [
+          "user-administration"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{user_id}/access": {
+      "get": {
+        "description": "This person's access in this organization \u2014 the matrix's read.\n\nThe same shape as one organization on the platform console, so both grids\nread one thing. Another organization's person is a 404, as everywhere here.",
+        "operationId": "get_access_api_v1_admin_users__user_id__access_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Access Api V1 Admin Users  User Id  Access Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Access",
+        "tags": [
+          "user-administration"
+        ]
+      },
+      "put": {
+        "description": "Set this person's whole access here: template role, ticks and cameras.\n\n`{role, permissions, camera_breadth?, camera_keys?}`. The organization is\nthe caller's own and is never read from the body. The server records the\nrole and the exceptions that make `decide()` answer exactly the ticks.\n\nRefused, and audited as refused: changing yourself; ticking a permission you\ndo not hold; recording a template role wider than your own; giving camera\nreach beyond yours. Removing is never refused. Specific cameras must exist\nin this organization.",
+        "operationId": "set_access_api_v1_admin_users__user_id__access_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Access Api V1 Admin Users  User Id  Access Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Access",
         "tags": [
           "user-administration"
         ]

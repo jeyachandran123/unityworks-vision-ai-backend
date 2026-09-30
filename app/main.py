@@ -42,6 +42,7 @@ from app.api.product import router as product_router
 from app.api.recorders import router as recorders_router
 from app.api.reports import router as reports_router
 from app.api.routes import build_router, devtools_router
+from app.api.user_administration import roles_router as user_roles_router
 from app.api.user_administration import router as user_administration_router
 from app.api.wall import router as wall_router
 from app.api.websocket import router as websocket_router
@@ -150,6 +151,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # `app.authorization.resolver`); reads gated on `VIEW_USERS`, writes on
     # `MANAGE_USERS`, per route.
     app.include_router(user_administration_router)
+    app.include_router(user_roles_router)
     # The platform-operator surface: organizations and their lifecycle. Gated
     # on `current_operator`, which resolves a `PlatformOperator` — a different
     # principal type from the tenant-scoped `AccessDecision` every other router

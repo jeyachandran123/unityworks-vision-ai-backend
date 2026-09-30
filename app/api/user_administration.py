@@ -80,6 +80,15 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import CurrentAccess, DbSession, requires, settings_of
 from app.auth.passwords import hash_password
+from app.authorization.assignments import (
+    OrganizationAccess,
+    access_audit_detail,
+    apply_organization_access,
+    load_for_access,
+    organization_access_to_wire,
+    parse_organization_access,
+    refuse_escalation,
+)
 from app.authorization.camera_scope import (
     grant_to_wire,
     parse_camera_scope_request,
@@ -88,6 +97,7 @@ from app.authorization.camera_scope import (
     set_camera_scope,
 )
 from app.authorization.model import (
+    ROLE_PERMISSIONS,
     AccessDecision,
     OverrideState,
     Permission,
@@ -99,7 +109,7 @@ from app.authorization.overrides import clear_permission_override, set_permissio
 from app.authorization.resolver import decide, parse_overrides
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.errors import ConflictError, NotFoundError, ScopeError, ValidationError
-from app.users.models import OrganizationMembership, RoleAssignment, User
+from app.users.models import Organization, OrganizationMembership, RoleAssignment, User
 
 #: Reads are `VIEW_USERS`; writes are `MANAGE_USERS`. Declared per route rather
 #: than once on the router, because gating the whole surface on `MANAGE_USERS`
@@ -108,6 +118,10 @@ from app.users.models import OrganizationMembership, RoleAssignment, User
 #: SUSPENDED organization could not read its own user list (suspension drops
 #: `MANAGE_*`, so it took the reads with it).
 router = APIRouter(prefix="/api/v1/admin/users", tags=["user-administration"])
+#: The role policy the access matrix starts a template from. Its own router
+#: because it is not about one user, and `/admin/users/roles` would read as a
+#: user whose id is "roles".
+roles_router = APIRouter(prefix="/api/v1/admin", tags=["user-administration"])
 
 _READS = [Depends(requires(Permission.VIEW_USERS))]
 _WRITES = [Depends(requires(Permission.MANAGE_USERS))]
@@ -421,13 +435,31 @@ async def create_user(
         raise ValidationError("'email' must be a valid address")
 
     display_name = str(payload.get("display_name", "") or "").strip() or email.split("@")[0]
-    role_values = payload.get("roles", [])
-    if not isinstance(role_values, list):
-        raise ValidationError("'roles' must be a list")
-    roles = [_role_from(r) for r in role_values]
 
-    for role in roles:
-        _require_grantable_role(access, role)
+    # Two shapes. The access matrix sends one template `role` plus the exact
+    # `permissions` ticked; older callers send `roles` alone. Both at once would
+    # leave it unclear which one is the person's access, so that is refused.
+    grid: OrganizationAccess | None = None
+    if "permissions" in payload:
+        if payload.get("roles"):
+            raise ValidationError("give either 'roles', or 'role' with 'permissions' — not both")
+        grid = parse_organization_access(
+            {
+                "organization_id": access.tenant_id,
+                "role": payload.get("role"),
+                "permissions": payload.get("permissions"),
+            }
+        )
+        refuse_escalation(access, grid, target=None)
+        roles: list[Role] = []
+    else:
+        role_values = payload.get("roles", [])
+        if not isinstance(role_values, list):
+            raise ValidationError("'roles' must be a list")
+        roles = [_role_from(r) for r in role_values]
+
+        for role in roles:
+            _require_grantable_role(access, role)
 
     existing = (
         await session.execute(
@@ -514,6 +546,17 @@ async def create_user(
     )
 
     await session.flush()
+    if grid is not None:
+        # The template role and the exceptions that make their access exactly
+        # the ticks — the same writer the platform console and the edit route
+        # use. Camera scope is already set above, so the grid states none.
+        await apply_organization_access(
+            session,
+            actor=actor,
+            target=await load_for_access(session, user.id),
+            access=grid,
+            granted_by=access.subject,
+        )
     await session.refresh(user, attribute_names=["role_assignments", "access_grants"])
 
     await AuditTrail(session).record(
@@ -529,6 +572,14 @@ async def create_user(
             "roles": sorted(r.value for r in roles),
             "camera_breadth": scope.breadth.value,
             "camera_count": len(scope.camera_ids),
+            **(
+                {
+                    "role": grid.role.value if grid.role is not None else None,
+                    "permissions": sorted(p.value for p in grid.permissions),
+                }
+                if grid is not None
+                else {}
+            ),
         },
     )
 
@@ -940,4 +991,129 @@ async def set_camera_scope_route(
     }
 
 
-__all__ = ["router"]
+# ── the access matrix, inside the organization ──────────────────────────────
+#
+# The same grid the platform console offers (`platform_administration.py`),
+# pinned to the caller's own organization: no organization to choose, because
+# the tenant on the token is the only one there is. Everything is written by the
+# same `app.authorization.assignments` code, with one difference the platform
+# never needed — `refuse_escalation`, because somebody inside an organization
+# who may administer people can hold far less than the Platform Admin.
+
+
+@roles_router.get("/roles", dependencies=_READS)
+async def role_policy(access: CurrentAccess) -> dict[str, Any]:
+    """What each role grants, and whether *you* may give it.
+
+    The matrix's "Start from role" list. `grantable` is rule 2 read ahead of
+    time: a role is grantable when every permission it carries is one the
+    caller holds, which is exactly what `refuse_escalation` checks on save —
+    so the screen never offers a role the server would refuse.
+    """
+    return {
+        "roles": [
+            {
+                "role": role.value,
+                "permissions": sorted(p.value for p in ROLE_PERMISSIONS.get(role, frozenset())),
+                "grantable": permissions_for(frozenset({role})) <= access.permissions,
+            }
+            for role in Role
+        ]
+    }
+
+
+@router.get("/{user_id}/access", dependencies=_READS)
+async def get_access(user_id: str, access: CurrentAccess, session: DbSession) -> dict[str, Any]:
+    """This person's access in this organization — the matrix's read.
+
+    The same shape as one organization on the platform console, so both grids
+    read one thing. Another organization's person is a 404, as everywhere here.
+    """
+    user = await _user_in_tenant(session, access.tenant_id, user_id)
+    organization = await session.get(Organization, access.tenant_id)
+    return organization_access_to_wire(user, organization, is_member=True)
+
+
+@router.put("/{user_id}/access", dependencies=_WRITES)
+async def set_access(
+    user_id: str,
+    request: Request,
+    access: CurrentAccess,
+    session: DbSession,
+    payload: Annotated[dict, Body(...)],
+) -> dict[str, Any]:
+    """Set this person's whole access here: template role, ticks and cameras.
+
+    `{role, permissions, camera_breadth?, camera_keys?}`. The organization is
+    the caller's own and is never read from the body. The server records the
+    role and the exceptions that make `decide()` answer exactly the ticks.
+
+    Refused, and audited as refused: changing yourself; ticking a permission you
+    do not hold; recording a template role wider than your own; giving camera
+    reach beyond yours. Removing is never refused. Specific cameras must exist
+    in this organization.
+    """
+    target = await _user_in_tenant(session, access.tenant_id, user_id)
+    grid = parse_organization_access(
+        {**payload, "organization_id": access.tenant_id}, allow_listed=True
+    )
+
+    if _is_self(access, target):
+        await _refuse_access(session, request, access, target, "self")
+        raise ScopeError("you may not change your own access")
+    try:
+        refuse_escalation(access, grid, target=target)
+    except ScopeError as refusal:
+        await _refuse_access(session, request, access, target, "escalation", refusal.details)
+        raise
+
+    if grid.camera_breadth is ScopeBreadth.LISTED:
+        await resolve_camera_keys(
+            session, organization_id=access.tenant_id, camera_keys=grid.camera_keys
+        )
+
+    actor = await _actor(session, access)
+    applied = await apply_organization_access(
+        session, actor=actor, target=target, access=grid, granted_by=access.subject
+    )
+    await AuditTrail(session).record(
+        action=AuditAction.ACCESS_SET,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles_tuple(access),
+        resource_type="user",
+        resource_id=target.id,
+        request_id=_request_id(request),
+        detail=access_audit_detail(target, applied),
+    )
+
+    reloaded = await load_for_access(session, target.id)
+    organization = await session.get(Organization, access.tenant_id)
+    return organization_access_to_wire(reloaded, organization, is_member=True)
+
+
+async def _refuse_access(
+    session: AsyncSession,
+    request: Request,
+    access: AccessDecision,
+    target: User,
+    reason: str,
+    details: dict | None = None,
+) -> None:
+    """A refusal is audited with the same weight as a success, and committed
+    before the error propagates — the request rolls back on the way out."""
+    await AuditTrail(session).record(
+        action=AuditAction.ACCESS_SET,
+        organization_id=access.tenant_id,
+        actor=access.subject,
+        actor_roles=_roles_tuple(access),
+        outcome=AuditOutcome.DENIED,
+        resource_type="user",
+        resource_id=target.id,
+        request_id=_request_id(request),
+        detail={"email": target.email, "reason": reason, **(details or {})},
+    )
+    await session.commit()
+
+
+__all__ = ["roles_router", "router"]

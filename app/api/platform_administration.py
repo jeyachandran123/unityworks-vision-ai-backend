@@ -55,13 +55,12 @@ from app.auth.passwords import hash_password
 from app.authorization.assignments import (
     AppliedAccess,
     OrganizationAccess,
+    access_audit_detail,
     apply_organization_access,
-    intended_permissions,
     load_for_access,
+    organization_access_to_wire,
     parse_access_items,
-    template_role,
 )
-from app.authorization.camera_scope import grant_to_wire
 from app.authorization.model import (
     ROLE_PERMISSIONS,
     OrganizationStatus,
@@ -69,7 +68,6 @@ from app.authorization.model import (
     Role,
 )
 from app.authorization.platform import PlatformOperator
-from app.authorization.resolver import decide
 from app.domain.audit import AuditAction, AuditOutcome, AuditTrail
 from app.domain.models import AuditEvent, Camera, Zone
 from app.errors import ConflictError, NotFoundError, ScopeError, ValidationError
@@ -789,46 +787,9 @@ async def _access_to_wire(session: DbSession, user: User) -> dict[str, Any]:
         "is_platform_operator": user.id in operators,
         "home_organization_id": user.organization_id,
         "organizations": [
-            _organization_access_to_wire(user, organization, organization.id in member_of)
+            organization_access_to_wire(user, organization, is_member=organization.id in member_of)
             for organization in organizations
         ],
-    }
-
-
-def _organization_access_to_wire(
-    user: User, organization: Organization, is_member: bool
-) -> dict[str, Any]:
-    base = {
-        "organization_id": organization.id,
-        "organization_name": organization.name,
-        "status": str(organization.status or OrganizationStatus.ACTIVE.value).strip().lower(),
-        "is_member": is_member,
-        "is_home": user.organization_id == organization.id,
-    }
-    if not is_member:
-        return {
-            **base,
-            "role": None,
-            "roles": [],
-            "permissions": [],
-            "effective": [],
-            "camera_scope": grant_to_wire(None),
-        }
-    template = template_role(user, organization.id)
-    grant = next(
-        (g for g in (user.access_grants or ()) if g.organization_id == organization.id), None
-    )
-    return {
-        **base,
-        "role": template.value if template is not None else None,
-        "roles": sorted(
-            a.role for a in (user.role_assignments or ()) if a.organization_id == organization.id
-        ),
-        "permissions": sorted(p.value for p in intended_permissions(user, organization.id)),
-        "effective": sorted(
-            p.value for p in decide(user, organization_id=organization.id).permissions
-        ),
-        "camera_scope": grant_to_wire(grant),
     }
 
 
@@ -1076,18 +1037,7 @@ async def _audit_access(
         resource_type="user",
         resource_id=user.id,
         request_id=_request_id(request),
-        detail={
-            "email": user.email,
-            "role": applied.plan.role.value if applied.plan.role is not None else None,
-            "added": sorted(p.value for p in applied.after - applied.before),
-            "removed": sorted(p.value for p in applied.before - applied.after),
-            "granted": sorted(p.value for p in applied.plan.granted),
-            "revoked": sorted(p.value for p in applied.plan.revoked),
-            "camera_breadth": (
-                applied.camera_breadth.value if applied.camera_breadth is not None else None
-            ),
-            "admitted": applied.admitted,
-        },
+        detail=access_audit_detail(user, applied),
     )
 
 

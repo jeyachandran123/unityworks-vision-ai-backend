@@ -197,6 +197,13 @@ GRANT/REVOKE overrides so `decide()` answers exactly that set; it writes through
 `user.access_set` into each organization it changes. Camera breadth from there is `none` or
 `all_in_tenant` only; `listed` stays with the organization's own admin.
 
+The same grid runs **inside an organization** (`GET /admin/roles`, `GET/PUT /admin/users/{id}/access`,
+and `POST /admin/users` with `role` + `permissions`), gated on that organization's `VIEW_USERS` /
+`MANAGE_USERS`. The difference is `assignments.refuse_escalation`: a newly ticked permission must be
+one the actor holds, a newly recorded template role must carry nothing the actor lacks, camera reach
+may not exceed the actor's own — removing is never refused. Refusals are audited as `user.access_set`
+with outcome `denied`. Specific (`listed`) cameras are allowed from this door.
+
 **Camera scope is three-valued and must stay so.** Vision OS reads an empty `cameras` tuple in a
 `Grant` as *every camera in the tenant*. The application's natural value for "no access yet" is an
 empty list. So `ScopeBreadth` is `NONE` / `ALL_IN_TENANT` / `LISTED`, `CameraScope` cannot be built

@@ -35,9 +35,15 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.authorization.camera_scope import set_camera_scope
+from app.authorization.camera_scope import (
+    grant_to_wire,
+    require_grantable_scope,
+    set_camera_scope,
+)
 from app.authorization.model import (
+    AccessDecision,
     CameraScope,
+    OrganizationStatus,
     Permission,
     Role,
     ScopeBreadth,
@@ -45,12 +51,13 @@ from app.authorization.model import (
     permissions_for,
 )
 from app.authorization.overrides import replace_permission_overrides
-from app.authorization.resolver import parse_overrides, parse_roles
-from app.errors import ValidationError
-from app.users.models import OrganizationMembership, RoleAssignment, User
+from app.authorization.resolver import decide, parse_overrides, parse_roles
+from app.errors import ScopeError, ValidationError
+from app.users.models import Organization, OrganizationMembership, RoleAssignment, User
 
-#: The two camera breadths this door accepts. `listed` names specific cameras,
-#: which only the organization's own administration can see to choose.
+#: The two camera breadths the platform door accepts. `listed` names specific
+#: cameras, which only the organization's own administration can see to choose
+#: — so only that door passes `allow_listed=True`.
 _SETTABLE_BREADTHS = frozenset({ScopeBreadth.NONE, ScopeBreadth.ALL_IN_TENANT})
 
 
@@ -87,6 +94,18 @@ class OrganizationAccess:
     #: `None` leaves camera reach as it is — which is how a list of specific
     #: cameras, set inside the organization, survives a change made here.
     camera_breadth: ScopeBreadth | None = None
+    #: The named cameras, for `LISTED` only — and only ever from inside the
+    #: organization, which is the one place that can see its cameras to pick.
+    camera_keys: tuple[str, ...] = ()
+
+    @property
+    def camera_scope(self) -> CameraScope | None:
+        """The stated camera reach as a scope, or `None` when not stated."""
+        if self.camera_breadth is None:
+            return None
+        if self.camera_breadth is ScopeBreadth.LISTED:
+            return CameraScope.listed(self.camera_keys)
+        return CameraScope(breadth=self.camera_breadth)
 
     @property
     def touches(self) -> bool:
@@ -111,12 +130,15 @@ class AppliedAccess:
     camera_breadth: ScopeBreadth | None
 
 
-def parse_organization_access(raw: Any) -> OrganizationAccess:
+def parse_organization_access(raw: Any, *, allow_listed: bool = False) -> OrganizationAccess:
     """Read one `{organization_id, role, permissions, camera_breadth}` item.
 
     Every unknown value is a refusal, never a drop: a matrix that silently
     ignored a permission it could not read would save something other than what
     the operator looked at and approved.
+
+    `allow_listed` admits `camera_breadth: "listed"` with `camera_keys` — the
+    organization's own door passes it; the platform's does not.
     """
     if not isinstance(raw, dict):
         raise ValidationError("each organization entry must be an object")
@@ -148,23 +170,42 @@ def parse_organization_access(raw: Any) -> OrganizationAccess:
             ) from exc
 
     breadth: ScopeBreadth | None = None
+    keys: tuple[str, ...] = ()
     if raw.get("camera_breadth") is not None:
         try:
             breadth = ScopeBreadth(str(raw["camera_breadth"]).strip().lower())
         except ValueError:
             breadth = None
-        if breadth not in _SETTABLE_BREADTHS:
+        settable = _SETTABLE_BREADTHS | ({ScopeBreadth.LISTED} if allow_listed else set())
+        if breadth not in settable:
             raise ValidationError(
-                "'camera_breadth' must be 'none' or 'all_in_tenant' here; specific "
-                "cameras are chosen inside the organization",
+                (
+                    "'camera_breadth' must be 'none', 'listed' or 'all_in_tenant'"
+                    if allow_listed
+                    else "'camera_breadth' must be 'none' or 'all_in_tenant' here; specific "
+                    "cameras are chosen inside the organization"
+                ),
                 details={"camera_breadth": raw["camera_breadth"]},
             )
+        if breadth is ScopeBreadth.LISTED:
+            values = raw.get("camera_keys", [])
+            if not isinstance(values, list):
+                raise ValidationError("'camera_keys' must be a list")
+            keys = tuple(dict.fromkeys(str(k).strip() for k in values if str(k).strip()))
+            if not keys:
+                # An empty list is ambiguous — and the platform reads an empty
+                # camera tuple as *every* camera. Say `none` when it is none.
+                raise ValidationError(
+                    "'camera_breadth' is 'listed' but no cameras were named; say "
+                    "'none' when the answer is none"
+                )
 
     return OrganizationAccess(
         organization_id=organization_id,
         role=role,
         permissions=frozenset(permissions),
         camera_breadth=breadth,
+        camera_keys=keys,
     )
 
 
@@ -257,13 +298,13 @@ async def apply_organization_access(
 
     before = intended_permissions(target, organization_id) if is_member else frozenset()
 
-    camera_breadth = access.camera_breadth
-    if camera_breadth is None and not is_member:
+    camera_scope = access.camera_scope
+    if camera_scope is None and not is_member:
         # `remove_member` keeps a person's rows so that an undo is lossless —
         # an every-camera grant included. The matrix shows a non-member as "no
         # cameras", so admitting one without a stated breadth must mean that,
         # never whatever a removed membership left behind: deny by default.
-        camera_breadth = ScopeBreadth.NONE
+        camera_scope = CameraScope.none()
 
     if not is_member:
         session.add(
@@ -301,12 +342,12 @@ async def apply_organization_access(
         revoked=plan.revoked,
     )
 
-    if camera_breadth is not None:
+    if camera_scope is not None:
         await set_camera_scope(
             session,
             actor=actor,
             target=target,
-            scope=CameraScope(breadth=camera_breadth),
+            scope=camera_scope,
             organization_id=organization_id,
         )
     await session.flush()
@@ -317,19 +358,129 @@ async def apply_organization_access(
         before=before,
         after=access.permissions,
         plan=plan,
-        camera_breadth=camera_breadth,
+        camera_breadth=camera_scope.breadth if camera_scope is not None else None,
     )
+
+
+def refuse_escalation(
+    actor: AccessDecision, access: OrganizationAccess, *, target: User | None
+) -> None:
+    """Refuse a grid that would give more than the actor holds.
+
+    The organization's own door, not the platform's: a Platform Admin holds
+    every permission by entry, while somebody inside an organization who may
+    administer people can hold much less. This is `user_administration`'s rule
+    2 — a grantor may only give out what they hold — applied to a whole grid:
+
+    * a permission newly ticked must be one the actor holds;
+    * a template role newly recorded must carry nothing the actor lacks — the
+      role outlives the ticks, and clearing the exceptions later would hand
+      over all of it;
+    * camera reach may not exceed the actor's own (`require_grantable_scope`).
+
+    Removing is never restricted. Narrowing somebody is not an escalation in
+    the direction this rule exists to block.
+
+    `target` is `None` for somebody being created, who holds nothing yet.
+    """
+    organization_id = access.organization_id
+    before = intended_permissions(target, organization_id) if target is not None else frozenset()
+    beyond = (access.permissions - before) - actor.permissions
+    if beyond:
+        raise ScopeError(
+            "you cannot give a permission you do not hold yourself",
+            details={"missing": sorted(p.value for p in beyond)},
+        )
+
+    held_roles = _roles_in(target, organization_id) if target is not None else frozenset()
+    if access.role is not None and access.role not in held_roles:
+        missing = permissions_for(frozenset({access.role})) - actor.permissions
+        if missing:
+            raise ScopeError(
+                f"cannot record role '{access.role.value}': it carries a permission "
+                "you do not hold",
+                details={"role": access.role.value, "missing": sorted(p.value for p in missing)},
+            )
+
+    scope = access.camera_scope
+    if scope is not None:
+        require_grantable_scope(actor, scope)
+
+
+def organization_access_to_wire(
+    user: User, organization: Organization, *, is_member: bool
+) -> dict[str, Any]:
+    """One organization's worth of a person's access, as the matrix reads it.
+
+    Shared by the platform console (every organization) and the organization's
+    own User & Access (just that one), so the two grids read the same shape.
+    `permissions` is `(role ∪ GRANTs) − REVOKEs`; `effective` is what `decide()`
+    gives on the next request — they differ only in a suspended organization.
+    """
+    base = {
+        "organization_id": organization.id,
+        "organization_name": organization.name,
+        "status": str(organization.status or OrganizationStatus.ACTIVE.value).strip().lower(),
+        "is_member": is_member,
+        "is_home": user.organization_id == organization.id,
+    }
+    if not is_member:
+        # Roles left behind by a removed membership grant nothing, and are not
+        # shown as if they did.
+        return {
+            **base,
+            "role": None,
+            "roles": [],
+            "permissions": [],
+            "effective": [],
+            "camera_scope": grant_to_wire(None),
+        }
+    template = template_role(user, organization.id)
+    grant = next(
+        (g for g in (user.access_grants or ()) if g.organization_id == organization.id), None
+    )
+    return {
+        **base,
+        "role": template.value if template is not None else None,
+        "roles": sorted(
+            a.role for a in (user.role_assignments or ()) if a.organization_id == organization.id
+        ),
+        "permissions": sorted(p.value for p in intended_permissions(user, organization.id)),
+        "effective": sorted(
+            p.value for p in decide(user, organization_id=organization.id).permissions
+        ),
+        "camera_scope": grant_to_wire(grant),
+    }
+
+
+def access_audit_detail(user: User, applied: AppliedAccess) -> dict[str, Any]:
+    """The `user.access_set` row's detail: what the change made them able to do."""
+    return {
+        "email": user.email,
+        "role": applied.plan.role.value if applied.plan.role is not None else None,
+        "added": sorted(p.value for p in applied.after - applied.before),
+        "removed": sorted(p.value for p in applied.before - applied.after),
+        "granted": sorted(p.value for p in applied.plan.granted),
+        "revoked": sorted(p.value for p in applied.plan.revoked),
+        "camera_breadth": (
+            applied.camera_breadth.value if applied.camera_breadth is not None else None
+        ),
+        "admitted": applied.admitted,
+    }
 
 
 __all__ = [
     "AccessPlan",
     "AppliedAccess",
     "OrganizationAccess",
+    "access_audit_detail",
     "apply_organization_access",
     "intended_permissions",
     "load_for_access",
+    "organization_access_to_wire",
     "parse_access_items",
     "parse_organization_access",
     "plan_access",
+    "refuse_escalation",
     "template_role",
 ]
