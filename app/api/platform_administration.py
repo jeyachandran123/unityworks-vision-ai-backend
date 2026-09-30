@@ -7,6 +7,13 @@ rename it, suspend it, enter it. This module owns administering the platform
 *across* organizations: who exists, who may enter what, what an operator is, and
 what the estate looks like in aggregate.
 
+Since 2026-09-30 it also sets **what a person may do** in each organization —
+the access matrix (`GET/PUT /people/{id}/access`, `POST /people`). That is not
+a widening: the Platform Admin can already enter any organization with every
+permission and do the same from inside it. The matrix writes the same role and
+override rows an Organization Admin writes, through the same guarded modules,
+and files every change in the organization it changes.
+
 Every route here is gated on `CurrentOperator`, reads no `Permission`, and is
 refused outright for any tenant principal. That is the same boundary
 `platform.py` documents, and the reason this is a separate file rather than a

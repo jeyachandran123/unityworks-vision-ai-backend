@@ -3152,6 +3152,50 @@
         "tags": [
           "platform"
         ]
+      },
+      "post": {
+        "description": "Create a person and give them their access, in one step.\n\nThe access matrix's first screen: account details, a home organization, and\nthe same per-organization items `PUT .../access` takes. Everything is\nchecked \u2014 the email, the password's floor, every organization \u2014 before any\nrow exists, and it all happens in this request's one transaction, so a\nrefusal leaves nothing behind.\n\nThe home organization is always joined, even with nothing ticked there: it\nis where the account lives, and an account filed somewhere it cannot enter\nis the state `home_membership_missing` exists to report, not one to create.\n\nA duplicate email is a plain 409 naming the existing account. The caller is\na Platform Admin who can already list everyone, and the next step is to edit\nthat person's access rather than create a second one.",
+        "operationId": "create_person_api_v1_platform_people_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Create Person Api V1 Platform People Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Person",
+        "tags": [
+          "platform"
+        ]
       }
     },
     "/api/v1/platform/people/{user_id}": {
@@ -3193,6 +3237,106 @@
           }
         },
         "summary": "Get Person",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api/v1/platform/people/{user_id}/access": {
+      "get": {
+        "description": "What this person may do in every organization on the platform.\n\nEvery organization is listed, member or not, because the matrix offers every\none of them. For an organization the person is not in, everything is empty\nand `camera_scope` says `none` \u2014 roles left behind by a removed membership\ngrant nothing and are not shown as if they did.\n\n`permissions` is what the matrix shows, `(role \u222a GRANTs) \u2212 REVOKEs`.\n`effective` is what `decide()` gives on the next request; the two differ\nonly in a suspended organization, whose writes are withheld until it is\nrestored. Both are reported so the console never re-derives either.",
+        "operationId": "person_access_api_v1_platform_people__user_id__access_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Person Access Api V1 Platform People  User Id  Access Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Person Access",
+        "tags": [
+          "platform"
+        ]
+      },
+      "put": {
+        "description": "Set what this person may do, in one or more organizations, at once.\n\nEach item states an organization's whole access: a template role (or none),\nthe permissions ticked, and optionally the camera breadth. The server writes\nthe role and the exceptions that make `decide()` answer exactly those\npermissions (`app.authorization.assignments`).\n\n### All or nothing\n\nEvery item is parsed and every organization checked \u2014 it exists, it is not\narchived \u2014 before the first row is written, and the request is one\ntransaction. One bad organization refuses the lot.\n\n### Who may not be a target\n\nYourself (403): an operator who could set their own access could give\nthemselves anything, in any organization. And another Platform Admin\n(422): a Platform Admin belongs to no organization, and giving one\nmemberships would make them a tenant principal as well.\n\nOnly the organizations named are touched. An organization the person is not\nin is joined only if its item asks for something \u2014 a role, a permission or\nevery camera \u2014 and that admission is audited as such.",
+        "operationId": "set_person_access_api_v1_platform_people__user_id__access_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Person Access Api V1 Platform People  User Id  Access Put",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Person Access",
         "tags": [
           "platform"
         ]

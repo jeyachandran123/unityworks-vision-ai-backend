@@ -189,6 +189,14 @@ Effective permissions are `(role permissions ∪ GRANTs) − REVOKEs`, composed 
 both hold the anti-escalation guards (no self-modification; a grantor may not confer reach it does
 not hold) so a route cannot forget them.
 
+**The platform access matrix** (`GET/PUT /platform/people/{id}/access`, `POST /platform/people`,
+since 2026-09-30) lets the Platform Admin state a person's access per organization as a set of
+permissions. `app/authorization/assignments.py::plan_access` turns it into one template role plus
+GRANT/REVOKE overrides so `decide()` answers exactly that set; it writes through
+`overrides.replace_permission_overrides` and `camera_scope.set_camera_scope`, and audits
+`user.access_set` into each organization it changes. Camera breadth from there is `none` or
+`all_in_tenant` only; `listed` stays with the organization's own admin.
+
 **Camera scope is three-valued and must stay so.** Vision OS reads an empty `cameras` tuple in a
 `Grant` as *every camera in the tenant*. The application's natural value for "no access yet" is an
 empty list. So `ScopeBreadth` is `NONE` / `ALL_IN_TENANT` / `LISTED`, `CameraScope` cannot be built
