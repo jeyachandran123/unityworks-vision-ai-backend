@@ -43,7 +43,8 @@ be lying about what the server enforces.
 
 from __future__ import annotations
 
-from datetime import datetime
+import json
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Query, Request
@@ -106,15 +107,39 @@ def _request_id(request: Request) -> str:
 
 
 def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None
+    """A timestamp with its offset stated, so a browser in any zone reads it right."""
+    return _aware(value).isoformat() if value else None
 
 
 # ── overview ─────────────────────────────────────────────────────────────────
 
+#: How many days the activity chart covers. A fortnight is long enough to set a
+#: week beside the week before it, and short enough that one busy onboarding
+#: still reads as a spike rather than as the baseline.
+ACTIVITY_DAYS = 14
+
+#: The stream state that means pictures are arriving. Every other state the wall
+#: reports — connecting, reconnecting, offline, error, disabled — is a camera
+#: the wall holds and nobody can currently see through.
+_LIVE = "live"
+
 
 @router.get("/overview")
 async def overview(
-    request: Request, operator: CurrentOperator, session: DbSession
+    request: Request,
+    operator: CurrentOperator,
+    session: DbSession,
+    utc_offset: Annotated[
+        int,
+        Query(
+            ge=-840,
+            le=840,
+            description=(
+                "The reader's offset from UTC, in minutes. Decides where one day "
+                "of the activity chart ends and the next begins."
+            ),
+        ),
+    ] = 0,
 ) -> dict[str, Any]:
     """The platform at a glance.
 
@@ -132,32 +157,46 @@ async def overview(
     opinion a consumer forms, and aggregating opinions across unrelated
     customers produces a number with no referent. They belong on a Command
     Center, which is one organization's own reading of its own kitchen.
+
+    ### What a Platform Admin opens this page to find out
+
+    Which customer needs them. So beside the totals it reports every
+    organization on one line (`fleet`), and names the three ways a customer goes
+    quietly wrong without anybody inside it raising a ticket: onboarding that
+    never finished, nobody left who can administer it, and cameras that are
+    configured and switched on with not one of them live.
     """
+    now = datetime.now(UTC)
     organizations = (await session.execute(select(Organization))).scalars().all()
+    names = {organization.id: organization.name for organization in organizations}
 
     by_status: dict[str, int] = {status.value: 0 for status in OrganizationStatus}
     for organization in organizations:
-        key = str(organization.status or "").strip().lower()
+        key = _status_of(organization)
         by_status[key] = by_status.get(key, 0) + 1
 
     zones = await _group_count(session, Zone.organization_id)
     cameras = await _group_count(session, Camera.organization_id)
+    switched_on = await _group_count(session, Camera.organization_id, Camera.enabled.is_(True))
+    members = await _group_count(session, OrganizationMembership.organization_id)
+    admins = await _admin_counts(session)
+    last_sign_in = await _last_sign_in(session)
+    wall = _wall_states(request)
 
-    users_total = int((await session.execute(select(func.count()).select_from(User))).scalar_one())
-    users_active = int(
-        (
-            await session.execute(
-                select(func.count()).select_from(User).where(User.is_active.is_(True))
-            )
-        ).scalar_one()
-    )
-    never_signed_in = int(
-        (
-            await session.execute(
-                select(func.count()).select_from(User).where(User.last_login_at.is_(None))
-            )
-        ).scalar_one()
-    )
+    platform_states: dict[str, int] = {}
+    for states in wall.values():
+        for state, count in states.items():
+            platform_states[state] = platform_states.get(state, 0) + count
+
+    async def users_where(*conditions) -> int:
+        statement = select(func.count()).select_from(User)
+        if conditions:
+            statement = statement.where(*conditions)
+        return int((await session.execute(statement)).scalar_one())
+
+    users_total = await users_where()
+    users_active = await users_where(User.is_active.is_(True))
+    never_signed_in = await users_where(User.last_login_at.is_(None))
 
     # People who work for more than one customer. The number that says whether
     # the multi-organization model is being used at all, and the population every
@@ -181,50 +220,173 @@ async def overview(
         ).scalar_one()
     )
 
+    # An account with a password and nowhere to use it. Usually the residue of
+    # a removed membership; occasionally somebody who was never finished. The
+    # Platform Admin belongs to no organization by design and is not counted.
+    without_membership = await users_where(
+        ~User.id.in_(select(OrganizationMembership.user_id)),
+        ~User.id.in_(select(PlatformOperatorGrant.user_id)),
+    )
+
+    fleet = [
+        {
+            "id": organization.id,
+            "name": organization.name,
+            "slug": organization.slug,
+            "status": _status_of(organization),
+            "created_at": _iso(organization.created_at),
+            "zones": zones.get(organization.id, 0),
+            "cameras": cameras.get(organization.id, 0),
+            "cameras_enabled": switched_on.get(organization.id, 0),
+            "cameras_live": wall.get(organization.id, {}).get(_LIVE, 0),
+            "stream_states": wall.get(organization.id, {}),
+            "members": members.get(organization.id, 0),
+            "admins": admins.get(organization.id, 0),
+            "last_sign_in_at": _iso(last_sign_in.get(organization.id)),
+        }
+        for organization in sorted(organizations, key=lambda o: (o.name or "").lower())
+    ]
+
+    def active(row: dict[str, Any]) -> bool:
+        return row["status"] == OrganizationStatus.ACTIVE.value
+
     # Onboarding that stalled. An organization with no zones or no cameras is
     # not broken — it is unfinished, and nobody is currently told about it.
     stalled = [
         {
-            "id": organization.id,
-            "name": organization.name,
-            "zone_count": zones.get(organization.id, 0),
-            "camera_count": cameras.get(organization.id, 0),
+            "id": row["id"],
+            "name": row["name"],
+            "zone_count": row["zones"],
+            "camera_count": row["cameras"],
         }
-        for organization in organizations
-        if str(organization.status or "").strip().lower() == OrganizationStatus.ACTIVE.value
-        and (zones.get(organization.id, 0) == 0 or cameras.get(organization.id, 0) == 0)
+        for row in fleet
+        if active(row) and (row["zones"] == 0 or row["cameras"] == 0)
     ]
 
+    activity, refused_7d = await _activity(session, now=now, utc_offset=utc_offset)
+
     return {
+        "generated_at": now.isoformat(),
         "organizations": {
             "total": len(organizations),
             "active": by_status.get(OrganizationStatus.ACTIVE.value, 0),
             "suspended": by_status.get(OrganizationStatus.SUSPENDED.value, 0),
             "archived": by_status.get(OrganizationStatus.ARCHIVED.value, 0),
+            "new_30d": sum(
+                1
+                for organization in organizations
+                if organization.created_at is not None
+                and _aware(organization.created_at) >= now - timedelta(days=30)
+            ),
         },
         "estate": {
             "zones": sum(zones.values()),
             "cameras": sum(cameras.values()),
-            # What the runtime is actually streaming, platform-wide. Read from
-            # the wall registry rather than the camera table, so it reports
-            # reality rather than intent.
+            "cameras_enabled": sum(switched_on.values()),
+            # Every stream the wall holds, whatever its state. Kept for the
+            # callers that already read it; `cameras_live` is the number that
+            # means pictures are arriving.
             "cameras_running": _running_total(request),
+            "cameras_live": platform_states.get(_LIVE, 0),
+            # Read from the wall registry rather than the camera table, so it
+            # reports reality rather than intent. This process only.
+            "stream_states": platform_states,
         },
         "people": {
             "users": users_total,
             "active_users": users_active,
+            "disabled_users": users_total - users_active,
             "multi_organization_users": multi_org,
             "never_signed_in": never_signed_in,
+            "signed_in_24h": await users_where(User.last_login_at >= now - timedelta(hours=24)),
+            "signed_in_7d": await users_where(User.last_login_at >= now - timedelta(days=7)),
+            "signed_in_30d": await users_where(User.last_login_at >= now - timedelta(days=30)),
+            "without_membership": without_membership,
             "platform_operators": operators,
         },
-        "attention": {"organizations_needing_setup": stalled},
-        "recent_activity": await _recent_activity(session),
+        "fleet": fleet,
+        "attention": {
+            "organizations_needing_setup": stalled,
+            # Nobody left who can let anybody in, take anybody out, or change
+            # what they may do. The customer cannot fix this from the inside.
+            "organizations_without_admin": [
+                {"id": row["id"], "name": row["name"]}
+                for row in fleet
+                if active(row) and row["admins"] == 0
+            ],
+            # Switched on, and not one of them live: the failure that produces
+            # the angriest call, because the customer believes they are watched.
+            "organizations_not_live": [
+                {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "cameras_enabled": row["cameras_enabled"],
+                }
+                for row in fleet
+                if active(row) and row["cameras_enabled"] > 0 and row["cameras_live"] == 0
+            ],
+            "refused_changes_7d": refused_7d,
+        },
+        "activity": activity,
+        "recent_activity": await _recent_activity(session, names),
     }
 
 
-async def _group_count(session: DbSession, column) -> dict[str, int]:
-    rows = await session.execute(select(column, func.count()).group_by(column))
+def _status_of(organization: Organization) -> str:
+    return str(organization.status or "").strip().lower()
+
+
+def _aware(value: datetime) -> datetime:
+    """A stored timestamp, in UTC.
+
+    PostgreSQL hands back an aware value; SQLite drops the zone on the way in
+    and hands back a naive one. Every write here is UTC, so naive means UTC.
+    """
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+
+
+async def _group_count(session: DbSession, column, *where) -> dict[str, int]:
+    statement = select(column, func.count()).group_by(column)
+    if where:
+        statement = statement.where(*where)
+    rows = await session.execute(statement)
     return {organization_id: int(count) for organization_id, count in rows.all()}
+
+
+async def _admin_counts(session: DbSession) -> dict[str, int]:
+    """Organization Admins per organization who can actually act as one.
+
+    Three conditions, each one a way a role row outlives its holder's reach: the
+    role is held there, the person is still a member there (removing a
+    membership leaves the roles behind), and the account is still active.
+    """
+    rows = await session.execute(
+        select(RoleAssignment.organization_id, func.count(func.distinct(RoleAssignment.user_id)))
+        .join(User, User.id == RoleAssignment.user_id)
+        .join(
+            OrganizationMembership,
+            (OrganizationMembership.user_id == RoleAssignment.user_id)
+            & (OrganizationMembership.organization_id == RoleAssignment.organization_id),
+        )
+        .where(RoleAssignment.role == Role.ORG_ADMIN.value, User.is_active.is_(True))
+        .group_by(RoleAssignment.organization_id)
+    )
+    return {organization_id: int(count) for organization_id, count in rows.all()}
+
+
+async def _last_sign_in(session: DbSession) -> dict[str, datetime]:
+    """The most recent sign-in by any member, per organization.
+
+    Read from the account, not from the organization's own audit trail: a
+    sign-in time is the platform's fact about a person, and the trail is the
+    customer's record of what happened inside.
+    """
+    rows = await session.execute(
+        select(OrganizationMembership.organization_id, func.max(User.last_login_at))
+        .join(User, User.id == OrganizationMembership.user_id)
+        .group_by(OrganizationMembership.organization_id)
+    )
+    return {organization_id: at for organization_id, at in rows.all() if at is not None}
 
 
 def _running_total(request: Request) -> int:
@@ -234,7 +396,85 @@ def _running_total(request: Request) -> int:
     return len(getattr(wall, "streams", ()) or ())
 
 
-async def _recent_activity(session: DbSession, limit: int = 20) -> list[dict[str, Any]]:
+def _wall_states(request: Request) -> dict[str, dict[str, int]]:
+    """Every stream the wall holds, by organization and then by state.
+
+    The state is the stream's own, derived from frame arrival: `live` means a
+    frame arrived within the last few seconds, and nothing else does. The
+    organization is the runtime id's tenant half — the same split that lets the
+    wall stop one customer's cameras without touching another's.
+    """
+    from app.domain.runtime_identity import SEPARATOR
+
+    wall = getattr(request.app.state, "wall", None)
+    if wall is None:
+        return {}
+    out: dict[str, dict[str, int]] = {}
+    for key, stream in (getattr(wall, "streams", None) or {}).items():
+        organization_id = str(key).split(SEPARATOR, 1)[0]
+        state = str(getattr(stream, "state", "") or "unknown")
+        states = out.setdefault(organization_id, {})
+        states[state] = states.get(state, 0) + 1
+    return out
+
+
+async def _activity(
+    session: DbSession, *, now: datetime, utc_offset: int
+) -> tuple[dict[str, Any], int]:
+    """Platform acts per day for the last `ACTIVITY_DAYS`, in the reader's days.
+
+    A day is cut at the reader's midnight, not at UTC's: an act at 23:30 UTC is
+    tomorrow morning in Singapore, and a chart that filed it under yesterday
+    would disagree with the clock on the reader's own wall.
+
+    Returns the chart and, separately, how many changes were refused in the last
+    seven days — counted on the same rows so the two can never disagree.
+    """
+    shift = timedelta(minutes=utc_offset)
+    today = (now + shift).date()
+    first = today - timedelta(days=ACTIVITY_DAYS - 1)
+    since = datetime(first.year, first.month, first.day, tzinfo=UTC) - shift
+
+    rows = (
+        await session.execute(
+            select(AuditEvent.occurred_at, AuditEvent.outcome).where(
+                AuditEvent.action.in_(PLATFORM_ACTIONS), AuditEvent.occurred_at >= since
+            )
+        )
+    ).all()
+
+    totals = {first + timedelta(days=offset): [0, 0] for offset in range(ACTIVITY_DAYS)}
+    week_ago = now - timedelta(days=7)
+    refused_7d = 0
+    for occurred_at, outcome in rows:
+        at = _aware(occurred_at)
+        bucket = totals.get((at + shift).date())
+        if bucket is None:
+            continue
+        bucket[0] += 1
+        if outcome == AuditOutcome.DENIED.value:
+            bucket[1] += 1
+            if at >= week_ago:
+                refused_7d += 1
+
+    days = [
+        {"date": day.isoformat(), "total": total, "refused": refused}
+        for day, (total, refused) in sorted(totals.items())
+    ]
+    return (
+        {
+            "utc_offset": utc_offset,
+            "days": days,
+            "last_7d": sum(day["total"] for day in days[-7:]),
+            "previous_7d": sum(day["total"] for day in days[:-7]),
+        },
+        refused_7d,
+    )
+
+
+async def _recent_activity(
+    session: DbSession, names: dict[str, str], limit: int = 30
+) -> list[dict[str, Any]]:
     """The last few platform-level acts, across every organization.
 
     Read from the same `audit_events` table every other trail in the product
@@ -242,6 +482,15 @@ async def _recent_activity(session: DbSession, limit: int = 20) -> list[dict[str
     customer's own operational audit rows (evidence reads, incident changes) do
     not leak into a cross-tenant console: those are a tenant's record, readable
     with `VIEW_AUDIT` inside that tenant, and an operator does not hold it.
+
+    ### Named, summarised, and never the raw detail
+
+    Each row names the organization and, when the act was about a person, that
+    person — an id is not something a reader can act on. What changed is
+    summarised into a few whitelisted facts (`_change`). The stored detail
+    itself never leaves: it is the writer's record, its shape is free-form, and
+    a wire format that forwarded it would forward whatever the next writer put
+    there.
     """
     rows = (
         (
@@ -255,18 +504,77 @@ async def _recent_activity(session: DbSession, limit: int = 20) -> list[dict[str
         .scalars()
         .all()
     )
-    return [
-        {
-            "id": row.id,
-            "action": row.action,
-            "organization_id": row.organization_id,
-            "actor": row.actor,
-            "resource_id": row.resource_id,
-            "outcome": row.outcome,
-            "occurred_at": _iso(row.occurred_at),
-        }
-        for row in rows
-    ]
+
+    user_ids = {row.resource_id for row in rows if row.resource_type == "user" and row.resource_id}
+    emails: dict[str, str] = {}
+    if user_ids:
+        emails = dict(
+            (await session.execute(select(User.id, User.email).where(User.id.in_(user_ids)))).all()
+        )
+
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        detail = _detail(row.detail)
+        subject: str | None = None
+        if row.resource_type == "user":
+            remembered = detail.get("email")
+            subject = emails.get(row.resource_id) or (
+                remembered if isinstance(remembered, str) and remembered else None
+            )
+        out.append(
+            {
+                "id": row.id,
+                "action": row.action,
+                "organization_id": row.organization_id,
+                "organization_name": names.get(row.organization_id, ""),
+                "actor": row.actor,
+                "resource_id": row.resource_id,
+                "subject": subject,
+                "outcome": row.outcome,
+                "change": _change(row.action, row.outcome, detail),
+                "occurred_at": _iso(row.occurred_at),
+            }
+        )
+    return out
+
+
+def _detail(raw: str) -> dict[str, Any]:
+    """A stored detail, or nothing. An unreadable one is survived, not trusted."""
+    try:
+        parsed = json.loads(raw) if raw else {}
+    except (TypeError, ValueError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _change(action: str, outcome: str, detail: dict[str, Any]) -> dict[str, Any] | None:
+    """What an act changed, as the few facts a reader needs. Whitelisted."""
+
+    def text(key: str) -> str | None:
+        value = detail.get(key)
+        return value[:200] if isinstance(value, str) and value else None
+
+    change: dict[str, Any] = {}
+    denied = outcome == AuditOutcome.DENIED.value
+
+    if action == AuditAction.ORGANIZATION_STATUS_CHANGED.value:
+        for key in ("from", "to", "reason"):
+            if text(key):
+                change[key] = text(key)
+    elif action == AuditAction.ACCESS_SET.value and not denied:
+        if "role" in detail:
+            change["role"] = text("role")
+        for key in ("added", "removed"):
+            if isinstance(detail.get(key), list):
+                change[key] = len(detail[key])
+    elif action == AuditAction.ORGANIZATION_UPDATED.value:
+        fields = detail.get("fields")
+        if isinstance(fields, list):
+            change["fields"] = [str(field) for field in fields]
+
+    if denied and text("reason"):
+        change["reason"] = text("reason")
+    return change or None
 
 
 # ── people ───────────────────────────────────────────────────────────────────

@@ -3164,8 +3164,24 @@
     },
     "/api/v1/platform/overview": {
       "get": {
-        "description": "The platform at a glance.\n\n### Every figure here is counted, none is scored\n\nThere is no health percentage, no compliance rate and no trend. Each number\nbelow is a `COUNT(*)` over a table that exists, and each one answers a\nquestion that genuinely spans organizations. A figure that could only be\ncomputed by inventing a weighting would be a figure nobody could act on, and\nthe first person to act on it would be acting on our arithmetic rather than\non their estate.\n\nDeliberately absent: incident counts, violation rates, compliance scores.\nThose are organization judgements \u2014 \"that is a hygiene violation\" is an\nopinion a consumer forms, and aggregating opinions across unrelated\ncustomers produces a number with no referent. They belong on a Command\nCenter, which is one organization's own reading of its own kitchen.",
+        "description": "The platform at a glance.\n\n### Every figure here is counted, none is scored\n\nThere is no health percentage, no compliance rate and no trend. Each number\nbelow is a `COUNT(*)` over a table that exists, and each one answers a\nquestion that genuinely spans organizations. A figure that could only be\ncomputed by inventing a weighting would be a figure nobody could act on, and\nthe first person to act on it would be acting on our arithmetic rather than\non their estate.\n\nDeliberately absent: incident counts, violation rates, compliance scores.\nThose are organization judgements \u2014 \"that is a hygiene violation\" is an\nopinion a consumer forms, and aggregating opinions across unrelated\ncustomers produces a number with no referent. They belong on a Command\nCenter, which is one organization's own reading of its own kitchen.\n\n### What a Platform Admin opens this page to find out\n\nWhich customer needs them. So beside the totals it reports every\norganization on one line (`fleet`), and names the three ways a customer goes\nquietly wrong without anybody inside it raising a ticket: onboarding that\nnever finished, nobody left who can administer it, and cameras that are\nconfigured and switched on with not one of them live.",
         "operationId": "overview_api_v1_platform_overview_get",
+        "parameters": [
+          {
+            "description": "The reader's offset from UTC, in minutes. Decides where one day of the activity chart ends and the next begins.",
+            "in": "query",
+            "name": "utc_offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "The reader's offset from UTC, in minutes. Decides where one day of the activity chart ends and the next begins.",
+              "maximum": 840,
+              "minimum": -840,
+              "title": "Utc Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3178,6 +3194,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Overview",
