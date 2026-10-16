@@ -416,11 +416,21 @@ class OnnxDetectorSession:
     def _letterbox(frame, transform, np):
         """Scale by ``transform.scale`` and centre on a padded canvas.
 
-        Nearest-neighbour, and deliberately so: it needs no imaging library, and
-        the adapter's inverse is pure arithmetic over the same transform, so
-        whatever this does to coordinates is undone exactly. A smoother
-        resampler would change the pixels a model sees without changing where a
-        box lands.
+        **Area-average when shrinking.** This was nearest-neighbour, on the
+        reasoning that a smoother resampler changes the pixels a model sees
+        without changing where a box lands. The second half is true; the first
+        is the problem. A 1920x1080 camera fitted into 640 keeps one pixel in
+        nine by nearest neighbour, and a person becomes whichever pixels happen
+        to fall on the grid. Measured on 30 live decision frames (2026-10-15)
+        at the kitchen policy's 0.4 confidence floor, yolov8n found 73 people
+        through the sampled letterbox and 82 through an averaged one (72 and 78
+        of them also found by Ultralytics' own pipeline); yolo11s, 90 and 93.
+        The pose adapter met the same defect and fixed it the same way
+        (``adapters/perception/pose.py::_resample``).
+
+        Coordinates are unaffected either way: the image is resized to the same
+        ``scaled_w`` x ``scaled_h`` rectangle, so the adapter's inverse still
+        undoes exactly what was done.
 
         The 114 grey fill is YOLO's convention. It matters only in that the
         padding must be a constant the model was trained to ignore.
@@ -432,13 +442,7 @@ class OnnxDetectorSession:
         scaled_w = max(1, int(round(source_w * transform.scale)))
         scaled_h = max(1, int(round(source_h * transform.scale)))
 
-        rows = np.minimum(
-            (np.arange(scaled_h) / transform.scale).astype(np.int32), source_h - 1
-        )
-        cols = np.minimum(
-            (np.arange(scaled_w) / transform.scale).astype(np.int32), source_w - 1
-        )
-        resized = frame[rows][:, cols]
+        resized = _area_resample(frame, scaled_h, scaled_w, np)
 
         canvas = np.full((target_h, target_w, 3), 114, dtype=np.uint8)
         top = int(round(transform.pad_y))
@@ -541,6 +545,51 @@ class OnnxDetectorSession:
 
     def close(self) -> None:
         self._session = None
+
+
+def _area_resample(frame, target_h: int, target_w: int, np):
+    """Resize to ``target_h`` x ``target_w``: area-average down, nearest up.
+
+    The same arithmetic as ``adapters/perception/pose.py::_resample`` — two
+    ``reduceat`` passes, each output pixel the mean of the source pixels that
+    map into it — kept beside its caller because an adapter does not import
+    another adapter's private helper. Upscaling stays nearest-neighbour: there
+    is no information to average.
+
+    OpenCV's ``INTER_AREA`` is the same average and is used when OpenCV is
+    installed, because it is several times faster on a 1080p frame and this
+    runs once per analysed frame on a CPU-only host. It is optional — the
+    ``inference`` extra does not require it — and both paths produced the same
+    detections on the 30-frame measurement above.
+    """
+    height, width = frame.shape[0], frame.shape[1]
+    if target_h < height and target_w < width:
+        try:
+            import cv2  # noqa: PLC0415 - optional accelerator, same arithmetic
+        except Exception:  # noqa: BLE001 - absent or broken: use numpy below
+            cv2 = None
+        if cv2 is not None:
+            return cv2.resize(
+                np.ascontiguousarray(frame), (target_w, target_h),
+                interpolation=cv2.INTER_AREA,
+            )
+
+    if target_h >= height or target_w >= width:
+        ys = (np.arange(target_h) * height // max(1, target_h)).clip(0, height - 1)
+        xs = (np.arange(target_w) * width // max(1, target_w)).clip(0, width - 1)
+        return frame[ys][:, xs]
+
+    source = frame.astype(np.float32)
+
+    row_starts = (np.arange(target_h) * height // target_h).astype(np.intp)
+    rows = np.add.reduceat(source, row_starts, axis=0)
+    rows /= np.diff(np.append(row_starts, height))[:, None, None]
+
+    col_starts = (np.arange(target_w) * width // target_w).astype(np.intp)
+    cells = np.add.reduceat(rows, col_starts, axis=1)
+    cells /= np.diff(np.append(col_starts, width))[None, :, None]
+
+    return cells.round().clip(0, 255).astype(np.uint8)
 
 
 def open_onnx_detector_session(

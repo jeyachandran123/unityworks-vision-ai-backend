@@ -1,0 +1,513 @@
+{
+  "tag": "person_format",
+  "configuration": {
+    "policy": "C:\\Users\\JAYACH~1\\AppData\\Local\\Temp\\claude\\c--Users-Jayachandran-ProjectsAndDocs-Projects-Unityworks-vision-AI\\6c02226c-32d9-4bf2-b9a7-faef8e8fead4\\scratchpad\\person-check\\kitchen-safety.person-check-format.json",
+    "provider": "nvidia",
+    "evidence_regions": true,
+    "quality_gate": true,
+    "crop_size_override": null,
+    "output_sizes": {
+      "head_covering": [
+        448,
+        448
+      ],
+      "face_covering": [
+        448,
+        448
+      ],
+      "subject_is_person": [
+        448,
+        448
+      ]
+    },
+    "understander": "nvidia (understander.nvidia_vl)"
+  },
+  "frames": 15,
+  "annotated_subjects": 43,
+  "matched_subjects": 41,
+  "unmatched_truth": 2,
+  "spurious_predictions": 8,
+  "vlm_calls": 97,
+  "vlm_calls_per_1000_frames": 6466.666666666667,
+  "latency": {
+    "mean_ms": 5092.9,
+    "median_ms": 2567.5,
+    "p95_ms": 15151.0,
+    "total_wall_clock_s": 498.5
+  },
+  "mean_vlm_latency_ms": 5092.9,
+  "quality_gate": {
+    "evidence_crops": 98,
+    "accepted": 97,
+    "rejected": 1,
+    "rejection_rate": 0.01020408163265306,
+    "vlm_calls_avoided": 1,
+    "not_visible_from_gate": 3,
+    "not_visible_from_model": 70
+  },
+  "answers_replayed_from_cache": 0,
+  "gate_rejections": 1,
+  "evidence_groups": 98,
+  "reasons": {
+    "evidence_sufficient": 97,
+    "gate:too_blurry": 1
+  },
+  "attributes": [
+    {
+      "attribute": "head_covering",
+      "matched": 41,
+      "correct": 22,
+      "accuracy": 0.5365853658536586,
+      "unsupported_claims": 11,
+      "confusion": {
+        "present": {
+          "present": 20,
+          "absent": 8
+        },
+        "not_visible": {
+          "absent": 11,
+          "not_visible": 2
+        }
+      },
+      "states": [
+        {
+          "state": "present",
+          "support": 28,
+          "predicted": 20,
+          "precision": 1.0,
+          "recall": 0.7142857142857143,
+          "f1": 0.8333333333333333
+        },
+        {
+          "state": "absent",
+          "support": 0,
+          "predicted": 19,
+          "precision": 0.0,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "not_visible",
+          "support": 13,
+          "predicted": 2,
+          "precision": 1.0,
+          "recall": 0.15384615384615385,
+          "f1": 0.2666666666666667
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ]
+    },
+    {
+      "attribute": "face_covering",
+      "matched": 0,
+      "correct": 0,
+      "accuracy": null,
+      "unsupported_claims": 0,
+      "confusion": {},
+      "states": [
+        {
+          "state": "present",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "absent",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "not_visible",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ]
+    },
+    {
+      "attribute": "subject_is_person",
+      "matched": 0,
+      "correct": 0,
+      "accuracy": null,
+      "unsupported_claims": 0,
+      "confusion": {},
+      "states": [
+        {
+          "state": "present",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "absent",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "not_visible",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ]
+    },
+    {
+      "attribute": "hand_covering",
+      "matched": 41,
+      "correct": 38,
+      "accuracy": 0.926829268292683,
+      "unsupported_claims": 0,
+      "confusion": {
+        "absent": {
+          "present": 1,
+          "not_visible": 2
+        },
+        "not_visible": {
+          "not_visible": 38
+        }
+      },
+      "states": [
+        {
+          "state": "present",
+          "support": 0,
+          "predicted": 1,
+          "precision": 0.0,
+          "recall": null,
+          "f1": null
+        },
+        {
+          "state": "absent",
+          "support": 3,
+          "predicted": 0,
+          "precision": null,
+          "recall": 0.0,
+          "f1": null
+        },
+        {
+          "state": "not_visible",
+          "support": 38,
+          "predicted": 40,
+          "precision": 0.95,
+          "recall": 1.0,
+          "f1": 0.9743589743589743
+        },
+        {
+          "state": "unknown",
+          "support": 0,
+          "predicted": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        }
+      ]
+    }
+  ],
+  "failures_by_category": {
+    "unknown_handling_failure": 11,
+    "vlm_failure": 9,
+    "semantic_model_failure": 2
+  },
+  "failures": [
+    {
+      "frame_id": "kitchen-01/f00060",
+      "subject_id": "s0",
+      "attribute": "hand_covering",
+      "truth": "absent",
+      "predicted": "present",
+      "category": "vlm_failure",
+      "crop_size": "224x224",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00180",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f00420",
+      "subject_id": "s0",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00420",
+      "subject_id": "s3",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00660",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f00660",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00780",
+      "subject_id": "s0",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00780",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f00780",
+      "subject_id": "s3",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f00900",
+      "subject_id": "s0",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f00900",
+      "subject_id": "s3",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01020",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f01020",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f01020",
+      "subject_id": "s3",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01140",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "present",
+      "predicted": "absent",
+      "category": "vlm_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "the region was readable and the answer was wrong"
+    },
+    {
+      "frame_id": "kitchen-01/f01140",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01260",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01500",
+      "subject_id": "s1",
+      "attribute": "hand_covering",
+      "truth": "absent",
+      "predicted": "not_visible",
+      "category": "semantic_model_failure",
+      "crop_size": "224x224",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "declined a region the annotator could read"
+    },
+    {
+      "frame_id": "kitchen-01/f01500",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01500",
+      "subject_id": "s2",
+      "attribute": "hand_covering",
+      "truth": "absent",
+      "predicted": "not_visible",
+      "category": "semantic_model_failure",
+      "crop_size": "224x224",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "declined a region the annotator could read"
+    },
+    {
+      "frame_id": "kitchen-01/f01620",
+      "subject_id": "s1",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    },
+    {
+      "frame_id": "kitchen-01/f01740",
+      "subject_id": "s2",
+      "attribute": "head_covering",
+      "truth": "not_visible",
+      "predicted": "absent",
+      "category": "unknown_handling_failure",
+      "crop_size": "448x448",
+      "quality": "passed",
+      "vlm_used": true,
+      "detail": "claimed a decided state where the annotator saw no usable evidence"
+    }
+  ]
+}

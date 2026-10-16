@@ -39,20 +39,46 @@
     "",
     "'not_visible' is what the platform's UNKNOWN state is built on. The rule",
     "document lists it under 'unknown_values', so it becomes UNKNOWN rather than",
-    "a failed condition — never a violation, and never a pass."
+    "a failed condition — never a violation, and never a pass.",
+    "",
+    "=== WHO IS ASKED ABOUT (2.2.0) ===",
+    "",
+    "Only people the detector found in the frame being analysed: 'active'.",
+    "2.1.0 also asked about 'occluded' people, whose box is where they were",
+    "LAST seen. The crop is cut from the current frame at that box, so the",
+    "model was shown an empty shelf and the rule alerted on nobody: 11 of 30",
+    "open alerts on PCC2 (2026-10-15) had no person in their own decision",
+    "frame. tests/app/test_occluded_subjects.py holds this.",
+    "",
+    "=== CONFIDENCE FLOOR 0.45 (2.3.0) ===",
+    "",
+    "Was 0.40. A lidded pot on PCC2 camera 13 was detected as a person at",
+    "0.41 and alerted all day. Over 32 measured frames only it and one real",
+    "cook (0.40) fell in [0.40, 0.45); a person moves and is re-detected, a",
+    "pot does not. tests/app/test_confidence_floor.py holds this.",
+    "",
+    "=== ANSWERED BY THE v1 REGION MODEL (2.4.0) ===",
+    "",
+    "With VISION_UNDERSTANDER_PROVIDER=region_head the questions below are",
+    "answered by the fine-tuned v1 model's labelled regions, not a VLM; the",
+    "prompt stays for the VLM fallback. kitchen-01, 41 people: head 87.8 %",
+    "(VLM 56.1 %), hands 87.8 % (VLM 78.0 %), and no head answered 'none'",
+    "where the truth was present or not visible (VLM: 12). 'apron' is new",
+    "and recorded only. The hourly budget is 3600 because the head runs",
+    "locally (~0.1 s a crop, no fee); return it to 400 before switching back",
+    "to a paid VLM, or that VLM will be called nine times as often."
   ],
   "policy_id": "kitchen-safety",
-  "version": "2.1.0",
+  "version": "2.4.0",
   "scene": "kitchen",
   "scope": {
     "object_classes": [
       "person"
     ],
     "lifecycle": [
-      "active",
-      "occluded"
+      "active"
     ],
-    "min_confidence": 0.4
+    "min_confidence": 0.45
   },
   "attributes": [
     {
@@ -306,6 +332,36 @@
         "min_scale_pixels": 150.0,
         "max_blur": 0.85
       }
+    },
+    {
+      "key": "apron",
+      "type": "enum",
+      "values": [
+        "apron",
+        "none",
+        "not_visible"
+      ],
+      "justification": "An apron over the front of the body is directly visible in the crop",
+      "validity_ms": 120000,
+      "_comment": [
+        "NEW in 2.4.0. RECORDED, NOT RULED: no rule in config/rules reads this",
+        "attribute, so it can never raise an alert. It is answered by the",
+        "region_head provider (the fine-tuned v1 model's apron / no_apron",
+        "labels) and is here so Staff Hygiene and reports can show it while its",
+        "accuracy is judged.",
+        "",
+        "Same band and floors as hand_covering on purpose: the torso is inside",
+        "the hand band, so this rides the hand crop and costs no extra crop."
+      ],
+      "question": "Look at the FRONT of the body, chest to waist. Answer \"apron\" if an apron is worn over the clothes. Answer \"none\" ONLY if the front of the body is clearly visible with no apron on it. Answer \"not_visible\" if the front of the body is out of frame, turned away from the camera, blocked, blurred, or too small to judge.",
+      "evidence_region": {
+        "top": 0.15,
+        "height": 0.55
+      },
+      "min_quality": {
+        "min_scale_pixels": 150.0,
+        "max_blur": 0.85
+      }
     }
   ],
   "demand": {
@@ -324,7 +380,7 @@
     ],
     "priority_class": "safety-observation",
     "budget": {
-      "max_calls_per_hour": 400
+      "max_calls_per_hour": 3600
     }
   },
   "prompt": {

@@ -99,8 +99,10 @@ class TestTheEnvFileReachesTheAdapter:
         options = Settings(VISION_NVIDIA_MODEL=ELEVEN_B).understander_options()
 
         adapter, _ = build_understander(
-            producible=PRODUCIBLE, provider="nvidia",
-            env={**KEYED, "VISION_NVIDIA_MODEL": NINETY_B}, defaults=options,
+            producible=PRODUCIBLE,
+            provider="nvidia",
+            env={**KEYED, "VISION_NVIDIA_MODEL": NINETY_B},
+            defaults=options,
         )
         assert adapter._model == NINETY_B
 
@@ -115,9 +117,9 @@ class TestTheEnvFileReachesTheAdapter:
         """
         options = Settings(_env_file=None).understander_options()
 
-        assert "VISION_NVIDIA_MODEL" not in options, (
-            "an unset model must be absent from the overlay, not present-and-empty"
-        )
+        assert (
+            "VISION_NVIDIA_MODEL" not in options
+        ), "an unset model must be absent from the overlay, not present-and-empty"
 
 
 class TestSelectingItNeedsNoSourceEdit:
@@ -153,7 +155,8 @@ class TestSelectingItNeedsNoSourceEdit:
                 continue
             for path in root.rglob("*.py"):
                 hits = [
-                    n for n, line in enumerate(
+                    n
+                    for n, line in enumerate(
                         path.read_text(encoding="utf-8", errors="replace").splitlines(), 1
                     )
                     if NINETY_B in line
@@ -173,7 +176,8 @@ class TestSelectingItNeedsNoSourceEdit:
         )
         tree = ast.parse(source)
         assigns = [
-            node for node in ast.walk(tree)
+            node
+            for node in ast.walk(tree)
             if isinstance(node, ast.Assign)
             and any(getattr(t, "id", "") == "DEFAULT_MODEL" for t in node.targets)
         ]
@@ -186,8 +190,13 @@ class TestItBindsTheExistingAdapter:
 
     def test_no_provider_was_added_for_it(self) -> None:
         """The brief forbids a new provider, and the endpoint is OpenAI-compatible
-        so none is needed. The table stays closed at three."""
-        assert set(UNDERSTANDER_FACTORIES) == {"nvidia", "ollama", "static"}
+        so none is needed. The 90B binds through the existing `nvidia` entry.
+
+        The table has since gained `region_head` (2026-10-16), the local
+        fine-tuned PPE model — a different adapter for a different model, not a
+        provider for the 90B. Pinned exactly so a further addition is a decision
+        somebody makes here rather than an accident."""
+        assert set(UNDERSTANDER_FACTORIES) == {"nvidia", "ollama", "region_head", "static"}
 
     def test_it_satisfies_the_port_contract(self) -> None:
         from vision_os.conformance.understanding_kits import UNDERSTANDER_KIT
@@ -232,9 +241,9 @@ class TestEvidenceStaysAttributable:
         eleven = nvidia(VISION_NVIDIA_MODEL=ELEVEN_B)._meta()
 
         assert ninety.model_version == "instruct"
-        assert ninety.model_version == eleven.model_version, (
-            "model_version cannot distinguish these models — use model_id"
-        )
+        assert (
+            ninety.model_version == eleven.model_version
+        ), "model_version cannot distinguish these models — use model_id"
 
     def test_it_is_not_claimed_deterministic(self) -> None:
         """A hosted model behind a load balancer does not reproduce, and V13
@@ -249,7 +258,16 @@ class TestProductionIsUnchangedByThisPhase:
         was running before this phase it is still running after."""
         import vision_os.adapters.configuration.understander_providers as providers
 
-        assert set(providers.UNDERSTANDER_FACTORIES) == {"nvidia", "ollama", "static"}
+        # `region_head` was added later and separately (see
+        # test_no_provider_was_added_for_it); the three this phase relied on
+        # are untouched.
+        assert {"nvidia", "ollama", "static"} <= set(providers.UNDERSTANDER_FACTORIES)
+        assert set(providers.UNDERSTANDER_FACTORIES) == {
+            "nvidia",
+            "ollama",
+            "region_head",
+            "static",
+        }
         assert providers.PROVIDER_ENV == "VISION_UNDERSTANDER_PROVIDER"
 
     @pytest.mark.parametrize("model", [NINETY_B, ELEVEN_B])

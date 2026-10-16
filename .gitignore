@@ -32,11 +32,19 @@ crops/
 logs/
 
 # ── Models ───────────────────────────────────────────────────────────────────
-# yolov8n.onnx is the PRODUCTION DETECTOR and is committed deliberately: the
-# deployment must be reproducible from a checkout, and 13 MB is a fair price for
-# that. Everything else under models/ is an experiment.
+# yolo11s.onnx is the PRODUCTION DETECTOR (since 2026-10-15) and is committed
+# deliberately: the deployment must be reproducible from a checkout, and 38 MB
+# is a fair price for that. yolov8n.onnx, the previous one, stays committed as
+# the fallback (`VISION_DETECTOR_WEIGHTS=models/yolov8n.onnx`). Everything else
+# under models/ is an experiment.
+#
+# v1.onnx is the fine-tuned region model (hairnet, glove, mask, apron and their
+# absences) the 'region_head' understander answers PPE attributes from; it is
+# exported from v1.pt, which stays local. 9.8 MB.
 models/*
+!models/yolo11s.onnx
 !models/yolov8n.onnx
+!models/v1.onnx
 
 # ── Production datasets ──────────────────────────────────────────────────────
 # P9.7. `datasets/` held 723 MB of CCTV-derived frames of identifiable people

@@ -44,7 +44,11 @@ CONFIDENCE_ENV = "VISION_DETECTOR_CONFIDENCE"
 IOU_ENV = "VISION_DETECTOR_IOU"
 
 DEFAULT_PROVIDER = "yolo"
-DEFAULT_WEIGHTS = "models/yolov8n.onnx"
+#: yolo11s since 2026-10-15 (was yolov8n). Same `(1, 84, 8400)` output layout,
+#: so the decoder is unchanged; measured gain and the comparison are recorded
+#: in `tests/app/test_detector_default.py`. `VISION_DETECTOR_WEIGHTS` still
+#: overrides, and `models/yolov8n.onnx` stays in the checkout to fall back to.
+DEFAULT_WEIGHTS = "models/yolo11s.onnx"
 
 #: How a detector's label space behaves when it meets something outside it.
 #:
@@ -81,7 +85,7 @@ def resolve_detector_provider(env: Mapping[str, str] | None = None) -> str:
 
 
 def default_weights_path() -> Path:
-    """``<repository root>/models/yolov8n.onnx``, relative to this package.
+    """``<repository root>/`` + ``DEFAULT_WEIGHTS``, relative to this package.
 
     Four levels up (``configuration`` → ``adapters`` → ``vision_os`` →
     repository root) lands on the repository that vendors this package, which

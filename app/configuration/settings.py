@@ -249,6 +249,16 @@ class Settings(BaseSettings):
     vision_understander_max_side: str = ""
     #: Seconds one understanding call may take before it is a reported timeout.
     vision_understander_timeout_s: str = ""
+    #: The `region_head` provider: a local fine-tuned model that labels regions
+    #: of a crop (hairnet / no_hairnet, glove / no_glove ...), and the file that
+    #: says which label means which attribute value. Same trap, same fix as the
+    #: model name above — `.env` reaches this object, not `os.environ`. Empty
+    #: means the provider's own default or, for the two paths, a refusal to bind.
+    vision_region_head_weights: str = ""
+    vision_region_head_labels: str = ""
+    vision_region_head_min_score: str = ""
+    vision_region_head_margin: str = ""
+    vision_region_head_input: str = ""
 
     # ── CCTV / live runtime ──────────────────────────────────────────────────
     #
@@ -506,6 +516,11 @@ class Settings(BaseSettings):
             "VISION_OLLAMA_MODEL": self.vision_ollama_model,
             "VISION_UNDERSTANDER_MAX_SIDE": self.vision_understander_max_side,
             "VISION_UNDERSTANDER_TIMEOUT_S": self.vision_understander_timeout_s,
+            "VISION_REGION_HEAD_WEIGHTS": self.vision_region_head_weights,
+            "VISION_REGION_HEAD_LABELS": self.vision_region_head_labels,
+            "VISION_REGION_HEAD_MIN_SCORE": self.vision_region_head_min_score,
+            "VISION_REGION_HEAD_MARGIN": self.vision_region_head_margin,
+            "VISION_REGION_HEAD_INPUT": self.vision_region_head_input,
         }
         return {name: value.strip() for name, value in options.items() if value.strip()}
 

@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "Which label of the fine-tuned region model means which registered value.",
+    "",
+    "Read by the 'region_head' understander provider",
+    "(VISION_UNDERSTANDER_PROVIDER=region_head). The model reports labelled",
+    "regions inside a crop; for each attribute the crop is asked about, the",
+    "strongest mapped label near the crop's centre is the answer, and none at",
+    "all is 'not_visible' - the model did not find the part, so nothing is",
+    "claimed about it.",
+    "",
+    "Every value must be in that attribute's registered domain",
+    "(config/policies/kitchen-safety.example.json). 'hairnet' is the model's",
+    "label for any head covering it was trained on, caps included - which is",
+    "also how kitchen-01's annotators counted a cap.",
+    "",
+    "Measured on kitchen-01 (41 subjects, 2026-10-16): head 87.8 % and hands",
+    "92.7 % agreement with human labels; no absent value answered where the",
+    "truth was present or not visible."
+  ],
+  "model": "v1",
+  "unseen_value": "not_visible",
+  "attributes": {
+    "head_covering": {"hairnet": "hairnet", "no_hairnet": "none"},
+    "hand_covering": {"glove": "gloves", "no_glove": "none"},
+    "face_covering": {"face_mask": "mask", "no_face_mask": "none"},
+    "apron": {"apron": "apron", "no_apron": "none"}
+  }
+}

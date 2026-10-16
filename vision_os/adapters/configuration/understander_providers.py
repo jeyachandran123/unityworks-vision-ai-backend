@@ -191,11 +191,147 @@ def _build_static(
     )
 
 
+#: Settings of the ``region_head`` provider. Paths may be relative to the
+#: working directory or to the repository that vendors this package.
+REGION_HEAD_WEIGHTS_ENV = "VISION_REGION_HEAD_WEIGHTS"
+REGION_HEAD_LABELS_ENV = "VISION_REGION_HEAD_LABELS"
+REGION_HEAD_MIN_SCORE_ENV = "VISION_REGION_HEAD_MIN_SCORE"
+REGION_HEAD_MARGIN_ENV = "VISION_REGION_HEAD_MARGIN"
+REGION_HEAD_INPUT_ENV = "VISION_REGION_HEAD_INPUT"
+
+
+def _resolve(value: str) -> Path:
+    path = Path(value)
+    if not path.is_absolute() and not path.exists():
+        # `<repository root>/value`: configuration → adapters → vision_os → root.
+        path = Path(__file__).resolve().parents[3] / value
+    return path
+
+
+def _graph_input_size(weights: Path, setting: str) -> int:
+    """The square input the graph was exported for, read from the graph.
+
+    Taken from the file rather than a setting because the two disagreeing is a
+    silent accuracy loss, not an error: a 448 crop fitted into a 640 graph is
+    enlarged by nearest neighbour, and on kitchen-01 that cost the head band 15
+    points (73.2 % against 87.8 % for the same model exported at 448). A
+    setting is accepted only when it agrees, or when the graph's input is
+    dynamic and something has to choose.
+    """
+    import onnxruntime  # noqa: PLC0415 - optional, adapter-scoped
+
+    shape = onnxruntime.InferenceSession(
+        str(weights), providers=["CPUExecutionProvider"]
+    ).get_inputs()[0].shape
+    static = shape[-1] if len(shape) == 4 and isinstance(shape[-1], int) else None
+    if static is not None:
+        if setting and int(setting) != static:
+            raise ProviderConfigurationError(
+                f"{REGION_HEAD_INPUT_ENV}={setting} contradicts '{weights.name}', which "
+                f"was exported for {static}x{static}. Leave it unset."
+            )
+        return int(static)
+    return int(setting or 640)
+
+
+def _build_region_head(
+    *, producible: Sequence[AttributeKey], env: Mapping[str, str], **_: Any
+) -> UnderstanderPort:
+    """A local model that labels regions of a crop, as an ``attr.*`` head.
+
+    The weights are an ONNX graph in the usual ``(1, 4 + classes, anchors)``
+    layout, opened here with the same session the detector adapter uses, so the
+    head inherits its letterbox and decoding. The label mapping is a JSON file
+    naming, per attribute, which model label means which registered value —
+    the vocabulary is data, and this module only checks that every label it
+    names is one the model can actually report.
+    """
+    import hashlib
+    import json
+
+    from ..detection.letterbox import compute_transform, invert_to_normalized
+    from ..models.runtimes import LetterboxedImage, open_onnx_detector_session
+    from ..understanding.region_head import RegionLabelHead
+
+    weights_setting = _setting(env, REGION_HEAD_WEIGHTS_ENV)
+    labels_setting = _setting(env, REGION_HEAD_LABELS_ENV)
+    if not weights_setting or not labels_setting:
+        raise ProviderConfigurationError(
+            f"provider 'region_head' needs {REGION_HEAD_WEIGHTS_ENV} (an ONNX graph) "
+            f"and {REGION_HEAD_LABELS_ENV} (its label mapping)."
+        )
+    weights, labels_path = _resolve(weights_setting), _resolve(labels_setting)
+    if not weights.is_file():
+        raise ProviderConfigurationError(f"region head weights not found at '{weights}'")
+    if not labels_path.is_file():
+        raise ProviderConfigurationError(f"region head label mapping not found at '{labels_path}'")
+
+    try:
+        mapping = json.loads(labels_path.read_text(encoding="utf-8"))
+        label_values = {
+            str(attribute): {str(label): str(value) for label, value in labels.items()}
+            for attribute, labels in mapping["attributes"].items()
+        }
+    except (ValueError, KeyError, AttributeError) as exc:
+        raise ProviderConfigurationError(
+            f"region head label mapping '{labels_path}' is not valid: {exc}"
+        ) from exc
+
+    min_score = float(_setting(env, REGION_HEAD_MIN_SCORE_ENV, default="0.4"))
+    size = _graph_input_size(weights, _setting(env, REGION_HEAD_INPUT_ENV))
+    session = open_onnx_detector_session(str(weights), conf_threshold=min_score)
+    names = list(session.class_names())
+    unknown = sorted(
+        {label for labels in label_values.values() for label in labels} - set(names)
+    )
+    if unknown:
+        raise ProviderConfigurationError(
+            f"region head mapping names label(s) {unknown} that '{weights.name}' cannot "
+            f"report; it reports {names}. A misspelt label would never match and "
+            f"every answer would read as not visible."
+        )
+
+    def score_regions(pixels, width, height, colour_space):
+        import numpy as np  # noqa: PLC0415 - optional, adapter-scoped
+
+        image = np.frombuffer(pixels, dtype=np.uint8)[: width * height * 3].reshape(height, width, 3)
+        if str(colour_space).lower().startswith("rgb"):
+            image = image[:, :, ::-1]
+        image = np.ascontiguousarray(image)
+        transform = compute_transform(
+            source_width=width, source_height=height, target_width=size, target_height=size
+        )
+        raw = session.infer(
+            [LetterboxedImage(pixels=memoryview(image.tobytes()), width=width,
+                              height=height, transform=transform)]
+        )[0]
+        regions = []
+        for item in raw:
+            box = invert_to_normalized(transform, item.x1, item.y1, item.x2, item.y2)
+            regions.append(
+                (names[item.class_index], float(item.score), box.x1, box.y1, box.x2, box.y2)
+            )
+        return regions
+
+    digest = hashlib.blake2b(weights.read_bytes(), digest_size=16).hexdigest()
+    return RegionLabelHead(
+        score_regions=score_regions,
+        label_values=label_values,
+        producible=producible,
+        model_id=str(mapping.get("model") or weights.stem),
+        artifact_hash=f"blake2b:{digest}",
+        min_score=min_score,
+        centre_margin=float(_setting(env, REGION_HEAD_MARGIN_ENV, default="0.15")),
+        unseen_value=str(mapping.get("unseen_value") or "not_visible"),
+    )
+
+
 #: Providers selectable by configuration. A closed table, like the tracker,
 #: crop-strategy and coercion factories.
 UNDERSTANDER_FACTORIES: Mapping[str, Any] = {
     "nvidia": _build_nvidia,
     "ollama": _build_ollama,
+    "region_head": _build_region_head,
     "static": _build_static,
 }
 
