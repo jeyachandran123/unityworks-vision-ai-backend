@@ -21,7 +21,8 @@ s" for a closed set of labels.
 ### How it answers
 
 For each attribute the request asks about, the strongest label mapped to that
-attribute wins, counting only regions scoring at least ``min_score`` whose
+attribute wins, counting only regions scoring at least their floor — the
+label's own entry in ``label_floors``, else ``min_score`` — whose
 centre lies inside the crop's middle — a crop is padded around its subject and
 neighbours intrude at the edges. When nothing mapped is seen, the answer is
 ``unseen_value`` (``not_visible``): the model did not find the part, so nothing
@@ -69,6 +70,7 @@ class RegionLabelHead:
         "_capabilities",
         "_hash",
         "_id",
+        "_floors",
         "_labels",
         "_margin",
         "_min_score",
@@ -87,6 +89,7 @@ class RegionLabelHead:
         artifact_hash: str,
         model_version: str = "1",
         min_score: float = 0.4,
+        label_floors: Mapping[str, float] | None = None,
         centre_margin: float = 0.15,
         unseen_value: str = "not_visible",
         adapter_id: str = "attr.region_labels",
@@ -108,6 +111,9 @@ class RegionLabelHead:
         self._score = score_regions
         self._labels = {str(k): dict(v) for k, v in label_values.items()}
         self._min_score = float(min_score)
+        # A label the model is less sure of on this footage can be held to a
+        # higher floor than the rest without starving every other label.
+        self._floors = {str(k): float(v) for k, v in (label_floors or {}).items()}
         self._margin = float(centre_margin)
         self._unseen = unseen_value
         self._id = adapter_id
@@ -209,8 +215,8 @@ class RegionLabelHead:
 
     def _counts(self, region: Region) -> bool:
         """Strong enough, and centred inside the crop's middle."""
-        _, score, x1, y1, x2, y2 = region
-        if score < self._min_score:
+        label, score, x1, y1, x2, y2 = region
+        if score < self._floors.get(label, self._min_score):
             return False
         cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
         low, high = self._margin, 1.0 - self._margin

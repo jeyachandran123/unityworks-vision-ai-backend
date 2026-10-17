@@ -277,12 +277,35 @@ def _build_region_head(
             f"region head label mapping '{labels_path}' is not valid: {exc}"
         ) from exc
 
-    min_score = float(_setting(env, REGION_HEAD_MIN_SCORE_ENV, default="0.4"))
+    # The floor: the setting when given, else the mapping file's, else 0.4.
+    # Per-label floors come only from the mapping file, beside the labels they
+    # qualify, and are checked against the model like the labels themselves.
+    try:
+        min_score = float(
+            _setting(env, REGION_HEAD_MIN_SCORE_ENV) or mapping.get("min_score") or 0.4
+        )
+        label_floors = {
+            str(label): float(floor)
+            for label, floor in (mapping.get("label_min_scores") or {}).items()
+            if not str(label).startswith("_")
+        }
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ProviderConfigurationError(
+            f"region head score floors in '{labels_path}' are not valid: {exc}"
+        ) from exc
+    if not all(0.0 < f < 1.0 for f in (min_score, *label_floors.values())):
+        raise ProviderConfigurationError(
+            f"region head score floors must lie between 0 and 1; got {min_score} and "
+            f"{label_floors}"
+        )
     size = _graph_input_size(weights, _setting(env, REGION_HEAD_INPUT_ENV))
-    session = open_onnx_detector_session(str(weights), conf_threshold=min_score)
+    session = open_onnx_detector_session(
+        str(weights), conf_threshold=min((min_score, *label_floors.values()))
+    )
     names = list(session.class_names())
     unknown = sorted(
-        {label for labels in label_values.values() for label in labels} - set(names)
+        ({label for labels in label_values.values() for label in labels} | set(label_floors))
+        - set(names)
     )
     if unknown:
         raise ProviderConfigurationError(
@@ -321,6 +344,7 @@ def _build_region_head(
         model_id=str(mapping.get("model") or weights.stem),
         artifact_hash=f"blake2b:{digest}",
         min_score=min_score,
+        label_floors=label_floors,
         centre_margin=float(_setting(env, REGION_HEAD_MARGIN_ENV, default="0.15")),
         unseen_value=str(mapping.get("unseen_value") or "not_visible"),
     )

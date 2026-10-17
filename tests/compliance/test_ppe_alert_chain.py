@@ -4,8 +4,9 @@
 refusal cases). This file adds what the live-hardening review of 2026-08-31 asked
 for and did not find covered:
 
-* the **face/mask** rule (cases C and D), which arrived in policy 2.1.0 and had
-  no acceptance test of its own;
+* the **face/mask** cases C and D. The mask arrived in policy 2.1.0 as its own
+  informational rule; since rules 2026.2 it is a condition of the PPE rule,
+  beside apron;
 * **case G** — an unavailable model must produce no PPE verdict at all, rather
   than a compliant one;
 * cases **E and F**, the per-hand ones, which the shipped policy **cannot
@@ -40,7 +41,6 @@ POLICY = json.loads(
 )
 
 PPE_RULE = "kitchen.person.ppe.v1"
-FACE_RULE = "kitchen.person.face_covering.v1"
 
 
 def findings(**held: str):
@@ -56,25 +56,29 @@ class TestCaseCAndD_Face:
     """visible face + mask PRESENT -> no violation; + mask ABSENT -> violation."""
 
     def test_case_c_a_worn_mask_is_compliant(self) -> None:
-        assert findings(face_covering="mask")[FACE_RULE].state is ComplianceState.COMPLIANT
+        """Rules 2026.2: one PPE rule reads all four items, so COMPLIANT needs
+        the whole outfit seen and worn."""
+        assert findings(
+            head_covering="hairnet", face_covering="mask", apron="apron", hand_covering="gloves"
+        )[PPE_RULE].state is ComplianceState.COMPLIANT
 
     def test_case_d_a_bare_face_is_a_violation(self) -> None:
-        finding = findings(face_covering="none")[FACE_RULE]
+        finding = findings(face_covering="none")[PPE_RULE]
 
         assert finding.state is ComplianceState.VIOLATION
-        assert "is not wearing a mask over the nose and mouth" in finding.describe()
+        assert "is not wearing a face mask" in finding.describe()
 
     def test_a_chin_mask_is_a_violation_and_says_so_truthfully(self) -> None:
         """`mask_below_nose` is a DECIDED state — the model saw a mask and saw
         where it sat. It fails the requirement without becoming 'we could not
         tell', which is the distinction the five-value domain exists to keep."""
-        finding = findings(face_covering="mask_below_nose")[FACE_RULE]
+        finding = findings(face_covering="mask_below_nose")[PPE_RULE]
 
         assert finding.state is ComplianceState.VIOLATION
         assert UnknownReason.NOT_OBSERVABLE not in finding.unknown_reasons
 
     def test_an_unreadable_face_is_unknown_not_a_violation(self) -> None:
-        finding = findings(face_covering="not_visible")[FACE_RULE]
+        finding = findings(face_covering="not_visible")[PPE_RULE]
 
         assert finding.state is ComplianceState.UNKNOWN
         assert UnknownReason.NOT_OBSERVABLE in finding.unknown_reasons
@@ -86,12 +90,33 @@ class TestCaseCAndD_Face:
         entry = next(a for a in POLICY["attributes"] if a["key"] == "face_covering")
         assert "A face seen from the side IS visible" in entry["question"]
 
-    def test_the_face_rule_stays_off_the_high_severity_rule(self) -> None:
-        """Folding an unmeasured attribute into the validated PPE rule would let
-        it raise HIGH-severity violations on evidence nobody has scored."""
+    def test_one_rule_reads_all_four_items(self) -> None:
+        """Rules 2026.2 folded the face mask (formerly a separate informational
+        rule, which never raised an alert) and apron into the PPE rule, at the
+        deployment owner's request, once the v1 region model answered them. One
+        person is one alert naming every item seen missing."""
         ppe = KITCHEN.get(PPE_RULE)
-        assert [c.attribute for c in ppe.require] == ["head_covering", "hand_covering"]
-        assert KITCHEN.get(FACE_RULE).severity == "informational"
+        assert [c.attribute for c in ppe.require] == [
+            "head_covering",
+            "face_covering",
+            "apron",
+            "hand_covering",
+        ]
+        assert ppe.severity == "high"
+        assert {r.rule_id for r in KITCHEN.rules} == {PPE_RULE, "site.object.identity.v1"}
+
+    def test_a_person_seen_without_three_items_is_one_sentence(self) -> None:
+        """The apron is out of frame, so it is not said to be missing."""
+        finding = findings(
+            head_covering="none", face_covering="none", apron="not_visible", hand_covering="none"
+        )[PPE_RULE]
+
+        assert finding.state is ComplianceState.VIOLATION
+        assert [c.message for c in finding.failed_conditions] == [
+            "is not wearing a hairnet",
+            "is not wearing a face mask",
+            "is not wearing gloves",
+        ]
 
 
 class TestCaseG_ModelUnavailable:
@@ -121,7 +146,11 @@ class TestCaseG_ModelUnavailable:
 
         assert finding.state is ComplianceState.VIOLATION
         assert [c.attribute_key for c in finding.failed_conditions] == ["head_covering"]
-        assert [c.attribute_key for c in finding.unresolved_conditions] == ["hand_covering"]
+        assert [c.attribute_key for c in finding.unresolved_conditions] == [
+            "face_covering",
+            "apron",
+            "hand_covering",
+        ]
 
     def test_the_unknown_reasons_stay_distinguishable(self) -> None:
         """'the model never answered' and 'the model looked and could not see'
@@ -163,7 +192,7 @@ class TestPerHandStateIsNotRepresentable:
 
     def test_the_policy_declares_one_hand_attribute(self) -> None:
         keys = [a["key"] for a in POLICY["attributes"]]
-        assert keys == ["head_covering", "face_covering", "hand_covering"]
+        assert keys == ["head_covering", "face_covering", "hand_covering", "apron"]
         assert "left_hand_covering" not in keys
         assert "right_hand_covering" not in keys
 
@@ -184,7 +213,7 @@ class TestPerHandStateIsNotRepresentable:
         ``gloves`` the finding is COMPLIANT — for a person with a bare hand.
         """
         assert findings(
-            head_covering="hairnet", hand_covering="gloves"
+            head_covering="hairnet", face_covering="mask", apron="apron", hand_covering="gloves"
         )[PPE_RULE].state is ComplianceState.COMPLIANT
 
     def test_case_f_one_unseen_hand_cannot_be_distinguished(self) -> None:
@@ -212,7 +241,7 @@ class TestTheThreeAttributesAreAllAsked:
     @pytest.mark.parametrize(
         "key,rule",
         [("head_covering", PPE_RULE), ("hand_covering", PPE_RULE),
-         ("face_covering", FACE_RULE)],
+         ("face_covering", PPE_RULE), ("apron", PPE_RULE)],
     )
     def test_each_ppe_attribute_reaches_a_rule(self, key: str, rule: str) -> None:
         """§13: a rule depending on an attribute nobody observes can never reach

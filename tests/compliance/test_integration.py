@@ -168,7 +168,7 @@ class TestBothPipelinePaths:
         )[0]
 
         assert finding.state is ComplianceState.VIOLATION
-        assert finding.describe() == "Employee #2: is not wearing a head covering"
+        assert finding.describe() == "Employee #2: is not wearing a hairnet"
 
 
 # --- 24. reuse across frames ---------------------------------------------------- #
@@ -312,6 +312,8 @@ class TestSubjectsAreIndependent:
                     "obj-1",
                     attributes={
                         "head_covering": attribute("head_covering", "hairnet"),
+                        "face_covering": attribute("face_covering", "mask"),
+                        "apron": attribute("apron", "apron"),
                         "hand_covering": attribute("hand_covering", "gloves"),
                     },
                 ),
@@ -328,18 +330,16 @@ class TestSubjectsAreIndependent:
             labels={"obj-1": "Employee #1", "obj-2": "Employee #2"},
         )
 
-        # Scoped to the PPE rule. The shipped document also carries an
-        # informational face-covering rule that covers `person`, and these
-        # fixtures declare no face_covering — so it contributes an UNKNOWN per
-        # subject. That is the correct behaviour of a rule whose evidence is
-        # absent, and it is not what this test is about.
+        # Scoped to the PPE rule. Since rules 2026.2 it reads all four items,
+        # so the compliant subject declares a mask and an apron too; the
+        # violating one needs no more than its bare head.
         ppe = [f for f in findings if f.rule_id == "kitchen.person.ppe.v1"]
 
         assert [f.state for f in ppe] == [
             ComplianceState.COMPLIANT,
             ComplianceState.VIOLATION,
         ]
-        assert ppe[1].describe() == "Employee #2: is not wearing a head covering"
+        assert ppe[1].describe() == "Employee #2: is not wearing a hairnet"
 
 
 # --- 27. the no-policy configuration --------------------------------------------- #
@@ -387,7 +387,6 @@ class TestShippedExamplesLoad:
 
         assert {r.rule_id for r in rules.rules} == {
             "kitchen.person.ppe.v1",
-            "kitchen.person.face_covering.v1",
             "site.object.identity.v1",
         }
 

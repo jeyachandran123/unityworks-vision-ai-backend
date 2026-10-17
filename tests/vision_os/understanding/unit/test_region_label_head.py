@@ -147,3 +147,13 @@ def test_labels_must_be_configured() -> None:
 def test_it_passes_the_platform_understander_kit() -> None:
     report = UNDERSTANDER_KIT.run(head([("cover_on", 0.9, *CENTRE)]))
     assert report.passed, report.failures
+
+
+def test_a_label_can_be_held_to_a_higher_floor_than_the_rest() -> None:
+    """One label the model is less sure of on this footage is held to 0.4
+    while the others count from 0.3 — without starving them."""
+    regions = [("cover_off", 0.35, *CENTRE), ("glove_off", 0.35, *CENTRE)]
+    response = head(regions, min_score=0.3, label_floors={"cover_off": 0.4}).understand(
+        request(HEAD, HANDS)
+    )
+    assert response.structured == {"head_part": "not_visible", "hand_part": "bare"}

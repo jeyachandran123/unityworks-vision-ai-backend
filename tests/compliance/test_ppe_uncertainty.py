@@ -43,8 +43,16 @@ KITCHEN = RuleSet.from_document(
 
 
 def verdict(head: str | None = None, hand: str | None = None):
-    """One person through the real kitchen rule."""
-    held = {}
+    """One person through the real kitchen rule.
+
+    These cases are about head and hand. Since rules 2026.2 the PPE rule also
+    reads face_covering and apron, so both are held as worn here and every
+    case still isolates the two items it names.
+    """
+    held = {
+        "face_covering": attribute("face_covering", "mask"),
+        "apron": attribute("apron", "apron"),
+    }
     if head is not None:
         held["head_covering"] = attribute("head_covering", head)
     if hand is not None:
@@ -136,7 +144,7 @@ class TestPartialEvidenceReportsWhatItKnows:
         assert finding.state is ComplianceState.VIOLATION
         assert [c.attribute_key for c in finding.failed_conditions] == ["head_covering"]
         assert [c.attribute_key for c in finding.unresolved_conditions] == ["hand_covering"]
-        assert "not wearing a head covering" in finding.describe()
+        assert "not wearing a hairnet" in finding.describe()
         assert "gloves" not in finding.describe()
 
     def test_the_sentence_never_names_an_unresolved_condition(self) -> None:
@@ -185,6 +193,7 @@ class TestTheShippedDocumentsAgree:
             "head_covering",
             "face_covering",
             "hand_covering",
+            "apron",
         ]
 
     @pytest.mark.parametrize(

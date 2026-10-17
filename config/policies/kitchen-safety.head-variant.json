@@ -63,8 +63,8 @@
     "answered by the fine-tuned v1 model's labelled regions, not a VLM; the",
     "prompt stays for the VLM fallback. kitchen-01, 41 people: head 87.8 %",
     "(VLM 56.1 %), hands 87.8 % (VLM 78.0 %), and no head answered 'none'",
-    "where the truth was present or not visible (VLM: 12). 'apron' is new",
-    "and recorded only. The hourly budget is 3600 because the head runs",
+    "where the truth was present or not visible (VLM: 12). Since rules",
+    "2026.2 the PPE rule reads all four items, apron included. The hourly budget is 3600 because the head runs",
     "locally (~0.1 s a crop, no fee); return it to 400 before switching back",
     "to a paid VLM, or that VLM will be called nine times as often."
   ],
@@ -344,11 +344,10 @@
       "justification": "An apron over the front of the body is directly visible in the crop",
       "validity_ms": 120000,
       "_comment": [
-        "NEW in 2.4.0. RECORDED, NOT RULED: no rule in config/rules reads this",
-        "attribute, so it can never raise an alert. It is answered by the",
+        "NEW in 2.4.0. Read by kitchen.person.ppe.v1 since rules 2026.2, so an",
+        "apron seen missing is part of the PPE alert. It is answered by the",
         "region_head provider (the fine-tuned v1 model's apron / no_apron",
-        "labels) and is here so Staff Hygiene and reports can show it while its",
-        "accuracy is judged.",
+        "labels).",
         "",
         "Same band and floors as hand_covering on purpose: the torso is inside",
         "the hand band, so this rides the hand crop and costs no extra crop."

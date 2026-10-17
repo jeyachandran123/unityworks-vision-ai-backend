@@ -37,8 +37,17 @@ CASES = ANSWERS["cases"]
 
 
 def verdict(head: str | None, hand: str | None) -> ComplianceState:
-    """One person through the real kitchen rule."""
-    held = {}
+    """One person through the real kitchen rule.
+
+    The recording answered head and hand only. Since rules 2026.2 the PPE rule
+    also reads face_covering and apron, so both are held as worn: the replay
+    then measures exactly the head/hand verdicts it measured before, and a
+    missing value for an item nobody recorded cannot turn them all UNKNOWN.
+    """
+    held = {
+        "face_covering": attribute("face_covering", "mask"),
+        "apron": attribute("apron", "apron"),
+    }
     if head is not None:
         held["head_covering"] = attribute("head_covering", head)
     if hand is not None:
