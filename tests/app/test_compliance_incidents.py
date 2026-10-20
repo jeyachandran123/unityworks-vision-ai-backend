@@ -332,3 +332,45 @@ class TestPassCounters:
         blob = str(wire)
         for forbidden in ("jpeg", "jpg", "base64", "\xff\xd8"):
             assert forbidden not in blob.lower()
+
+
+class TestOneAlertListsEverything:
+    """Head and body are separate model calls, so the first finding often
+    names one item. A later finding about the same person naming more must
+    add to the open alert, not vanish into de-duplication."""
+
+    @staticmethod
+    def _two_failed():
+        from dataclasses import replace
+
+        from compliance.finding import ConditionOutcome
+
+        base = _finding(ComplianceState.VIOLATION)
+        gloves = ConditionOutcome(
+            attribute_key="hand_covering",
+            operator="eq",
+            expected="gloves",
+            observed="none",
+            satisfied=False,
+            message="is not wearing gloves",
+        )
+        return replace(base, finding_id="f-later", conditions=(*base.conditions, gloves))
+
+    @pytest.mark.asyncio
+    async def test_a_later_missing_item_is_added_to_the_open_alert(self, app):
+        await apply(app, [_finding(ComplianceState.VIOLATION)])
+        later = await apply(app, [self._two_failed()])
+        assert (later.incidents_opened, later.incidents_updated) == (0, 1)
+
+        (incident,) = await _incidents(app)
+        assert incident.summary == "obj-1 is not wearing a head covering or gloves"
+        assert '"hand_covering"' in incident.finding_snapshot
+
+    @pytest.mark.asyncio
+    async def test_an_item_already_listed_is_not_rewritten(self, app):
+        await apply(app, [self._two_failed()])
+        before = (await _incidents(app))[0].finding_snapshot
+        await apply(app, [_finding(ComplianceState.VIOLATION)])
+        await apply(app, [self._two_failed()])
+        (incident,) = await _incidents(app)
+        assert incident.finding_snapshot == before

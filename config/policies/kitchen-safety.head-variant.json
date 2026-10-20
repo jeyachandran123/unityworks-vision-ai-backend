@@ -64,12 +64,22 @@
     "prompt stays for the VLM fallback. kitchen-01, 41 people: head 87.8 %",
     "(VLM 56.1 %), hands 87.8 % (VLM 78.0 %), and no head answered 'none'",
     "where the truth was present or not visible (VLM: 12). Since rules",
-    "2026.2 the PPE rule reads all four items, apron included. The hourly budget is 3600 because the head runs",
-    "locally (~0.1 s a crop, no fee); return it to 400 before switching back",
-    "to a paid VLM, or that VLM will be called nine times as often."
+    "2026.2 the PPE rule reads all four items, apron included.",
+    "",
+    "=== BUDGET 10800 (2.5.0, 2026-10-19) ===",
+    "",
+    "The budget is shared by every camera and refills per minute: 10800/hour",
+    "is 180 calls a minute, and each person costs two (head crop, body crop).",
+    "At 3600 (60 a minute) busy minutes overran it - cam-13 alone asked about",
+    "108 calls in its busiest minute on 2026-10-19, cam-12 another 62 - and",
+    "the people past the limit were skipped: 222 of 387 active people on",
+    "cam-13 were never judged, so a frame with three bare heads raised one",
+    "alert. The head runs locally (~0.1-0.2 s a crop, no fee). Return this to",
+    "400 before switching back to a paid VLM, or that VLM will be called 27",
+    "times as often."
   ],
   "policy_id": "kitchen-safety",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "scene": "kitchen",
   "scope": {
     "object_classes": [
@@ -379,7 +389,7 @@
     ],
     "priority_class": "safety-observation",
     "budget": {
-      "max_calls_per_hour": 3600
+      "max_calls_per_hour": 10800
     }
   },
   "prompt": {

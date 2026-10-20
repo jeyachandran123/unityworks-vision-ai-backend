@@ -96,6 +96,12 @@ class IncidentService:
             existing.observed_at = max(_aware(existing.observed_at), _aware(observed_at))
             if evidence_refs:
                 existing.evidence_refs = _merge_refs(existing.evidence_refs, evidence_refs)
+            # One alert lists everything the person was seen without. The head
+            # and body are separate model calls, so the first finding often
+            # names only one item; a later one naming more is added to this
+            # alert rather than lost to de-duplication. Items already recorded
+            # keep their original condition — only new failures are added.
+            _merge_failures(existing, finding, summary)
             return existing, False
 
         incident = Incident(
@@ -292,6 +298,73 @@ def _merge_refs(existing: str, incoming: tuple[str, ...]) -> str:
         if ref and ref not in seen:
             seen.append(ref)
     return ",".join(seen[:50])
+
+
+WEARING = "is not wearing "
+
+
+def join_items(items: list[str]) -> str:
+    """`a hairnet`, `a face mask`, `gloves` → "a hairnet, a face mask or gloves".
+
+    "or", because the sentence is negated: not wearing a hairnet or gloves
+    means neither is worn.
+    """
+    if len(items) <= 1:
+        return "".join(items)
+    return f"{', '.join(items[:-1])} or {items[-1]}"
+
+
+def wearing_sentence(subject: str, messages: list[str]) -> str | None:
+    """ "<subject> is not wearing a, b or c" — or None when any message is not an
+    "is not wearing …" message, so the caller keeps its own wording."""
+    if not messages or not all(m.startswith(WEARING) for m in messages):
+        return None
+    return f"{subject} {WEARING}{join_items([m[len(WEARING):] for m in messages])}"
+
+
+def _merge_failures(incident: Incident, finding: dict[str, Any] | None, summary: str) -> bool:
+    """Add conditions newly failed in `finding` to the open incident's record.
+
+    The merged list follows the rule's own order (the new finding's), keeping
+    the stored copy of any condition that had already failed. Returns whether
+    anything was added.
+    """
+    if not finding or not isinstance(finding.get("conditions"), list):
+        return False
+    try:
+        stored = json.loads(incident.finding_snapshot or "{}")
+    except ValueError:
+        return False
+    if not isinstance(stored, dict) or not isinstance(stored.get("conditions"), list):
+        return False
+
+    def failed(c: Any) -> bool:
+        return isinstance(c, dict) and c.get("outcome") == "failed"
+
+    old = {c.get("attribute"): c for c in stored["conditions"] if isinstance(c, dict)}
+    already = {a for a, c in old.items() if failed(c)}
+    new = [c for c in finding["conditions"] if isinstance(c, dict)]
+    if not any(failed(c) and c.get("attribute") not in already for c in new):
+        return False
+
+    merged = []
+    for c in new:
+        before = old.pop(c.get("attribute"), None)
+        if failed(c) and not failed(before):
+            merged.append(c)  # newly seen missing
+        else:
+            merged.append(before if before is not None else c)  # as first recorded
+    merged.extend(old.values())
+    stored["conditions"] = merged
+    incident.finding_snapshot = json.dumps(stored, default=str)[:8000]
+
+    subject = summary.split(f" {WEARING}", 1)[0] if f" {WEARING}" in summary else ""
+    sentence = wearing_sentence(
+        subject or incident.object_id, [str(c.get("message") or "") for c in merged if failed(c)]
+    )
+    if sentence:
+        incident.summary = sentence
+    return True
 
 
 def to_wire(incident: Incident) -> dict[str, Any]:
