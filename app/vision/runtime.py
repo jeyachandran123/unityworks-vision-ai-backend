@@ -687,7 +687,10 @@ class VisionRuntime:
             "cropping": {
                 "enabled": True,
                 "crop_strategy": "crop.part_focused",
-                "understanding_calls_per_hour": 3_600.0,
+                # The platform-wide understanding cap, shared by every camera.
+                # A policy's own `demand.budget` is a second, per-demand limit
+                # under this one, so raising only the policy changes nothing.
+                "understanding_calls_per_hour": self._settings.vision_understanding_calls_per_hour,
             },
             # ── Understanding (M9) ──────────────────────────────────────────
             "understanding": {

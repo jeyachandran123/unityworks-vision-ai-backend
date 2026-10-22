@@ -197,6 +197,12 @@ class Settings(BaseSettings):
     #: model and optimal assignment. No new dependency, no new code path, and
     #: the lifecycle bounds are identical to the ones already configured.
     vision_tracker_id: str = "tracker.sort"
+    #: The platform-wide cap on understanding calls, shared by every camera and
+    #: refilled per minute (10800/hour = 180 a minute). Was a literal 3600 in the
+    #: runtime, which silently capped the kitchen policy's own 10800 budget: at
+    #: 3600, busy minutes on cam-13 skipped people past the limit. v1 runs
+    #: locally (~0.1-0.2 s a crop, no fee); lower it before binding a paid VLM.
+    vision_understanding_calls_per_hour: float = 10_800.0
     #: Which understander the platform should bind.
     #:
     #: Empty lets the platform read its own `VISION_UNDERSTANDER_PROVIDER` from

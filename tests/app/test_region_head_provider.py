@@ -188,15 +188,20 @@ def test_a_label_the_model_cannot_report_is_refused(tmp_path) -> None:
 
 @requires_weights
 def test_the_shipped_floors_hold_the_face_labels_higher(tmp_path) -> None:
-    """0.3 overall, 0.4 for the face labels: measured on kitchen-01 for head
-    and hands, and checked by eye on live frames for faces (see the mapping
-    file). A floor for a label the model cannot report is refused like a
+    """0.3 overall, 0.2 for the face and apron labels (the demo setting):
+    measured on kitchen-01 for head and hands, checked by eye on live frames
+    for faces (see the mapping file). A floor for a label the model cannot report is refused like a
     misspelt mapping, and a floor outside (0, 1) is refused outright."""
     import json
 
     shipped = json.loads(LABELS.read_text(encoding="utf-8"))
     assert shipped["min_score"] == 0.3
-    assert shipped["label_min_scores"] == {"face_mask": 0.4, "no_face_mask": 0.4}
+    assert shipped["label_min_scores"] == {
+        "face_mask": 0.4,
+        "no_face_mask": 0.2,
+        "apron": 0.4,
+        "no_apron": 0.2,
+    }
 
     bad = tmp_path / "labels.json"
     bad.write_text(json.dumps({**shipped, "label_min_scores": {"no_face_maks": 0.4}}))

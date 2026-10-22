@@ -175,7 +175,9 @@ class ComplianceDriver:
         "_last",
         "_last_by_organization",
         "_notifier",
+        "_people",
         "_readers",
+        "_recall",
         "_settings",
         "_task",
         "_vision",
@@ -205,6 +207,14 @@ class ComplianceDriver:
         self._last_by_organization: dict[str, CompliancePass] = {}
         #: One reader per organization: each reads as its own tenant's principal.
         self._readers: dict[str, Any] = {}
+        # A person's last clear answer survives a following "could not see".
+        from app.vision.recall import DecidedRecall
+
+        self._recall = DecidedRecall()
+        # One person, one tag, across the platform's object-id hand-overs.
+        from app.vision.person_link import PersonLinker
+
+        self._people = PersonLinker()
         self._wall = wall
         self._notifier = notifier
 
@@ -393,7 +403,13 @@ class ComplianceDriver:
             return None
 
     async def _capture_evidence(
-        self, session: Any, *, camera_key: str, finding: Any, organization_id: str
+        self,
+        session: Any,
+        *,
+        camera_key: str,
+        finding: Any,
+        organization_id: str,
+        person_of: dict[str, str] | None = None,
     ) -> str:
         """Store **the frame the decision was made on** as durable evidence.
 
@@ -460,7 +476,7 @@ class ComplianceDriver:
 
         ref = _evidence_ref_of(finding) or f"finding:{finding.finding_id}"
         store = evidence_domain.EvidenceStore(session, root=self._settings.evidence_path)
-        exhibits = _exhibits(decision, finding=finding, evidence_ref=ref)
+        exhibits = _exhibits(decision, finding=finding, evidence_ref=ref, person_of=person_of)
         try:
             # The frame first, always. Its manifest names the crops by handles
             # this function chose, so it is complete before any of them exists —
@@ -549,11 +565,26 @@ class ComplianceDriver:
         passes: dict[str, CompliancePass] = {}
         for organization_id, cameras in (await self.estate()).items():
             try:
-                run, findings = self.evaluate(
-                    self.snapshot(tuple(cameras), organization_id=organization_id)
+                import time
+
+                now_ns = time.time_ns()
+                snapshot = self.snapshot(tuple(cameras), organization_id=organization_id)
+                person_of = self._people.link(
+                    snapshot, organization_id=organization_id, now_ns=now_ns
                 )
+                snapshot = self._recall.apply(
+                    snapshot,
+                    organization_id=organization_id,
+                    now_ns=now_ns,
+                    identity=lambda object_id, people=person_of: people.get(object_id, object_id),
+                )
+                run, findings = self.evaluate(snapshot)
                 run = await self.apply(
-                    findings, cameras=cameras, organization_id=organization_id, run=run
+                    findings,
+                    cameras=cameras,
+                    organization_id=organization_id,
+                    run=run,
+                    person_of=person_of,
                 )
             except Exception as exc:  # noqa: BLE001 - one organization, not the pass
                 run = CompliancePass(errors=1)
@@ -576,6 +607,7 @@ class ComplianceDriver:
         cameras: dict[str, str | None],
         organization_id: str,
         run: CompliancePass | None = None,
+        person_of: dict[str, str] | None = None,
     ) -> CompliancePass:
         """Move this organization's incident queue to match these findings.
 
@@ -587,6 +619,7 @@ class ComplianceDriver:
         run = run or CompliancePass()
         if not findings:
             return run
+        person_of = person_of or {}
 
         from app.domain.incidents import IncidentService
         from compliance import ComplianceState
@@ -613,7 +646,11 @@ class ComplianceDriver:
                             zone_id=cameras.get(camera_key),
                             camera_key=camera_key,
                             rule_id=finding.rule_id,
-                            object_id=str(finding.subject.object_id),
+                            # The person, stable across the platform's id
+                            # hand-overs; the raw track id stays beside it.
+                            object_id=person_of.get(
+                                str(finding.subject.object_id), str(finding.subject.object_id)
+                            ),
                             observed_at=_observed_at(finding),
                             severity=finding.severity,
                             summary=_summary(finding),
@@ -637,6 +674,7 @@ class ComplianceDriver:
                                 camera_key=camera_key,
                                 finding=finding,
                                 organization_id=organization_id,
+                                person_of=person_of,
                             )
                             if ref:
                                 incident.evidence_refs = ref
@@ -652,7 +690,9 @@ class ComplianceDriver:
                         resolved = await service.resolve_by_observation(
                             organization_id=organization_id,
                             camera_key=camera_key,
-                            object_id=str(finding.subject.object_id),
+                            object_id=person_of.get(
+                                str(finding.subject.object_id), str(finding.subject.object_id)
+                            ),
                             rule_id=finding.rule_id,
                         )
                         run.incidents_resolved += int(resolved is not None)
@@ -714,7 +754,9 @@ class _Exhibits:
     crops: tuple[_CropExhibit, ...] = ()
 
 
-def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
+def _exhibits(
+    decision: Any, *, finding: Any, evidence_ref: str, person_of: dict[str, str] | None = None
+) -> _Exhibits:
     """The subject's box, its neighbours', and the crops. **Never raises.**
 
     ### Why this is decided here and frozen
@@ -736,11 +778,14 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
 
     ### Labels
 
-    `Person #1`, `Person #2` … assigned left to right across the frame, which
-    is how somebody looking at the picture would number them. Presentation
-    only: the `object_id` travels beside every label so the trace back to the
-    platform's own identity never depends on a display string.
+    `Person DDG38C` - the person's tag, the last six characters of the person
+    id `person_link` keeps stable across the platform's object-id hand-overs -
+    so the picture and the alert list name somebody the same way. Without a
+    person map (tests, other classes) the frame falls back to `Person #1`,
+    `Person #2`, left to right. Presentation only: `object_id` and `person`
+    travel beside every label.
     """
+    person_of = person_of or {}
     try:
         subjects = dict(getattr(decision, "subjects", {}) or {})
     except Exception:  # noqa: BLE001 - evidence is not the incident
@@ -764,13 +809,18 @@ def _exhibits(decision: Any, *, finding: Any, evidence_ref: str) -> _Exhibits:
 
     ordered = sorted(relevant.items(), key=lambda item: (item[1].box[0], item[1].box[1]))
     labels = {
-        object_id: f"{_class_noun(subject_class)} #{index}"
+        object_id: (
+            f"{_class_noun(subject_class)} {person_of[object_id][-6:].upper()}"
+            if object_id in person_of
+            else f"{_class_noun(subject_class)} #{index}"
+        )
         for index, (object_id, _entry) in enumerate(ordered, start=1)
     }
 
     def _describe(object_id: str, entry: Any) -> dict[str, Any]:
         return {
             "object_id": object_id,
+            "person": person_of.get(object_id, object_id),
             "class": entry.object_class or subject_class,
             "label": labels[object_id],
             "box": [round(float(v), 6) for v in entry.box],

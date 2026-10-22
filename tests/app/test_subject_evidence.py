@@ -189,6 +189,21 @@ class TestMultiPersonSubjectIdentity:
         labels = {manifest["subject"]["label"]} | {c["label"] for c in manifest["context"]}
         assert labels == {"Person #1", "Person #2"}
 
+    def test_people_are_named_by_their_tag_when_the_person_map_is_known(self, two_people):
+        """The picture and the alert list name somebody the same way: by the
+        last six characters of the person id `person_link` keeps stable."""
+        manifest = _manifest(
+            _exhibits(
+                two_people,
+                finding=_Finding(),
+                evidence_ref=REF,
+                person_of={SUBJECT: "01M5GYK2DDG38C", BYSTANDER: "01M5GYAAQ858TP"},
+            )
+        )
+        assert manifest["subject"]["label"] == "Person DDG38C"
+        assert manifest["subject"]["person"] == "01M5GYK2DDG38C"
+        assert manifest["context"][0]["label"] == "Person Q858TP"
+
     def test_labels_run_left_to_right_as_a_person_would_number_them(self, two_people):
         manifest = _manifest(_exhibits(two_people, finding=_Finding(), evidence_ref=REF))
         assert manifest["context"][0]["label"] == "Person #1"   # x1 = 0.10
@@ -278,7 +293,7 @@ class TestGalleryPayload:
         assert manifest["kind"] == "decision-frame"
         assert set(manifest) == {"kind", "frame", "subject", "context"}
         assert set(manifest["subject"]) == {
-            "object_id", "class", "label", "box", "is_subject", "sent_to_model",
+            "object_id", "person", "class", "label", "box", "is_subject", "sent_to_model",
             "crop_ref",
         }
 

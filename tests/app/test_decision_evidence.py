@@ -255,7 +255,7 @@ class TestGUnknownProducesNoViolationEvidence:
         attempted: list = []
         original = module.ComplianceDriver._capture_evidence
 
-        async def _spy(self, session, *, camera_key, finding, organization_id):
+        async def _spy(self, session, *, camera_key, finding, organization_id, **extra):
             attempted.append(str(finding.finding_id))
             return await original(
                 self,
@@ -263,6 +263,7 @@ class TestGUnknownProducesNoViolationEvidence:
                 camera_key=camera_key,
                 finding=finding,
                 organization_id=organization_id,
+                **extra,
             )
 
         monkeypatch.setattr(module.ComplianceDriver, "_capture_evidence", _spy)
