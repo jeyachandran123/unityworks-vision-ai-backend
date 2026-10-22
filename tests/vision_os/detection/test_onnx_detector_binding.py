@@ -109,22 +109,24 @@ def test_the_scripted_detector_describes_itself_honestly():
 
 @requires_weights
 def test_class_names_come_from_the_model_not_from_source():
-    """A COCO list written here would mislabel every object under a new model."""
+    """A COCO list written here would mislabel every object under a new model.
+
+    The default weights are the fine-tuned v1 (2026-10-22): nine classes, read
+    from the graph, where the COCO model before it declared eighty."""
     bound = build_detector(clock=VirtualClock(), env={})
     names = {str(class_id) for class_id in bound.classes}
-    assert len(bound.classes) == 80
-    assert {"person", "car", "bus", "chair"} <= names
-    # Spaces become underscores; the native label is preserved for mapping.
-    assert "dining_table" in names
-    assert any(entry.native_label == "dining table" for entry in bound.mappings)
+    assert len(bound.classes) == 9
+    assert {"person", "hairnet", "no_face_mask", "apron"} <= names
+    # The native label is preserved for mapping (spaces would become underscores).
+    assert all(str(e.class_id) == e.native_label.replace(" ", "_") for e in bound.mappings)
 
 
 @requires_weights
 def test_a_deployment_may_narrow_the_class_list():
     bound = build_detector(
-        clock=VirtualClock(), env={CLASSES_ENV: "person, car"}
+        clock=VirtualClock(), env={CLASSES_ENV: "person, apron"}
     )
-    assert {str(c) for c in bound.classes} == {"person", "car"}
+    assert {str(c) for c in bound.classes} == {"person", "apron"}
     assert "narrowed by configuration" in bound.note
 
 

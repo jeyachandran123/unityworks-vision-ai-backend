@@ -44,11 +44,12 @@ CONFIDENCE_ENV = "VISION_DETECTOR_CONFIDENCE"
 IOU_ENV = "VISION_DETECTOR_IOU"
 
 DEFAULT_PROVIDER = "yolo"
-#: yolo11s since 2026-10-15 (was yolov8n). Same `(1, 84, 8400)` output layout,
-#: so the decoder is unchanged; measured gain and the comparison are recorded
-#: in `tests/app/test_detector_default.py`. `VISION_DETECTOR_WEIGHTS` still
-#: overrides, and `models/yolov8n.onnx` stays in the checkout to fall back to.
-DEFAULT_WEIGHTS = "models/yolo11s.onnx"
+#: The fine-tuned v1 model since 2026-10-22 (yolo11s before it, yolov8n before
+#: that), exported at 640 with the usual `(1, 4 + classes, 8400)` layout. It
+#: names nine classes - person plus the PPE labels - so a deployment narrows it
+#: with `VISION_DETECTOR_CLASSES=person`; the measurement is recorded in
+#: `tests/app/test_detector_default.py`. `VISION_DETECTOR_WEIGHTS` overrides.
+DEFAULT_WEIGHTS = "models/v1-640.onnx"
 
 #: How a detector's label space behaves when it meets something outside it.
 #:

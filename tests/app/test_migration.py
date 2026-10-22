@@ -231,6 +231,7 @@ class TestConfigurationDocuments:
         assert (REPO / relative).is_file()
 
     def test_the_production_detector_weights_came_along(self) -> None:
-        weights = REPO / "models" / "yolov8n.onnx"
+        # v1 since 2026-10-22; the migrated yolov8n.onnx is in git history.
+        weights = REPO / "models" / "v1-640.onnx"
         assert weights.is_file()
         assert weights.stat().st_size > 1_000_000

@@ -259,6 +259,17 @@ class Settings(BaseSettings):
     vision_region_head_min_score: str = ""
     vision_region_head_margin: str = ""
     vision_region_head_input: str = ""
+    #: The person detector. Same trap again: the detector provider reads
+    #: `os.environ`, so these reach it only through `detector_options()`.
+    #: Empty means the provider's own default (the v1 weights shipped in
+    #: `models/`). `classes` defaults to `person` because the shipped weights
+    #: also name the PPE labels, and a hairnet box tracked as an object of its
+    #: own would be judged, drawn and counted as one.
+    vision_detector_provider: str = ""
+    vision_detector_weights: str = ""
+    vision_detector_classes: str = "person"
+    vision_detector_confidence: str = ""
+    vision_detector_iou: str = ""
 
     # ── CCTV / live runtime ──────────────────────────────────────────────────
     #
@@ -521,6 +532,22 @@ class Settings(BaseSettings):
             "VISION_REGION_HEAD_MIN_SCORE": self.vision_region_head_min_score,
             "VISION_REGION_HEAD_MARGIN": self.vision_region_head_margin,
             "VISION_REGION_HEAD_INPUT": self.vision_region_head_input,
+        }
+        return {name: value.strip() for name, value in options.items() if value.strip()}
+
+    def detector_options(self) -> dict[str, str]:
+        """Person-detector configuration, under the platform's own names.
+
+        The same bridge as `understander_options`, and handed over the same way:
+        as defaults beneath the real environment, so an operator's variable for
+        one run still wins. Only non-empty values are emitted.
+        """
+        options = {
+            "VISION_DETECTOR_PROVIDER": self.vision_detector_provider,
+            "VISION_DETECTOR_WEIGHTS": self.vision_detector_weights,
+            "VISION_DETECTOR_CLASSES": self.vision_detector_classes,
+            "VISION_DETECTOR_CONFIDENCE": self.vision_detector_confidence,
+            "VISION_DETECTOR_IOU": self.vision_detector_iou,
         }
         return {name: value.strip() for name, value in options.items() if value.strip()}
 

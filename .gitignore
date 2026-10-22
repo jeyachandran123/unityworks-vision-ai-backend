@@ -32,18 +32,17 @@ crops/
 logs/
 
 # ── Models ───────────────────────────────────────────────────────────────────
-# yolo11s.onnx is the PRODUCTION DETECTOR (since 2026-10-15) and is committed
-# deliberately: the deployment must be reproducible from a checkout, and 38 MB
-# is a fair price for that. yolov8n.onnx, the previous one, stays committed as
-# the fallback (`VISION_DETECTOR_WEIGHTS=models/yolov8n.onnx`). Everything else
-# under models/ is an experiment.
-#
-# v1.onnx is the fine-tuned region model (hairnet, glove, mask, apron and their
-# absences) the 'region_head' understander answers PPE attributes from; it is
-# exported from v1.pt, which stays local. 9.8 MB.
+# v1 is the only model (since 2026-10-22), committed deliberately: the
+# deployment must be reproducible from a checkout. Two exports of the same
+# fine-tuned v1.pt, which stays local:
+#   v1-640.onnx  the PERSON DETECTOR (640 input; narrowed to `person` by
+#                VISION_DETECTOR_CLASSES). 9.8 MB.
+#   v1.onnx      the 'region_head' understander's PPE answers (hairnet, glove,
+#                mask, apron and their absences) on 448 crops. 9.7 MB.
+# yolo11s / yolov8n / yolov8n-pose were removed; they are in git history.
+# Everything else under models/ is an experiment.
 models/*
-!models/yolo11s.onnx
-!models/yolov8n.onnx
+!models/v1-640.onnx
 !models/v1.onnx
 
 # ── Production datasets ──────────────────────────────────────────────────────

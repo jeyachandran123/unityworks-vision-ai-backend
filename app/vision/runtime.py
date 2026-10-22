@@ -21,6 +21,7 @@ composition.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -119,17 +120,29 @@ class VisionRuntime:
         composition = getattr(self._composition, "understanding_composition", None)
         understander = getattr(composition, "understander", None)
         if understander is None:
-            return {"available": False, "state": "not_bound", "model": "", "reason":
-                    "no understander is bound; attributes cannot be produced"}
+            return {
+                "available": False,
+                "state": "not_bound",
+                "model": "",
+                "reason": "no understander is bound; attributes cannot be produced",
+            }
         health = getattr(understander, "health", None)
         if not callable(health):
-            return {"available": True, "state": "unreported",
-                    "model": str(getattr(understander, "adapter_id", "")), "reason": ""}
+            return {
+                "available": True,
+                "state": "unreported",
+                "model": str(getattr(understander, "adapter_id", "")),
+                "reason": "",
+            }
         try:
             return dict(health())
         except Exception as exc:  # noqa: BLE001 - diagnostics never break status
-            return {"available": True, "state": "unreported", "model": "",
-                    "reason": f"health check failed: {type(exc).__name__}: {exc}"}
+            return {
+                "available": True,
+                "state": "unreported",
+                "model": "",
+                "reason": f"health check failed: {type(exc).__name__}: {exc}",
+            }
 
     # ── lifecycle ────────────────────────────────────────────────────────────
 
@@ -286,7 +299,12 @@ class VisionRuntime:
             from vision_os.adapters.configuration.detector_providers import build_detector
             from vision_os.kernel.clock import VirtualClock
 
-            bound_detector = build_detector(clock=VirtualClock())
+            # `.env` reaches the settings object, not `os.environ`, so the file's
+            # detector settings travel as defaults beneath the real environment.
+            bound_detector = build_detector(
+                clock=VirtualClock(),
+                env={**self._settings.detector_options(), **os.environ},
+            )
             document["detectors"] = [
                 bound_detector.declaration(
                     detector_id="primary",
@@ -782,9 +800,7 @@ def _attach_decision_subjects(cropping: Any) -> None:
                     object_class=classes.get(str(object_id), ""),
                 )
         except Exception as exc:  # noqa: BLE001 - evidence never breaks the path
-            logger.debug(
-                "decision subjects not recorded: {}: {}", type(exc).__name__, exc
-            )
+            logger.debug("decision subjects not recorded: {}: {}", type(exc).__name__, exc)
         if existing is not None:
             existing(result, crops)
 
